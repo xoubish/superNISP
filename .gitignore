@@ -133,4 +133,5 @@ dmypy.json
 *.fits
 *.fit
 *.fits.gz
+*.dat
 
