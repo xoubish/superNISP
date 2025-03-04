@@ -7,8 +7,12 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.wandb/
+wandb/
 .Python
 build/
+.data/
+data/
 develop-eggs/
 dist/
 downloads/
@@ -135,4 +139,4 @@ data
 *.fit
 *.fits.gz
 *.csv
-
+.virtual_documents/
