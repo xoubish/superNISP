@@ -49,7 +49,7 @@ class SuperResDiffusionUNet(nn.Module):
 
 # Diffusion Model
 class DiffusionModel(nn.Module):
-    def __init__(self, unet_model, timesteps=100):  # Reduced from 500 to 100 for speed
+    def __init__(self, unet_model, timesteps=500):  # Reduced from 500 to 100 for speed
         super().__init__()
         self.unet = unet_model
         self.timesteps = timesteps
