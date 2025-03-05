@@ -19,7 +19,6 @@ class SuperResDiffusionUNet(nn.Module):
 
         self.cross_attention = nn.MultiheadAttention(embed_dim=hidden_dim * 4, num_heads=4)
 
-        # Decoder to Maintain 34x34 Output
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(hidden_dim * 4, hidden_dim * 2, kernel_size=3, stride=2, padding=1, output_padding=0),
             nn.ReLU(),
@@ -61,11 +60,10 @@ class DiffusionModel(nn.Module):
         condition = condition.to(next(self.parameters()).device)
         return self.unet(x, condition)
 
-# **Upsampler for 20x20 → 34x34**
 class Upsampler(nn.Module):
     def __init__(self, in_channels=1, out_channels=1):
         super().__init__()
-        self.upsample = nn.Upsample(size=(34, 34), mode='bilinear', align_corners=True)
+        self.upsample = nn.Upsample(size=(66, 66), mode='bilinear', align_corners=True)
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
