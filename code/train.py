@@ -6,12 +6,20 @@ import wandb
 from torch.utils.data import DataLoader
 from dataset import SuperResolutionDataset  
 from model import SuperResolutionDiffusion, SuperResDiffusionUNet, Upsampler  
+import random
 
+def normalize_image(img):
+    img = img.squeeze().cpu().numpy()
+    img_min, img_max = img.min(), img.max()
+    if img_max > img_min:
+        img = (img - img_min) / (img_max - img_min)
+    return (img * 255).astype("uint8")
+    
 # Initialize Weights & Biases
 wandb.init(
     project="super-resolution-diffusion",
     config={
-        "epochs": 50,
+        "epochs": 100,
         "learning_rate": 1e-4,
         "batch_size": 64,  # Increased for better GPU utilization
         "optimizer": "AdamW",
@@ -84,7 +92,6 @@ for epoch in range(num_epochs):
     avg_loss = epoch_loss / len(train_loader)
     elapsed_time = time.time() - start_time
 
-    # ✅ Print epoch info
     print(f"✅ Epoch {epoch + 1}/{num_epochs} completed in {elapsed_time:.2f} seconds. Loss: {avg_loss:.6f}")
 
     wandb.log({
@@ -96,25 +103,27 @@ for epoch in range(num_epochs):
         "learning_rate": optimizer.param_groups[0]["lr"],
     })
 
-    # Log Images Every 5 Epochs (Restored direct batch fetching)
     if (epoch + 1) % 5 == 0:
         model.eval()
         with torch.no_grad():
-            lr_batch, hr_batch = next(iter(test_loader))  # ✅ Restored direct batch fetching
-            lr_batch = lr_batch.to(device)
-            t_test = torch.zeros((lr_batch.shape[0],), dtype=torch.long, device=device)
-            sr_batch = model(lr_batch, t_test).cpu()
+            # Select a random index from the dataset directly
+            random_idx = random.randint(0, len(test_loader.dataset) - 1)    
+            lr_img, hr_img = test_loader.dataset[random_idx]
+            lr_img = lr_img.unsqueeze(0).to(device)  # Add batch dimension
 
-        def normalize_image(img):
-            img = img.squeeze().cpu().numpy()
-            img_min, img_max = img.min(), img.max()
-            if img_max > img_min:
-                img = (img - img_min) / (img_max - img_min)
-            return (img * 255).astype("uint8")
+            #Generate super-resolution image
+            t_test = torch.zeros((1,), dtype=torch.long, device=device)
+            sr_img = model(lr_img, t_test).cpu().squeeze(0)
 
-        wandb.log({
-            "low_res": wandb.Image(normalize_image(lr_batch[0]), caption="Low-Res"),
-            "super_res": wandb.Image(normalize_image(sr_batch[0]), caption="Super-Res"),
-            "high_res": wandb.Image(normalize_image(hr_batch[0]), caption="High-Res"),
-        })
+            # Normalize images
+            lr_img = normalize_image(lr_img)
+            sr_img = normalize_image(sr_img)
+            hr_img = normalize_image(hr_img)
+
+            # Log to WandB
+            wandb.log({
+                "low_res": wandb.Image(lr_img, caption=f"Low-Res {random_idx}"),
+                "super_res": wandb.Image(sr_img, caption=f"Super-Res {random_idx}"),
+                "high_res": wandb.Image(hr_img, caption=f"High-Res {random_idx}"),
+            })
         model.train()
