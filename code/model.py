@@ -2,39 +2,40 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class SuperResDiffusionUNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1, hidden_dim=64, num_heads=2):
+    def __init__(self, in_channels=1, out_channels=1, hidden_dim=64, activation_fn=nn.ReLU):
         super().__init__()
+
+        self.activation_fn = activation_fn  # Store the class, not an instance
 
         # Encoder
         self.encoder1 = nn.Sequential(
             nn.Conv2d(in_channels, hidden_dim, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
+            self.activation_fn(),  # Instantiate it here
         )
         self.encoder2 = nn.Sequential(
             nn.Conv2d(hidden_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
+            self.activation_fn(),
         )
         self.encoder3 = nn.Sequential(
             nn.Conv2d(hidden_dim * 2, hidden_dim * 4, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
+            self.activation_fn(),
         )
 
-        # Condition Projection (Ensures `condition` is the same shape as `x3`)
+        # Condition Projection
         self.condition_proj = nn.Conv2d(1, hidden_dim * 4, kernel_size=3, padding=1)
 
-        # ✅ Fix: Cross-Attention Without Flattening
+        # Cross-Attention
         self.cross_attention = nn.Conv2d(hidden_dim * 4 * 2, hidden_dim * 4, kernel_size=1)
 
         # Decoder
         self.decoder1 = nn.Sequential(
             nn.ConvTranspose2d(hidden_dim * 4, hidden_dim * 2, kernel_size=4, stride=2, padding=1, output_padding=1),
-            nn.ReLU(),
+            self.activation_fn(),
         )
         self.decoder2 = nn.Sequential(
             nn.ConvTranspose2d(hidden_dim * 2, hidden_dim, kernel_size=4, stride=2, padding=1, output_padding=1),
-            nn.ReLU(),
+            self.activation_fn(),
         )
         self.decoder3 = nn.Conv2d(hidden_dim, out_channels, kernel_size=3, padding=1)
 
@@ -44,44 +45,45 @@ class SuperResDiffusionUNet(nn.Module):
         x3 = self.encoder3(x2)
 
         condition = self.condition_proj(condition)
-
-        # ✅ Fix: Ensure `condition` is the same size as `x3`
         condition = F.interpolate(condition, size=(x3.shape[2], x3.shape[3]), mode="bilinear", align_corners=True)
 
-        # ✅ Now Concatenation Works
-        x3 = torch.cat([x3, condition], dim=1)  
-        x3 = self.cross_attention(x3)  
+        x3 = torch.cat([x3, condition], dim=1)
+        x3 = self.cross_attention(x3)
 
-        # Decoder
         x = self.decoder1(x3)
-        if x.shape != x2.shape:
-            x = F.interpolate(x, size=x2.shape[2:], mode="bilinear", align_corners=True)
+        x = self.align_dims(x, x2)  # Alignment before adding
         x = x + x2  # Skip connection
 
         x = self.decoder2(x)
-        if x.shape != x1.shape:
-            x = F.interpolate(x, size=x1.shape[2:], mode="bilinear", align_corners=True)
+        x = self.align_dims(x, x1)  # Alignment before adding
         x = x + x1  # Skip connection
 
         x = self.decoder3(x)
-
         return x
+
+    def align_dims(self, x, target):
+        if x.size() != target.size():
+            diffY = target.size(2) - x.size(2)
+            diffX = target.size(3) - x.size(3)
+            x = F.pad(x, [diffX // 2, diffX - diffX // 2,
+                          diffY // 2, diffY - diffY // 2])
+        return x
+
 
 # Upsampler that ensures output is exactly 66×66
 class Upsampler(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1):
+    def __init__(self, in_channels=1, out_channels=1, upscale_factor=2):
         super().__init__()
-        self.upsample = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),  # ✅ Anti-aliasing upsampling
-            nn.Conv2d(in_channels, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Conv2d(64, out_channels, kernel_size=3, padding=1),
-        )
+        self.conv1 = nn.Conv2d(in_channels, in_channels * (upscale_factor ** 2), kernel_size=3, padding=1)
+        self.pixel_shuffle = nn.PixelShuffle(upscale_factor)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
         x = x.to(next(self.parameters()).device)
-        return self.upsample(x)
+        x = self.relu(self.pixel_shuffle(self.conv1(x)))
+        x = self.conv2(x)
+        return x
 
 
 # Diffusion Model with Cosine Noise Schedule

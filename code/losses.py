@@ -26,21 +26,22 @@ class PerceptualLoss(nn.Module):
         return F.mse_loss(pred_features, target_features)
 
 class HybridLoss(nn.Module):
-    """Simplified hybrid loss: Weighted MSE + Optional Perceptual Loss."""
-    def __init__(self, center_boost=3.0, base_weight=1.0, perceptual_weight=0.01):
+    """Simplified hybrid loss: Uniform L1 + MSE + Perceptual Loss"""
+    def __init__(self, mse_weight=1.0, l1_weight=0.01, perceptual_weight=0.01):
         super().__init__()
         self.perceptual_loss = PerceptualLoss()
-        self.center_boost = center_boost
-        self.base_weight = base_weight
-        self.perceptual_weight = perceptual_weight  # Lower weight for perceptual loss
+        self.mse_weight = mse_weight
+        self.l1_weight = l1_weight
+        self.perceptual_weight = perceptual_weight
 
     def forward(self, pred, target):
-        # Weighted MSE Loss (Prioritizes Galaxy)
-        weight_map = gaussian_weight_map(target.shape, sigma=0.4)
-        weight_map = self.base_weight + (self.center_boost - self.base_weight) * weight_map
-        mse_loss = (weight_map * (pred - target) ** 2).mean()
+        # **MSE Loss** (Encourages smooth outputs)
+        mse_loss = self.mse_weight * F.mse_loss(pred, target)
 
-        # Optional Perceptual Loss (Add only if needed)
-        perceptual_loss = self.perceptual_weight * self.perceptual_loss(pred, target) if self.perceptual_weight > 0 else 0
-        
-        return mse_loss + perceptual_loss
+        # **L1 Loss** (Encourages sharp edges)
+        l1_loss = self.l1_weight * torch.abs(pred - target).mean()
+
+        # **Perceptual Loss** (Preserves structure)
+        perceptual_loss = self.perceptual_weight * self.perceptual_loss(pred, target)
+
+        return mse_loss + l1_loss + perceptual_loss
