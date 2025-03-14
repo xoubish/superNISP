@@ -26,22 +26,17 @@ class PerceptualLoss(nn.Module):
         return F.mse_loss(pred_features, target_features)
 
 class HybridLoss(nn.Module):
-    """Simplified hybrid loss: Uniform L1 + MSE + Perceptual Loss"""
+    """Hybrid loss: Configurable weights for MSE, L1, and Perceptual Loss"""
     def __init__(self, mse_weight=1.0, l1_weight=0.01, perceptual_weight=0.01):
         super().__init__()
-        self.perceptual_loss = PerceptualLoss()
         self.mse_weight = mse_weight
         self.l1_weight = l1_weight
         self.perceptual_weight = perceptual_weight
+        self.perceptual_loss = PerceptualLoss()
 
     def forward(self, pred, target):
-        # **MSE Loss** (Encourages smooth outputs)
         mse_loss = self.mse_weight * F.mse_loss(pred, target)
-
-        # **L1 Loss** (Encourages sharp edges)
-        l1_loss = self.l1_weight * torch.abs(pred - target).mean()
-
-        # **Perceptual Loss** (Preserves structure)
+        l1_loss = self.l1_weight * F.l1_loss(pred, target)
         perceptual_loss = self.perceptual_weight * self.perceptual_loss(pred, target)
-
         return mse_loss + l1_loss + perceptual_loss
+
