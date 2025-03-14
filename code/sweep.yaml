@@ -1,0 +1,47 @@
+command:
+  - ${env}
+  - python3
+  - train.py
+  - ${args}
+method: bayes
+metric:
+  goal: minimize
+  name: train_loss
+parameters:
+  activation_function:
+    distribution: categorical
+    values:
+      - ReLU
+      - LeakyReLU
+      - ELU
+  batch_size:
+    distribution: int_uniform
+    max: 128
+    min: 16
+  epochs:
+    distribution: int_uniform
+    max: 300
+    min: 50
+  learning_rate:
+    distribution: uniform
+    max: 0.0006
+    min: 5e-05
+  loss_function:
+    distribution: categorical
+    values:
+      - MSELoss
+      - Hybrid Loss (Weighted MSE + Perceptual Loss)
+  optimizer:
+    distribution: categorical
+    values:
+      - Adam
+      - AdamW
+  timesteps:
+    distribution: int_uniform
+    max: 1000
+    min: 250
+  weight_decay:
+    distribution: uniform
+    max: 0.01
+    min: 0.0001
+program: train.py
