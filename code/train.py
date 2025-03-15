@@ -21,7 +21,7 @@ def setup_config_defaults():
         "hidden_dim": 64,
         "timesteps": 500,
         "upscale_factor": 2,
-        "loss_function": "MSELoss",
+        "loss_function": "Hybrid Loss (Weighted MSE + Perceptual Loss)",
         "mse_weight": 1.0,
         "l1_weight": 0.1,
         "perceptual_weight": 0.01,
@@ -69,7 +69,7 @@ upsampler = Upsampler(
 
 model = SuperResolutionDiffusion(unet, upsampler).to(device)
 
-criterion = get_loss_function(config)
+criterion = get_loss_function(config).to(device)
 optimizer = optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
