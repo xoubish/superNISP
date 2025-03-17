@@ -135,6 +135,7 @@ dmypy.json
 # Additions for macOS and FITS files
 .DS_Store
 data
+plots
 *.pth
 *.fits
 *.fit
