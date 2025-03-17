@@ -9,6 +9,7 @@ from model import SuperResolutionDiffusion, SuperResDiffusionUNet, Upsampler
 from losses import HybridLoss
 import random
 import time
+from torchvision import transforms
 
 def setup_config_defaults():
     default_config = {
@@ -73,8 +74,15 @@ criterion = get_loss_function(config).to(device)
 optimizer = optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
+
+
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])  # Adjust these values based on your data analysis
+])
+
 train_loader = DataLoader(
-    SuperResolutionDataset("../data/Nisp_train.hdf5", "../data/Nircam_train.hdf5", split="train", sample_fraction=0.1),
+    SuperResolutionDataset("../data/Nisp_train_nonorm.hdf5", "../data/Nircam_train_nonorm.hdf5", split="train", sample_fraction=0.1),
     batch_size=config.batch_size,
     shuffle=True,
     num_workers=8,
@@ -83,7 +91,7 @@ train_loader = DataLoader(
 )
 
 test_loader = DataLoader(
-    SuperResolutionDataset("../data/Nisp_train.hdf5", "../data/Nircam_train.hdf5", split="test", sample_fraction=0.1),
+    SuperResolutionDataset("../data/Nisp_train_nonorm.hdf5", "../data/Nircam_train_nonorm.hdf5", split="test", sample_fraction=0.1),
     batch_size=config.batch_size,
     shuffle=False,
     num_workers=2,
