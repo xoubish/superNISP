@@ -9,6 +9,8 @@ __pycache__/
 # Distribution / packaging
 .wandb/
 wandb/
+checkpoints/
+.checkpoints/
 .Python
 build/
 .data/
