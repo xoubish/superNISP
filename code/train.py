@@ -82,7 +82,7 @@ transform = transforms.Compose([
 ])
 
 train_loader = DataLoader(
-    SuperResolutionDataset("../data/Nisp_train_nonorm.hdf5", "../data/Nircam_train_nonorm.hdf5", split="train", sample_fraction=0.1),
+    SuperResolutionDataset("../data/Nisp_train_cosmos.hdf5", "../data/Nircam_train_cosmos.hdf5", split="train", sample_fraction=0.2),
     batch_size=config.batch_size,
     shuffle=True,
     num_workers=8,
@@ -91,7 +91,7 @@ train_loader = DataLoader(
 )
 
 test_loader = DataLoader(
-    SuperResolutionDataset("../data/Nisp_train_nonorm.hdf5", "../data/Nircam_train_nonorm.hdf5", split="test", sample_fraction=0.1),
+    SuperResolutionDataset("../data/Nisp_train_cosmos.hdf5", "../data/Nircam_train_cosmos.hdf5", split="test", sample_fraction=0.1),
     batch_size=config.batch_size,
     shuffle=False,
     num_workers=2,
