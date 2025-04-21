@@ -46,6 +46,38 @@ def get_loss_function(config):
     else:
         raise ValueError(f"Unsupported loss function: {config.loss_function}")
 
+def compute_ellipticity_from_moments(img):
+    """
+    Computes (e1, e2) ellipticity for a batch of images.
+    img: Tensor of shape (B, 1, H, W)
+    """
+    B, _, H, W = img.shape
+    device = img.device
+
+    y, x = torch.meshgrid(
+        torch.arange(H, dtype=torch.float32, device=device),
+        torch.arange(W, dtype=torch.float32, device=device),
+        indexing='ij'
+    )
+    x = x[None, None, :, :].expand(B, 1, H, W)
+    y = y[None, None, :, :].expand(B, 1, H, W)
+
+    flux = img.sum(dim=[2, 3], keepdim=True)
+    x_bar = (img * x).sum(dim=[2, 3], keepdim=True) / (flux + 1e-8)
+    y_bar = (img * y).sum(dim=[2, 3], keepdim=True) / (flux + 1e-8)
+
+    dx = x - x_bar
+    dy = y - y_bar
+
+    Mxx = (img * dx**2).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
+    Myy = (img * dy**2).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
+    Mxy = (img * dx * dy).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
+
+    e1 = (Mxx - Myy) / (Mxx + Myy + 1e-8)
+    e2 = 2 * Mxy / (Mxx + Myy + 1e-8)
+
+    return torch.stack([e1, e2], dim=1)
+
 # Initialize Weights & Biases with dynamic configuration setup
 wandb.init(project="super-resolution-diffusion", config={"entity": "your_wandb_entity_name"})
 setup_config_defaults()  # Set default values
@@ -126,11 +158,19 @@ for epoch in range(config.epochs):
     avg_loss = epoch_loss / len(train_loader)
     scheduler.step(avg_loss)
 
+    sr_img_tensor = sr_img.unsqueeze(0)  # (1, 1, H, W)
+    hr_img_tensor = hr_img.unsqueeze(0)  # (1, 1, H, W)
+
+    _pred = compute_ellipticity_from_moments(sr_img_tensor)
+    e_true = compute_ellipticity_from_moments(hr_img_tensor)
+    shape_error = torch.abs(e_pred - e_true).squeeze()
+
     wandb.log({
-        "epoch": epoch + 1,
-        "train_loss": avg_loss,
-        "learning_rate": optimizer.param_groups[0]["lr"],
-        "elapsed_time": time.time() - start_time
+        "low_res": wandb.Image(lr_img, caption=f"Low-Res {random_idx}"),
+        "super_res": wandb.Image(sr_img, caption=f"Super-Res {random_idx}"),
+        "high_res": wandb.Image(hr_img, caption=f"High-Res {random_idx}"),
+        "shape_error_e1": shape_error[0].item(),
+        "shape_error_e2": shape_error[1].item(),
     })
 
     if (epoch + 1) % 20 == 0:
