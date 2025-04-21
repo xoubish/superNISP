@@ -26,6 +26,7 @@ def setup_config_defaults():
         "mse_weight": 1.0,
         "l1_weight": 0.1,
         "perceptual_weight": 0.01,
+        "shape_weight": 0.1,
         "weight_decay": 0.01
     }
     # Set defaults only if they are not already set by wandb
