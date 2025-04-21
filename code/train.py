@@ -144,11 +144,7 @@ for epoch in range(config.epochs):
         "elapsed_time": time.time() - start_time
     })
 
-    if (epoch + 1) % 20 == 0:
-        checkpoint_path = f"checkpoints/model_epoch_{epoch+1}.pth"
-        torch.save(model.state_dict(), checkpoint_path)
-        print(f"Model saved at {checkpoint_path}")
-
+    if (epoch + 1) % 10 == 0:
         model.eval()
         with torch.no_grad():
             random_idx = random.randint(0, len(test_loader.dataset) - 1)
