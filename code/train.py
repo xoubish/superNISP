@@ -22,38 +22,27 @@ def setup_config_defaults():
         "hidden_dim": 64,
         "timesteps": 500,
         "upscale_factor": 2,
-        "loss_function": "Hybrid Loss (Weighted MSE + Perceptual Loss)",
         "mse_weight": 1.0,
         "l1_weight": 0.1,
         "perceptual_weight": 0.01,
         "shape_weight": 0.1,
         "weight_decay": 0.01
     }
-    # Set defaults only if they are not already set by wandb
     for key, value in default_config.items():
         if not hasattr(wandb.config, key):
             setattr(wandb.config, key, value)
 
 def get_loss_function(config):
-    if config.loss_function == "Hybrid Loss (Weighted MSE + Perceptual Loss)":
-        return HybridLoss(
-            mse_weight=config.mse_weight, 
-            l1_weight=config.l1_weight, 
-            perceptual_weight=config.perceptual_weight
-        )
-    elif config.loss_function == "MSELoss":
-        return nn.MSELoss()
-    else:
-        raise ValueError(f"Unsupported loss function: {config.loss_function}")
+    return HybridLoss(
+        mse_weight=config.mse_weight,
+        l1_weight=config.l1_weight,
+        perceptual_weight=config.perceptual_weight,
+        shape_weight=config.shape_weight
+    )
 
 def compute_ellipticity_from_moments(img):
-    """
-    Computes (e1, e2) ellipticity for a batch of images.
-    img: Tensor of shape (B, 1, H, W)
-    """
     B, _, H, W = img.shape
     device = img.device
-
     y, x = torch.meshgrid(
         torch.arange(H, dtype=torch.float32, device=device),
         torch.arange(W, dtype=torch.float32, device=device),
@@ -61,32 +50,26 @@ def compute_ellipticity_from_moments(img):
     )
     x = x[None, None, :, :].expand(B, 1, H, W)
     y = y[None, None, :, :].expand(B, 1, H, W)
-
     flux = img.sum(dim=[2, 3], keepdim=True)
     x_bar = (img * x).sum(dim=[2, 3], keepdim=True) / (flux + 1e-8)
     y_bar = (img * y).sum(dim=[2, 3], keepdim=True) / (flux + 1e-8)
-
     dx = x - x_bar
     dy = y - y_bar
-
     Mxx = (img * dx**2).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
     Myy = (img * dy**2).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
     Mxy = (img * dx * dy).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
-
     e1 = (Mxx - Myy) / (Mxx + Myy + 1e-8)
     e2 = 2 * Mxy / (Mxx + Myy + 1e-8)
-
     return torch.stack([e1, e2], dim=1)
 
-# Initialize Weights & Biases with dynamic configuration setup
+# Initialize Weights & Biases
 wandb.init(project="super-resolution-diffusion", config={"entity": "your_wandb_entity_name"})
-setup_config_defaults()  # Set default values
+setup_config_defaults()
 config = wandb.config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 os.makedirs("checkpoints", exist_ok=True)
-activation_fn = getattr(nn, config.activation_function)  # Get activation function dynamically
+activation_fn = getattr(nn, config.activation_function)
 
 unet = SuperResDiffusionUNet(
     in_channels=config.in_channels,
@@ -107,11 +90,9 @@ criterion = get_loss_function(config).to(device)
 optimizer = optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
-
-
 transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5])  # Adjust these values based on your data analysis
+    transforms.Normalize(mean=[0.5], std=[0.5])
 ])
 
 train_loader = DataLoader(
@@ -144,7 +125,6 @@ for epoch in range(config.epochs):
     for lr_batch, hr_batch in train_loader:
         lr_batch, hr_batch = lr_batch.to(device), hr_batch.to(device)
         t = torch.randint(0, config.timesteps, (lr_batch.shape[0],), device=device)
-
         optimizer.zero_grad()
         with torch.amp.autocast('cuda'):
             output = model(lr_batch, t)
@@ -152,31 +132,22 @@ for epoch in range(config.epochs):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
-
         epoch_loss += loss.item()
 
     avg_loss = epoch_loss / len(train_loader)
     scheduler.step(avg_loss)
 
-    sr_img_tensor = sr_img.unsqueeze(0)  # (1, 1, H, W)
-    hr_img_tensor = hr_img.unsqueeze(0)  # (1, 1, H, W)
-
-    _pred = compute_ellipticity_from_moments(sr_img_tensor)
-    e_true = compute_ellipticity_from_moments(hr_img_tensor)
-    shape_error = torch.abs(e_pred - e_true).squeeze()
-
     wandb.log({
-        "low_res": wandb.Image(lr_img, caption=f"Low-Res {random_idx}"),
-        "super_res": wandb.Image(sr_img, caption=f"Super-Res {random_idx}"),
-        "high_res": wandb.Image(hr_img, caption=f"High-Res {random_idx}"),
-        "shape_error_e1": shape_error[0].item(),
-        "shape_error_e2": shape_error[1].item(),
+        "epoch": epoch + 1,
+        "train_loss": avg_loss,
+        "learning_rate": optimizer.param_groups[0]["lr"],
+        "elapsed_time": time.time() - start_time
     })
 
     if (epoch + 1) % 20 == 0:
         checkpoint_path = f"checkpoints/model_epoch_{epoch+1}.pth"
         torch.save(model.state_dict(), checkpoint_path)
-        print(f"📌 Model saved at {checkpoint_path}")
+        print(f"\U0001F4CC Model saved at {checkpoint_path}")
 
         model.eval()
         with torch.no_grad():
@@ -186,10 +157,18 @@ for epoch in range(config.epochs):
             t_test = torch.zeros((1,), dtype=torch.long, device=device)
             sr_img = model(lr_img, t_test).cpu().squeeze(0)
 
+            sr_img_tensor = sr_img.unsqueeze(0)
+            hr_img_tensor = hr_img.unsqueeze(0)
+            e_pred = compute_ellipticity_from_moments(sr_img_tensor)
+            e_true = compute_ellipticity_from_moments(hr_img_tensor)
+            shape_error = torch.abs(e_pred - e_true).squeeze()
+
             wandb.log({
                 "low_res": wandb.Image(lr_img, caption=f"Low-Res {random_idx}"),
                 "super_res": wandb.Image(sr_img, caption=f"Super-Res {random_idx}"),
                 "high_res": wandb.Image(hr_img, caption=f"High-Res {random_idx}"),
+                "shape_error_e1": shape_error[0].item(),
+                "shape_error_e2": shape_error[1].item(),
             })
 
         model.train()
@@ -197,7 +176,8 @@ for epoch in range(config.epochs):
     if avg_loss < best_loss - 0.001:
         best_loss = avg_loss
         torch.save(model.state_dict(), "checkpoints/best_model.pth")
-        print(f"🏆 Best model updated (Loss: {best_loss:.6f})")
+        print(f"Best model updated (Loss: {best_loss:.6f})")
 
 torch.save(model.state_dict(), "checkpoints/final_model.pth")
-print("✅ Final model saved.")
+print("Final model saved.")
+wandb.finish()
