@@ -147,7 +147,7 @@ for epoch in range(config.epochs):
     if (epoch + 1) % 20 == 0:
         checkpoint_path = f"checkpoints/model_epoch_{epoch+1}.pth"
         torch.save(model.state_dict(), checkpoint_path)
-        print(f"\U0001F4CC Model saved at {checkpoint_path}")
+        print(f"Model saved at {checkpoint_path}")
 
         model.eval()
         with torch.no_grad():
@@ -175,9 +175,12 @@ for epoch in range(config.epochs):
 
     if avg_loss < best_loss - 0.001:
         best_loss = avg_loss
-        torch.save(model.state_dict(), "checkpoints/best_model.pth")
+        # Save best model inside wandb run directory
+        best_model_path = os.path.join(wandb.run.dir, "best_model.pth")
+        torch.save(model.state_dict(), best_model_path)
         print(f"Best model updated (Loss: {best_loss:.6f})")
 
-torch.save(model.state_dict(), "checkpoints/final_model.pth")
+final_model_path = os.path.join(wandb.run.dir, "final_model.pth")
+torch.save(model.state_dict(), final_model_path)
 print("Final model saved.")
 wandb.finish()
