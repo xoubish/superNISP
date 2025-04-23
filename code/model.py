@@ -21,19 +21,19 @@ class SuperResDiffusionUNet(nn.Module):
 
         # Encoder
         self.encoder1 = nn.Sequential(
-            nn.Conv2d(in_channels, hidden_dim, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(in_channels, hidden_dim, kernel_size=4, stride=2, padding=1),  # 66 → 33
             activation_fn()
         )
         self.encoder2 = nn.Sequential(
-            nn.Conv2d(hidden_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(hidden_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1),  # 33 → 16
             activation_fn()
         )
         self.encoder3 = nn.Sequential(
-            nn.Conv2d(hidden_dim * 2, hidden_dim * 4, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(hidden_dim * 2, hidden_dim * 4, kernel_size=4, stride=2, padding=1),  # 16 → 8
             activation_fn()
         )
 
-        # Condition + Time
+        # Conditioning and time
         self.condition_proj = nn.Conv2d(1, hidden_dim * 4, kernel_size=3, padding=1)
         self.time_mlp = nn.Sequential(
             nn.Linear(time_embed_dim, hidden_dim * 4),
@@ -43,19 +43,25 @@ class SuperResDiffusionUNet(nn.Module):
 
         # Decoder
         self.decoder1 = nn.Sequential(
-            nn.ConvTranspose2d(hidden_dim * 4, hidden_dim * 2, kernel_size=4, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(hidden_dim * 4, hidden_dim * 2, kernel_size=4, stride=2, padding=1),  # 8 → 16
             activation_fn()
         )
         self.decoder2 = nn.Sequential(
-            nn.ConvTranspose2d(hidden_dim * 2, hidden_dim, kernel_size=4, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(hidden_dim * 2, hidden_dim, kernel_size=4, stride=2, padding=1),  # 16 → 32
             activation_fn()
         )
-        self.decoder3 = nn.Conv2d(hidden_dim, out_channels, kernel_size=3, padding=1)
+        self.decoder3 = nn.Sequential(
+            nn.ConvTranspose2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1),  # 32 → 64
+            activation_fn()
+        )
+
+        # Final output layer
+        self.output_conv = nn.Conv2d(hidden_dim // 2, out_channels, kernel_size=3, padding=1)  # 64×64 → 64×64 (same shape)
 
     def forward(self, x, condition, t_embed):
-        x1 = self.encoder1(x)
-        x2 = self.encoder2(x1)
-        x3 = self.encoder3(x2)
+        x1 = self.encoder1(x)  # 66→33
+        x2 = self.encoder2(x1)  # 33→16
+        x3 = self.encoder3(x2)  # 16→8
 
         condition = self.condition_proj(condition)
         condition = F.interpolate(condition, size=(x3.shape[2], x3.shape[3]), mode="bilinear", align_corners=True)
@@ -64,24 +70,32 @@ class SuperResDiffusionUNet(nn.Module):
         x3 = torch.cat([x3 + t_proj, condition], dim=1)
         x3 = self.cross_attention(x3)
 
-        x = self.decoder1(x3)
+        x = self.decoder1(x3)  # 8 → 16
         x = self.align_dims(x, x2)
         x = x + x2
 
-        x = self.decoder2(x)
+        x = self.decoder2(x)  # 16 → 32
         x = self.align_dims(x, x1)
         x = x + x1
 
-        x = self.decoder3(x)
+        x = self.decoder3(x)  # 32 → 64
+        x = self.output_conv(x)  # 64×64 → 64×64
+
+        # Pad to exactly 66×66
+        x = self.align_dims(x, target=torch.empty(x.size(0), x.size(1), 66, 66, device=x.device))
         return x
 
     def align_dims(self, x, target):
-        if x.size() != target.size():
-            diffY = target.size(2) - x.size(2)
-            diffX = target.size(3) - x.size(3)
+        if isinstance(target, torch.Tensor):
+            target_h, target_w = target.size(2), target.size(3)
+        else:
+            target_h, target_w = target[0], target[1]
+        diffY = target_h - x.size(2)
+        diffX = target_w - x.size(3)
+        if diffX != 0 or diffY != 0:
             x = F.pad(x, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
         return x
-
+        
 # === Upsampler Module ===
 class Upsampler(nn.Module):
     def __init__(self, in_channels=1, out_channels=1, upscale_factor=2):
