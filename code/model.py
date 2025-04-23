@@ -41,27 +41,30 @@ class SuperResDiffusionUNet(nn.Module):
         )
         self.cross_attention = nn.Conv2d(hidden_dim * 4 * 2, hidden_dim * 4, kernel_size=1)
 
-        # Decoder
+        # Decoder using Upsample + Conv2d (checkerboard-free)
         self.decoder1 = nn.Sequential(
-            nn.ConvTranspose2d(hidden_dim * 4, hidden_dim * 2, kernel_size=4, stride=2, padding=1),  # 8 → 16
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(hidden_dim * 4, hidden_dim * 2, kernel_size=3, padding=1),
             activation_fn()
         )
         self.decoder2 = nn.Sequential(
-            nn.ConvTranspose2d(hidden_dim * 2, hidden_dim, kernel_size=4, stride=2, padding=1),  # 16 → 32
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(hidden_dim * 2, hidden_dim, kernel_size=3, padding=1),
             activation_fn()
         )
         self.decoder3 = nn.Sequential(
-            nn.ConvTranspose2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1),  # 32 → 64
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(hidden_dim, hidden_dim // 2, kernel_size=3, padding=1),
             activation_fn()
         )
 
         # Final output layer
-        self.output_conv = nn.Conv2d(hidden_dim // 2, out_channels, kernel_size=3, padding=1)  # 64×64 → 64×64 (same shape)
+        self.output_conv = nn.Conv2d(hidden_dim // 2, out_channels, kernel_size=3, padding=1)
 
     def forward(self, x, condition, t_embed):
-        x1 = self.encoder1(x)  # 66→33
-        x2 = self.encoder2(x1)  # 33→16
-        x3 = self.encoder3(x2)  # 16→8
+        x1 = self.encoder1(x)
+        x2 = self.encoder2(x1)
+        x3 = self.encoder3(x2)
 
         condition = self.condition_proj(condition)
         condition = F.interpolate(condition, size=(x3.shape[2], x3.shape[3]), mode="bilinear", align_corners=True)
@@ -70,16 +73,16 @@ class SuperResDiffusionUNet(nn.Module):
         x3 = torch.cat([x3 + t_proj, condition], dim=1)
         x3 = self.cross_attention(x3)
 
-        x = self.decoder1(x3)  # 8 → 16
+        x = self.decoder1(x3)
         x = self.align_dims(x, x2)
         x = x + x2
 
-        x = self.decoder2(x)  # 16 → 32
+        x = self.decoder2(x)
         x = self.align_dims(x, x1)
         x = x + x1
 
-        x = self.decoder3(x)  # 32 → 64
-        x = self.output_conv(x)  # 64×64 → 64×64
+        x = self.decoder3(x)
+        x = self.output_conv(x)
 
         # Pad to exactly 66×66
         x = self.align_dims(x, target=torch.empty(x.size(0), x.size(1), 66, 66, device=x.device))
@@ -95,7 +98,7 @@ class SuperResDiffusionUNet(nn.Module):
         if diffX != 0 or diffY != 0:
             x = F.pad(x, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
         return x
-        
+
 # === Upsampler Module ===
 class Upsampler(nn.Module):
     def __init__(self, in_channels=1, out_channels=1, upscale_factor=2):
