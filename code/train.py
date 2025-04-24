@@ -62,6 +62,29 @@ def compute_ellipticity_from_moments(img):
     e2 = 2 * Mxy / (Mxx + Myy + 1e-8)
     return torch.stack([e1, e2], dim=1)
 
+def compute_average_metrics(model, dataloader, device):
+    model.eval()
+    total_psnr = 0.0
+    total_ssim = 0.0
+    num_batches = 0
+
+    with torch.no_grad():
+        for lr_test, hr_test in dataloader:
+            lr_test, hr_test = lr_test.to(device), hr_test.to(device)
+            t_test = torch.tensor([0], device=device)  # Final denoising step
+            predicted_hr = model(lr_test, t_test).cpu()
+
+            psnr_value = compute_psnr(predicted_hr, hr_test.cpu())
+            ssim_value = compute_ssim(predicted_hr, hr_test.cpu())
+
+            total_psnr += psnr_value
+            total_ssim += ssim_value
+            num_batches += 1
+
+    avg_psnr = total_psnr / num_batches if num_batches > 0 else 0.0
+    avg_ssim = total_ssim / num_batches if num_batches > 0 else 0.0
+    return avg_psnr, avg_ssim
+
 # Initialize Weights & Biases
 wandb.init(project="super-resolution-diffusion", config={"entity": "your_wandb_entity_name"})
 setup_config_defaults()
@@ -159,12 +182,16 @@ for epoch in range(config.epochs):
             e_true = compute_ellipticity_from_moments(hr_img_tensor)
             shape_error = torch.abs(e_pred - e_true).squeeze()
 
+            val_psnr, val_ssim = compute_average_metrics(model, test_loader, device)
+
             wandb.log({
                 "low_res": wandb.Image(lr_img, caption=f"Low-Res {random_idx}"),
                 "super_res": wandb.Image(sr_img, caption=f"Super-Res {random_idx}"),
                 "high_res": wandb.Image(hr_img, caption=f"High-Res {random_idx}"),
                 "shape_error_e1": shape_error[0].item(),
                 "shape_error_e2": shape_error[1].item(),
+                "psnr": val_psnr,
+                "ssim": val_ssim
             })
 
         model.train()
