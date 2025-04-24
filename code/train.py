@@ -10,6 +10,8 @@ from losses import HybridLoss
 import random
 import time
 from torchvision import transforms
+import torchmetrics
+from skimage.metrics import structural_similarity as ssim
 
 def setup_config_defaults():
     default_config = {
@@ -62,6 +64,15 @@ def compute_ellipticity_from_moments(img):
     e2 = 2 * Mxy / (Mxx + Myy + 1e-8)
     return torch.stack([e1, e2], dim=1)
 
+def compute_psnr(pred, target):
+    psnr = torchmetrics.functional.image.peak_signal_noise_ratio(pred, target)
+    return psnr.item()
+
+def compute_ssim(pred, target):
+    pred_np = pred.squeeze().cpu().numpy()
+    target_np = target.squeeze().cpu().numpy()
+    return ssim(pred_np, target_np, data_range=target_np.max() - target_np.min())
+    
 def compute_average_metrics(model, dataloader, device):
     model.eval()
     total_psnr = 0.0
@@ -71,8 +82,8 @@ def compute_average_metrics(model, dataloader, device):
     with torch.no_grad():
         for lr_test, hr_test in dataloader:
             lr_test, hr_test = lr_test.to(device), hr_test.to(device)
-            t_test = torch.tensor([0], device=device)  # Final denoising step
-            predicted_hr = model(lr_test, t_test).cpu()
+            t = torch.zeros(lr_test.size(0), dtype=torch.long, device=device)  # shape = [B]
+            predicted_hr = model(lr_test, t).cpu()
 
             psnr_value = compute_psnr(predicted_hr, hr_test.cpu())
             ssim_value = compute_ssim(predicted_hr, hr_test.cpu())
