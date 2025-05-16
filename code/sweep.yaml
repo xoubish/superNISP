@@ -1,0 +1,71 @@
+command:
+  - ${env}
+  - python3
+  - train.py
+  - ${args}
+
+method: bayes
+
+metric:
+  name: psnr
+  goal: maximize
+
+parameters:
+  activation_function:
+    distribution: categorical
+    values: [ReLU, LeakyReLU, ELU]
+
+  batch_size:
+    distribution: int_uniform
+    min: 16
+    max: 128
+
+  epochs:
+    distribution: int_uniform
+    min: 50
+    max: 300
+
+  learning_rate:
+    distribution: uniform
+    min: 5e-05
+    max: 0.0006
+
+  optimizer:
+    distribution: categorical
+    values: [Adam, AdamW]
+
+  timesteps:
+    distribution: int_uniform
+    min: 250
+    max: 1000
+
+  weight_decay:
+    distribution: uniform
+    min: 0.0001
+    max: 0.01
+
+  mse_weight:
+    distribution: uniform
+    min: 0.1
+    max: 2.0
+
+  l1_weight:
+    distribution: uniform
+    min: 0.0
+    max: 0.2
+
+  perceptual_weight:
+    distribution: uniform
+    min: 0.0
+    max: 0.2
+
+  shape_weight:
+    distribution: uniform
+    min: 0.0
+    max: 0.5
+
+early_terminate: 
+  type: hyperband
+  min_iter: 10
+
+run_cap: 100

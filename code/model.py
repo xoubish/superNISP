@@ -1,77 +1,131 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import math
 
-# UNet with Cross-Attention
+# === Timestep Embedding ===
+def get_timestep_embedding(timesteps, embedding_dim):
+    half_dim = embedding_dim // 2
+    exponent = -torch.arange(half_dim, dtype=torch.float32, device=timesteps.device) * (math.log(10000.0) / (half_dim - 1))
+    emb = timesteps.float().unsqueeze(1) * torch.exp(exponent.unsqueeze(0))
+    return torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
+
+# === UNet with Condition + Time Embedding ===
 class SuperResDiffusionUNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1, hidden_dim=64):
+    def __init__(self, in_channels=1, out_channels=1, hidden_dim=64, activation_fn=nn.ReLU, time_embed_dim=128):
         super().__init__()
-        self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels, hidden_dim, 3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(hidden_dim, hidden_dim * 2, 3, padding=1, stride=2),
-            nn.ReLU(),
-            nn.Conv2d(hidden_dim * 2, hidden_dim * 4, 3, padding=1, stride=2),
-            nn.ReLU(),
+        self.activation_fn = activation_fn
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.hidden_dim = hidden_dim
+
+        # Encoder
+        self.encoder1 = nn.Sequential(
+            nn.Conv2d(in_channels, hidden_dim, kernel_size=4, stride=2, padding=1),  # 66 → 33
+            activation_fn()
+        )
+        self.encoder2 = nn.Sequential(
+            nn.Conv2d(hidden_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1),  # 33 → 16
+            activation_fn()
+        )
+        self.encoder3 = nn.Sequential(
+            nn.Conv2d(hidden_dim * 2, hidden_dim * 4, kernel_size=4, stride=2, padding=1),  # 16 → 8
+            activation_fn()
         )
 
-        # Ensure condition matches x channels
+        # Conditioning and time
         self.condition_proj = nn.Conv2d(1, hidden_dim * 4, kernel_size=3, padding=1)
+        self.time_mlp = nn.Sequential(
+            nn.Linear(time_embed_dim, hidden_dim * 4),
+            activation_fn()
+        )
+        self.cross_attention = nn.Conv2d(hidden_dim * 4 * 2, hidden_dim * 4, kernel_size=1)
 
-        self.cross_attention = nn.MultiheadAttention(embed_dim=hidden_dim * 4, num_heads=4)
-
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(hidden_dim * 4, hidden_dim * 2, kernel_size=3, stride=2, padding=1, output_padding=0),
-            nn.ReLU(),
-            nn.ConvTranspose2d(hidden_dim * 2, hidden_dim, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.ReLU(),
-            nn.Conv2d(hidden_dim, out_channels, kernel_size=3, padding=1),
+        # Decoder using Upsample + Conv2d (checkerboard-free)
+        self.decoder1 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(hidden_dim * 4, hidden_dim * 2, kernel_size=3, padding=1),
+            activation_fn()
+        )
+        self.decoder2 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(hidden_dim * 2, hidden_dim, kernel_size=3, padding=1),
+            activation_fn()
+        )
+        self.decoder3 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(hidden_dim, hidden_dim // 2, kernel_size=3, padding=1),
+            activation_fn()
         )
 
-    def forward(self, x, condition):
-        x = x.to(next(self.parameters()).device) 
-        condition = condition.to(next(self.parameters()).device)
+        # Final output layer
+        self.output_conv = nn.Conv2d(hidden_dim // 2, out_channels, kernel_size=3, padding=1)
 
-        x = self.encoder(x)
+    def forward(self, x, condition, t_embed):
+        x1 = self.encoder1(x)
+        x2 = self.encoder2(x1)
+        x3 = self.encoder3(x2)
+
         condition = self.condition_proj(condition)
+        condition = F.interpolate(condition, size=(x3.shape[2], x3.shape[3]), mode="bilinear", align_corners=True)
 
-        batch_size, channels, height, width = x.shape
+        t_proj = self.time_mlp(t_embed).view(x3.shape[0], -1, 1, 1).expand(-1, -1, x3.shape[2], x3.shape[3])
+        x3 = torch.cat([x3 + t_proj, condition], dim=1)
+        x3 = self.cross_attention(x3)
 
-        # Flatten height & width dimensions before attention
-        x = x.flatten(2).permute(2, 0, 1)
-        condition = condition.flatten(2).permute(2, 0, 1)
+        x = self.decoder1(x3)
+        x = self.align_dims(x, x2)
+        x = x + x2
 
-        x, _ = self.cross_attention(x, condition, condition)
+        x = self.decoder2(x)
+        x = self.align_dims(x, x1)
+        x = x + x1
 
-        # Reshape back to image format
-        x = x.permute(1, 2, 0).view(batch_size, channels, height, width)
-        x = self.decoder(x)
+        x = self.decoder3(x)
+        x = self.output_conv(x)
+
+        # Pad to exactly 66×66
+        x = self.align_dims(x, target=torch.empty(x.size(0), x.size(1), 66, 66, device=x.device))
         return x
 
-# Diffusion Model
+    def align_dims(self, x, target):
+        if isinstance(target, torch.Tensor):
+            target_h, target_w = target.size(2), target.size(3)
+        else:
+            target_h, target_w = target[0], target[1]
+        diffY = target_h - x.size(2)
+        diffX = target_w - x.size(3)
+        if diffX != 0 or diffY != 0:
+            x = F.pad(x, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
+        return x
+
+# === Upsampler Module ===
+class Upsampler(nn.Module):
+    def __init__(self, in_channels=1, out_channels=1, upscale_factor=2):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_channels, in_channels * (upscale_factor ** 2), kernel_size=3, padding=1)
+        self.pixel_shuffle = nn.PixelShuffle(upscale_factor)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+
+    def forward(self, x):
+        x = self.relu(self.pixel_shuffle(self.conv1(x)))
+        x = self.conv2(x)
+        return x
+
+# === Diffusion Wrapper with Time Embedding ===
 class DiffusionModel(nn.Module):
-    def __init__(self, unet_model, timesteps=500):  # Reduced from 500 to 100 for speed
+    def __init__(self, unet_model, timesteps=500, time_embed_dim=128):
         super().__init__()
         self.unet = unet_model
         self.timesteps = timesteps
+        self.time_embed_dim = time_embed_dim
 
     def forward(self, x, t, condition):
-        x = x.to(next(self.parameters()).device)  
-        t = t.to(next(self.parameters()).device)
-        condition = condition.to(next(self.parameters()).device)
-        return self.unet(x, condition)
+        t_embed = get_timestep_embedding(t, self.time_embed_dim)
+        return self.unet(x, condition, t_embed)
 
-class Upsampler(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1):
-        super().__init__()
-        self.upsample = nn.Upsample(size=(66, 66), mode='bilinear', align_corners=True)
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-
-    def forward(self, x):
-        x = x.to(next(self.parameters()).device) 
-        x = self.upsample(x)
-        return self.conv(x)
-
-# Full Model
+# === Main Super-Resolution Diffusion Model ===
 class SuperResolutionDiffusion(nn.Module):
     def __init__(self, unet_model, upsampler):
         super().__init__()
@@ -79,14 +133,13 @@ class SuperResolutionDiffusion(nn.Module):
         self.diffusion = DiffusionModel(unet_model)
 
     def forward(self, x, t):
-        x = x.to(next(self.parameters()).device)  
-        t = t.to(next(self.parameters()).device)
-
         upscaled = self.upsampler(x)
-
-        # Add progressive noise
-        noise = torch.randn_like(upscaled, device=upscaled.device)  
-        alpha_t = torch.sqrt(1 - (t / self.diffusion.timesteps).float().view(-1, 1, 1, 1))
+        noise = torch.randn_like(upscaled, device=upscaled.device)
+        alpha_t = cosine_schedule(t, self.diffusion.timesteps).view(-1, 1, 1, 1)
         noisy_image = alpha_t * upscaled + (1 - alpha_t) * noise
+        output = self.diffusion(noisy_image, t, upscaled)
+        return F.interpolate(output, size=(66, 66), mode="bilinear", align_corners=True)
 
-        return self.diffusion(noisy_image, t, upscaled)
+# === Cosine Noise Schedule ===
+def cosine_schedule(t, total_timesteps=500):
+    return torch.cos((t / total_timesteps) * (0.5 * torch.pi))
