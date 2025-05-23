@@ -1,17 +1,19 @@
 import os
 import sys
 import gzip
-from io import BytesIO
-from astropy.io import fits
-import matplotlib.pyplot as plt
-import dropbox
 import time
 import glob
+import re
 import warnings
+from io import BytesIO
+from copy import deepcopy
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import re
+import dropbox
 
+from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.wcs.utils import proj_plane_pixel_scales
 from astropy.coordinates import SkyCoord
@@ -19,10 +21,12 @@ from astropy.nddata import Cutout2D
 from astropy.table import Table
 from astropy.wcs import FITSFixedWarning
 from astropy import units as u
+
 from scipy import ndimage
 from skimage import restoration
 
 dbx_url = 'https://www.dropbox.com/scl/fo/37ooho4m924wb3d2m1gt8/ABJjd8gNUl0h_rmUP41S3cI?rlkey=nqy0t7p9sgxa3a853bf1ris9l&st=clxv8yui&dl=0'
+FRAC_ZERO = 0.25
 
 warnings.simplefilter('ignore', FITSFixedWarning)
 
@@ -95,6 +99,84 @@ def cut_catalog2(cat_file, cuts=None):
     my_cat = my_cat.dropna().reset_index(drop=True)
     return my_cat
 
+def rotate_jwst(clip, angle=-20, size=69, pad=20):
+    # There are different types of interpolation possible for this one, talk about it with Shooby
+    wcs = clip.wcs
+    new_image = ndimage.rotate(clip.data, angle, reshape=False, order=3, cval=-20)
+    new_clip = Cutout2D(new_image, clip.center_cutout, size)
+    # new_clip.wcs = wcs
+    return new_clip # no WCS info after this
+
+
+###########################################
+############### Metadata ##################
+###########################################
+
+meta = {
+    'cosmos': {
+        'NISP-Y_MER': {
+            'cut_func': cut_catalog,
+            'jwst_hdu': 0,
+            'nisp_hdu': 0,
+            'cat_path': '../catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits', # COSMOS classic
+            'size_jwst': 69, # Change to 41 and 69 px
+            'size_nisp': 41,
+            'pad_jwst': 20,
+            'rot_jwst': -20,
+            'psf_hdu': 1,
+            'matched_cat': '../catalog/matched_cat_cosmos_1.csv',
+            'matched_jwst': '../data/jwst_cosmos_69px_F115W.npy',
+            'matched_nisp': '../data/euclid_MER_cosmos_41px_Y.npy',
+            # 'matched_nisp_psf': '../data/nisp_cosmos_psf.npy',
+        },
+        'NISP-Y': {
+            'cut_func': cut_catalog,
+            'jwst_hdu': 0,
+            'nisp_hdu': 1,
+            'cat_path': '../catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits', # COSMOS classic
+            'size_jwst': 205,
+            'size_nisp': 41,
+            'mirror_nisp': True,
+            'mask': True,
+            'pad_jwst': 20,
+            'rot_jwst': -3.945,
+            'matched_cat': '../catalog/matched_cat_cosmos_2.csv',
+            'matched_jwst': '../data/jwst_cosmos_205px_F115W.npy',
+            'matched_nisp': '../data/euclid_NIR_cosmos_41px_Y.npy',
+        },
+    },
+    'HUDF': {
+        'NISP-Y_MER': {
+            'cut_func': cut_catalog2,
+            'jwst_hdu': 1,
+            'nisp_hdu': 0,
+            'cat_path': '../catalog/gds.fits', # CANDELS catalog
+            'size_jwst': 135, # Change to an odd # of pixels
+            'size_nisp': 41,
+            'pad_jwst': 0,
+            'rot_jwst': 0,
+            'psf_hdu': 1,
+            'matched_cat': '../catalog/matched_cat_hudf_1.csv',
+            'matched_jwst': '../data/jwst_hudf_135px_F115W.npy',
+            'matched_nisp': '../data/euclid_MER_hudf_41px_Y.npy',
+            # 'matched_nisp_psf': '../data/nisp_hudf_psf.npy',
+        },
+        'NISP-Y': {
+            'cut_func': cut_catalog2,
+            'jwst_hdu': 1,
+            'nisp_hdu': 1,
+            'cat_path': '../catalog/gds.fits', # CANDELS catalog
+            'size_jwst': 205,
+            'size_nisp': 41,
+            'pad_jwst': 0,
+            'rot_jwst': 0,
+            'matched_cat': '../catalog/matched_cat_hudf_2.csv',
+            'matched_jwst': '../data/jwst_hudf_205px_F115W.npy',
+            'matched_nisp': '../data/euclid_NIR_hudf_41px_Y.npy',
+        },
+    },
+}
+
 
 ##########################################
 ########### Dropbox Functions ############
@@ -159,8 +241,7 @@ def match_catalog(file_name, gal_coords, hdu_idx=0, url=None, dbx=None):
 
 def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20, 
                 rot_jwst=-20.0, limit=None, jwst_hdu=0, nisp_hdu=0, deconvolve=True,
-                mirror_euclid=False,
-               ):
+                mirror_nisp=False, mask=False, **kwargs):
     ### The catalog must have matched ra, dec, jwst_image, and nisp_image columns
     image_pairs = catalog.groupby(['jwst_image', 'nisp_image'])
 
@@ -187,15 +268,21 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
             with fits.open(nisp_file) as hdul:
                 nisp_header = hdul[nisp_hdu].header
                 nisp_data = hdul[nisp_hdu].data
+                if mask:
+                    mask_data = hdul[nisp_hdu+1].data
+                    wcs_mask = WCS(hdul[nisp_hdu+1].header)
                 
         else: # Open from dropbox
             print('Fetching files from dropbox...')
             jwst_header, jwst_data = get_fits_file(url, jwst_file, dbx=dbx, hdu_idx=jwst_hdu)
             nisp_header, nisp_data = get_fits_file(url, nisp_file, dbx=dbx, hdu_idx=nisp_hdu)
+            if mask:
+                mask_header, mask_data = get_fits_file(url, nisp_file, dbx=dbx, hdu_idx=nisp_hdu+1)
+                wcs_mask = WCS(mask_header)
 
-        if deconvolve:
-            psf_file = psf_filename(nisp_file)
-            psf = mpsf.from_file(psf_file)
+        # if deconvolve:
+        #     psf_file = psf_filename(nisp_file)
+        #     psf = mpsf.from_file(psf_file)
         
         wcs_jwst, wcs_nisp = WCS(jwst_header), WCS(nisp_header)
         
@@ -207,18 +294,29 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
             # Get JWST clip (larger than final size)
             clip_jwst = Cutout2D(jwst_data, gal_coords[i], size=size_jwst+pad, wcs=wcs_jwst, mode='trim')
             if sum(clip_jwst.data.shape)!=(size_jwst+pad)*2: continue
-            if np.sum((clip_jwst.data==0.0).astype(int))/((size_jwst+pad)**2) > 0.25: continue
+            if np.sum((clip_jwst.data==0.0).astype(int))/((size_jwst+pad)**2) > FRAC_ZERO: continue
             
             # Get NISP clip
             clip_nisp = Cutout2D(nisp_data, gal_coords[i], size=size_nisp, wcs=wcs_nisp, mode='trim')
             if sum(clip_nisp.data.shape)!=(size_nisp)*2: continue
-            if np.sum((clip_nisp.data==0.0).astype(int))/((size_nisp)**2) > 0.25: continue
             
-            if deconvolve:
-                psf_clip = psf.get_closest_stamp_at_radec([gal_coords[i].ra.degree, 
-                                                            gal_coords[i].dec.degree])
-                psf_clip.normalize()
-                psf_data = psf_clip.get_data()
+            # Mask clip, if necessary
+            if mask:
+                clip_mask = Cutout2D(mask_data, gal_coords[i], size=size_nisp, wcs=wcs_mask, mode='trim')
+                clip_mask = (clip_mask.data>=1) # < 1 is good data, greater is bad
+                masked_clip = np.ma.array(clip_nisp.data, mask=clip_mask)
+                clip_nisp.data = masked_clip.filled(0)
+
+            # Check for blank clips
+            if np.sum((clip_nisp.data==0.0).astype(int))/((size_nisp)**2) > FRAC_ZERO: continue
+            if mirror_nisp: # Mirror NISP-Y
+                clip_nisp.data = np.fliplr(clip_nisp.data)
+            
+            # if deconvolve:
+            #     psf_clip = psf.get_closest_stamp_at_radec([gal_coords[i].ra.degree, 
+            #                                                 gal_coords[i].dec.degree])
+            #     psf_clip.normalize()
+            #     psf_data = psf_clip.get_data()
             
             # Rotate JWST image 20 degrees counter-clockwise and crop
             # This loses the WCS
@@ -226,6 +324,13 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
                 clip_jwst = rotate_jwst(clip_jwst, size=size_jwst, angle=rot_jwst)
                 # clip_jwst.wcs = rotate_wcs(clip_jwst, angle=rot_jwst)
             # clip_jwst.data = ABmag_jwst(clip_jwst, jwst_header['PIXAR_SR'])
+
+            if mask: # Mask JWST too
+                zoom_factor = size_jwst / size_nisp
+                zoomed_mask = ndimage.zoom(clip_mask, zoom_factor, order=0, 
+                                           mode='grid-constant', grid_mode=True)
+                masked_clip = np.ma.array(clip_jwst.data, mask=zoomed_mask)
+                clip_jwst.data = masked_clip.filled(0)
             
             clips.append((gal_coords[i], clip_jwst, clip_nisp))
             count += 1
@@ -241,8 +346,7 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
 
 
 def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_clips=False, redo_cat=False,
-                redo_clips=False, secret="../../secrets/dropbox_token", meta=meta,
-                deconvolve=False):
+                redo_clips=False, secret="../../secrets/dropbox_token", meta=meta):
     params = meta[field][euclid_type]
 
     # Try to load clip files from disk
@@ -296,17 +400,15 @@ def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_c
             my_cat.to_csv(params['matched_cat'], index=False)
     
     # Clip images
-    clips = clip_images(my_cat, url=dbx_url, dbx=dbx, jwst_hdu=params['jwst_hdu'], 
-                        size_jwst=params['size_jwst'], rot_jwst=params['rot_jwst'], 
-                        size_nisp=params['size_nisp'], pad=params['pad_jwst'],
-                        nisp_hdu=params['nisp_hdu'], deconvolve=deconvolve)
+    clips = clip_images(my_cat, url=dbx_url, dbx=dbx, **params)
+    # clips = clip_images(my_cat, url=dbx_url, dbx=dbx, jwst_hdu=params['jwst_hdu'], 
+    #                     size_jwst=params['size_jwst'], rot_jwst=params['rot_jwst'], 
+    #                     size_nisp=params['size_nisp'], pad=params['pad_jwst'],
+    #                     nisp_hdu=params['nisp_hdu'], deconvolve=deconvolve)
     
     # Arrange data
     jwst_cutouts = np.array([clip[1].data for clip in clips])
 
-    # if euclid_type=='NISP-Y':
-    #     for i in range(len(clips)):
-    #         clips[i][2] = mirror_cutout_along_y(clips[i][2])
     nisp_cutouts = np.array([clip[2].data for clip in clips])
     
     if save_clips:
@@ -314,3 +416,291 @@ def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_c
         np.save(params['matched_nisp'], nisp_cutouts, allow_pickle=False)
     
     return jwst_cutouts, nisp_cutouts
+
+
+##############################################
+########### WCS stuff (not great) ############
+##############################################
+
+
+def plot_on_clip(base_clip, other_clip):
+    """ My own plotting function """
+    base_size, other_size = base_clip.data.shape[0], other_clip.data.shape[0]
+    corners = np.array([[0,0],[0,other_size],[other_size,other_size],[other_size,0],[0,0]])
+    corners_sky = other_clip.wcs.pixel_to_world(corners[:,1], corners[:,0])
+    corners_base = base_clip.wcs.world_to_pixel(corners_sky)
+
+    fig, axes = plt.subplots(1, 2)
+    axes[0].imshow(base_clip.data, origin='lower')
+    axes[0].plot(corners_base[0], corners_base[1], 'r--')
+    axes[1].imshow(other_clip.data, origin='lower')
+    plt.show()
+
+    base_scale = pixel_scale(base_clip.wcs)
+    other_scale = pixel_scale(other_clip.wcs)
+
+    print(f"Base clip scale: {base_scale:.2f} \nOther clip scale: {other_scale:.2f}")
+    print(f"Base clip should be {other_scale/base_scale:.4f}x larger than other clip")
+
+def mirror_cutout_along_y(cutout):
+    """
+    Mirror a Cutout2D object along the y-axis (flip horizontally),
+    updating both the data and WCS information.
+    
+    Parameters:
+    -----------
+    cutout : Cutout2D
+        The input cutout with valid WCS
+        
+    Returns:
+    --------
+    Cutout2D
+        A new Cutout2D object with mirrored data and corrected WCS
+    """
+    # Create a deep copy to avoid modifying the original
+    new_cutout = deepcopy(cutout)
+    
+    # Flip the image data horizontally
+    new_cutout.data = np.fliplr(cutout.data)
+    
+    # Get the original WCS
+    old_wcs = cutout.wcs
+    
+    # Create a new WCS object
+    new_wcs = WCS(naxis=old_wcs.naxis)
+    
+    # Copy over the basic WCS parameters
+    new_wcs.wcs.crval = old_wcs.wcs.crval.copy()
+    new_wcs.wcs.crpix = old_wcs.wcs.crpix.copy()
+    new_wcs.wcs.cdelt = old_wcs.wcs.cdelt.copy()
+    
+    # Get the transformation matrix (either CD or PC)
+    if hasattr(old_wcs.wcs, 'cd'):
+        old_matrix = old_wcs.wcs.cd.copy()
+        # Flip the sign of the first column (RA components)
+        new_matrix = old_matrix.copy()
+        new_matrix[:, 0] = -old_matrix[:, 0]
+        new_wcs.wcs.cd = new_matrix
+    else:
+        old_matrix = old_wcs.wcs.pc.copy()
+        # Flip the sign of the first column (RA components)
+        new_matrix = old_matrix.copy()
+        new_matrix[:, 0] = -old_matrix[:, 0]
+        new_wcs.wcs.pc = new_matrix
+        # Also need to flip the sign of the RA scale
+        new_wcs.wcs.cdelt[0] = -old_wcs.wcs.cdelt[0]
+    
+    # Update the reference pixel x-coordinate
+    # For a horizontal flip, the new reference pixel is at (width - x)
+    width = cutout.data.shape[1]
+    new_wcs.wcs.crpix[0] = width + 1 - old_wcs.wcs.crpix[0]
+    
+    # Copy over any additional WCS attributes
+    for attr in ['ctype', 'cunit', 'lonpole', 'latpole', 'radesys', 'equinox']:
+        if hasattr(old_wcs.wcs, attr):
+            setattr(new_wcs.wcs, attr, getattr(old_wcs.wcs, attr))
+
+    new_cutout.wcs = new_wcs
+    
+    return new_cutout
+
+def get_relative_rotation_vector(cutout1, cutout2):
+    """
+    Calculate relative rotation by transforming a vector between the two frames.
+    """
+    wcs1 = cutout1.wcs
+    wcs2 = cutout2.wcs
+    
+    # Define two points in the first cutout
+    center = np.array([cutout1.shape[1]/2, cutout1.shape[0]/2])
+    point2 = center + np.array([0, 100])  # 100 pixels in y direction
+    
+    # Convert to sky coordinates
+    center_sky = pixel_to_skycoord(center[0], center[1], wcs1)
+    point2_sky = pixel_to_skycoord(point2[0], point2[1], wcs1)
+    
+    # Convert back to pixel coordinates in the second cutout
+    center_pix2 = skycoord_to_pixel(center_sky, wcs2)
+    point2_pix2 = skycoord_to_pixel(point2_sky, wcs2)
+    
+    # Calculate the vector in both coordinate systems
+    vec1 = np.array([0, 100])  # Original vector (0, 100)
+    vec2 = np.array([point2_pix2[0] - center_pix2[0], 
+                     point2_pix2[1] - center_pix2[1]])
+    
+    # Calculate the angle between the vectors
+    angle1 = np.arctan2(vec1[1], vec1[0])
+    angle2 = np.arctan2(vec2[1], vec2[0])
+    
+    # Return the relative rotation in degrees
+    rel_angle = np.degrees(angle2 - angle1)
+    
+    # Normalize to range [-180, 180]
+    if rel_angle > 180:
+        rel_angle -= 360
+    elif rel_angle < -180:
+        rel_angle += 360
+        
+    return rel_angle
+
+
+def rotate_cutout_with_wcs(cutout, angle_deg, reshape=True, order=1, fill_value=0):
+    """
+    Rotate a Cutout2D object by a specified angle in degrees,
+    updating both the data and WCS information to maintain proper alignment.
+    
+    Parameters:
+    -----------
+    cutout : Cutout2D
+        The input cutout with valid WCS
+    angle_deg : float
+        Rotation angle in degrees (positive is counterclockwise)
+    reshape : bool, optional
+        Whether to reshape the output to contain the entire rotated image
+    order : int, optional
+        Order of spline interpolation (0-5). Default is 1 (bilinear)
+    fill_value : float, optional
+        Value used to fill areas outside the input image
+        
+    Returns:
+    --------
+    tuple
+        (rotated_data, rotated_wcs)
+    """
+    # Get the original WCS and data
+    original_wcs = cutout.wcs
+    original_data = cutout.data
+    
+    # Get the center of the original image in pixel coordinates
+    old_center_pix = np.array([(original_data.shape[1] - 1) / 2, 
+                              (original_data.shape[0] - 1) / 2])
+    
+    # Get the center in sky coordinates
+    old_center_sky = pixel_to_skycoord(old_center_pix[0], old_center_pix[1], original_wcs)
+    
+    # Rotate the image data
+    rotated_data = rotate(original_data, angle_deg, reshape=reshape, 
+                          order=order, mode='constant', cval=fill_value)
+    
+    # Get the center of the rotated image
+    if reshape:
+        new_center_pix = np.array([(rotated_data.shape[1] - 1) / 2, 
+                                  (rotated_data.shape[0] - 1) / 2])
+    else:
+        new_center_pix = old_center_pix
+    
+    # Create a new WCS object
+    new_wcs = WCS(naxis=2)
+    
+    # Copy basic WCS parameters
+    new_wcs.wcs.ctype = original_wcs.wcs.ctype
+    if hasattr(original_wcs.wcs, 'cunit'):
+        new_wcs.wcs.cunit = original_wcs.wcs.cunit
+    new_wcs.wcs.crval = old_center_sky.spherical.lon.deg, old_center_sky.spherical.lat.deg
+    
+    # Set the reference pixel to the center of the rotated image
+    new_wcs.wcs.crpix = new_center_pix + 1  # +1 because FITS is 1-indexed
+    
+    # Create a rotation matrix for the angle
+    angle_rad = np.radians(angle_deg)
+    rot_matrix = np.array([
+        [np.cos(angle_rad), -np.sin(angle_rad)],
+        [np.sin(angle_rad), np.cos(angle_rad)]
+    ])
+    
+    # Get the original transformation matrix
+    if hasattr(original_wcs.wcs, 'cd'):
+        # CD matrix case
+        cd_matrix = original_wcs.wcs.cd
+        # Apply rotation to the CD matrix
+        new_cd = np.dot(rot_matrix, cd_matrix)
+        new_wcs.wcs.cd = new_cd
+    else:
+        # PC matrix case
+        pc_matrix = original_wcs.wcs.pc
+        cdelt = original_wcs.wcs.cdelt
+        
+        # Apply rotation to the PC matrix
+        new_pc = np.dot(rot_matrix, pc_matrix)
+        new_wcs.wcs.pc = new_pc
+        new_wcs.wcs.cdelt = cdelt
+    
+    # Copy other WCS attributes
+    for attr in ['radesys', 'equinox', 'lonpole', 'latpole']:
+        if hasattr(original_wcs.wcs, attr):
+            setattr(new_wcs.wcs, attr, getattr(original_wcs.wcs, attr))
+    
+    return rotated_data, new_wcs
+
+
+def test_rotation(cutout, angle_deg):
+    """Test rotation by plotting original and rotated images with corner mapping"""
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Polygon
+    
+    # Rotate the cutout
+    rotated_data, rotated_wcs = rotate_cutout_with_wcs(cutout, angle_deg)
+    
+    # Create a grid of points to visualize the transformation
+    ny, nx = cutout.data.shape
+    y, x = np.mgrid[0:ny:10, 0:nx:10]
+    points = np.vstack([x.flatten(), y.flatten()]).T
+    
+    # Transform points from pixel to sky coordinates
+    sky_coords = cutout.wcs.pixel_to_world(points[:,0], points[:,1])
+    
+    # Transform back to pixel coordinates in the rotated frame
+    x_rot, y_rot = rotated_wcs.world_to_pixel(sky_coords)
+    
+    # Plot results
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    
+    # Original image
+    ax1.imshow(cutout.data, origin='lower')
+    ax1.plot(points[:,0], points[:,1], 'r+')
+    ax1.set_title('Original Image')
+    
+    # Rotated image
+    ax2.imshow(rotated_data, origin='lower')
+    ax2.plot(x_rot, y_rot, 'r+')
+    ax2.set_title(f'Rotated by {angle_deg}°')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Test corners specifically
+    corners = np.array([[0, 0], [nx-1, 0], [nx-1, ny-1], [0, ny-1], [0, 0]])
+    corners_sky = cutout.wcs.pixel_to_world(corners[:,0], corners[:,1])
+    corners_rot = np.array(rotated_wcs.world_to_pixel(corners_sky)).T
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    
+    # Original image
+    ax1.imshow(cutout.data, origin='lower')
+    ax1.plot(corners[:,0], corners[:,1], 'r-', linewidth=2)
+    ax1.set_title('Original Image')
+    
+    # Rotated image
+    ax2.imshow(rotated_data, origin='lower')
+    ax2.plot(corners_rot[:,0], corners_rot[:,1], 'r-', linewidth=2)
+    ax2.set_title(f'Rotated by {angle_deg}°')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    return rotated_data, rotated_wcs
+
+def plot_with_wcs_grid(ax, data, wcs, title):
+    """Plot data with WCS grid overlay"""
+    ax.imshow(data, origin='lower', cmap='gray')
+    ax.set_title(title)
+    ax.grid(color='white', ls='solid', alpha=0.5)
+    
+    # Add coordinate labels
+    ra = ax.coords[0]
+    dec = ax.coords[1]
+    ra.set_axislabel('Right Ascension')
+    dec.set_axislabel('Declination')
+    ra.set_major_formatter('hh:mm:ss')
+    dec.set_major_formatter('dd:mm:ss')
+
