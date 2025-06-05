@@ -21,6 +21,7 @@ from astropy.nddata import Cutout2D
 from astropy.table import Table
 from astropy.wcs import FITSFixedWarning
 from astropy import units as u
+from photutils.psf import resize_psf
 
 from scipy import ndimage
 from skimage import restoration
@@ -45,13 +46,22 @@ def pixel_scale(wcs):
     return 1/np.sqrt(np.dot(hyp, hyp)) # arcsec / pixel
 
 
-def psf_filename(filename):
-    tile_id = re.search("TILE([0-9]{9})", filename)[1]
-    cat_file = glob.glob(f"../data/*/EUC_MER_CATALOG-PSF-NIR-Y_TILE{tile_id}*.fits")
-    if len(cat_file)==0: raise ValueError(f"No matches for TILE ID {tile_id}")
-    elif len(cat_file)>1: raise ValueError(f"Too many files match TILE ID {tile_id}")
+# def psf_filename(filename):
+#     tile_id = re.search("TILE([0-9]{9})", filename)[1]
+#     cat_file = glob.glob(f"../data/*/EUC_MER_CATALOG-PSF-NIR-Y_TILE{tile_id}*.fits")
+#     if len(cat_file)==0: raise ValueError(f"No matches for TILE ID {tile_id}")
+#     elif len(cat_file)>1: raise ValueError(f"Too many files match TILE ID {tile_id}")
 
-    return cat_file[0]
+#     return cat_file[0]
+
+def psf_filename(nisp_filename, psf_files):
+    nisp_base = nisp_filename.split('.')[0].replace('IMAGE', 'PSF-I')
+    psf_file = [file for file in psf_files if nisp_base in file]
+    if len(psf_file)==0:
+        raise ValueError(f"Could not find PSF file for {nisp_filename}")
+    elif len(psf_file)>1:
+        raise ValueError(f"Found too many PSF files for {nisp_filename}")
+    return psf_file[0]
 
 def cut_catalog(cat_file, cuts=None):
     # Open cat file
@@ -70,8 +80,9 @@ def cut_catalog(cat_file, cuts=None):
     my_cat = pd.DataFrame({'id_classic': cat_clipped['ID'].astype(int),
                            'ra': cat_clipped['ALPHA_J2000'].astype(float),
                            'dec': cat_clipped['DELTA_J2000'].astype(float),
-                           'jwst_image': "",
-                           'nisp_image': "",
+                           'jwst_image': '',
+                           'nisp_image': '',
+                           'psf_image': '',
                           })
     
     return my_cat
@@ -94,6 +105,7 @@ def cut_catalog2(cat_file, cuts=None):
         'dec': cat_clipped['DEC_1'],
         'jwst_image': '',
         'nisp_image': '',
+        'psf_image': '',
     })
 
     my_cat = my_cat.dropna().reset_index(drop=True)
@@ -124,6 +136,7 @@ meta = {
             'pad_jwst': 20,
             'rot_jwst': -20,
             'psf_hdu': 1,
+            'jwst_psf_file': '../data/PSF_NIRCam_in_flight_opd_filter_F115W.fits',
             'matched_cat': '../catalog/matched_cat_cosmos_1.csv',
             'matched_jwst': '../data/jwst_cosmos_69px_F115W.npy',
             'matched_nisp': '../data/euclid_MER_cosmos_41px_Y.npy',
@@ -138,6 +151,7 @@ meta = {
             'size_nisp': 41,
             'mirror_nisp': True,
             'mask': True,
+            'deconvolve': False,
             'pad_jwst': 20,
             'rot_jwst': -3.945,
             'matched_cat': '../catalog/matched_cat_cosmos_2.csv',
@@ -240,11 +254,11 @@ def match_catalog(file_name, gal_coords, hdu_idx=0, url=None, dbx=None):
     return np.where(gal_coords.contained_by(wcs))[0]
 
 def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20, 
-                rot_jwst=-20.0, limit=None, jwst_hdu=0, nisp_hdu=0, deconvolve=True,
-                mirror_nisp=False, mask=False, **kwargs):
+                rot_jwst=-20.0, limit=None, jwst_hdu=0, nisp_hdu=0, deconvolve=False,
+                jwst_psf_file=None, mirror_nisp=False, mask=False, **kwargs):
     ### The catalog must have matched ra, dec, jwst_image, and nisp_image columns
     image_pairs = catalog.groupby(['jwst_image', 'nisp_image'])
-
+    ping = True
     clips = []
     count = 0
     for match, cat in image_pairs:
@@ -271,6 +285,11 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
                 if mask:
                     mask_data = hdul[nisp_hdu+1].data
                     wcs_mask = WCS(hdul[nisp_hdu+1].header)
+            if deconvolve:
+                with fits.open(cat.iloc[0].psf_image) as hdul:
+                    nisp_psf = hdul[1].data
+                    oversamp = hdul[0].header['OVERSAMP']
+                    nisp_zoomed = resize_psf(nisp_psf, 1, 6)
                 
         else: # Open from dropbox
             print('Fetching files from dropbox...')
@@ -279,10 +298,17 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
             if mask:
                 mask_header, mask_data = get_fits_file(url, nisp_file, dbx=dbx, hdu_idx=nisp_hdu+1)
                 wcs_mask = WCS(mask_header)
-
+            if deconvolve: # Get PSF file at image scale
+                _, nisp_psf = get_fits_file(url, cat.iloc[0].psf_image, dbx=dbx, hdu_idx=1)
+                hdr, _ = get_fits_file(url, cat.iloc[0].psf_image, dbx=dbx, hdu_idx=0)
+                oversamp = hdr['OVERSAMP']
+                nisp_zoomed = resize_psf(nisp_psf, 1, float(oversamp))
+                nisp_zoomed /= np.sum(nisp_zoomed) # normalize
         # if deconvolve:
-        #     psf_file = psf_filename(nisp_file)
-        #     psf = mpsf.from_file(psf_file)
+        #     with fits.open(jwst_psf_file) as hdul:
+        #         jwst_psf = hdul[1].data
+        #         cx, cy = np.array(jwst_psf.shape)//2
+        #         jwst_zoomed = Cutout2D(jwst_psf, (cx, cy), 20)
         
         wcs_jwst, wcs_nisp = WCS(jwst_header), WCS(nisp_header)
         
@@ -300,23 +326,26 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
             clip_nisp = Cutout2D(nisp_data, gal_coords[i], size=size_nisp, wcs=wcs_nisp, mode='trim')
             if sum(clip_nisp.data.shape)!=(size_nisp)*2: continue
             
-            # Mask clip, if necessary
+            # Check for blank clips
+            if np.sum((clip_nisp.data==0.0).astype(int))/((size_nisp)**2) > FRAC_ZERO: continue
+
+            # Mask nisp clip, if requested
             if mask:
                 clip_mask = Cutout2D(mask_data, gal_coords[i], size=size_nisp, wcs=wcs_mask, mode='trim')
                 clip_mask = (clip_mask.data>=1) # < 1 is good data, greater is bad
                 masked_clip = np.ma.array(clip_nisp.data, mask=clip_mask)
                 clip_nisp.data = masked_clip.filled(0)
 
-            # Check for blank clips
-            if np.sum((clip_nisp.data==0.0).astype(int))/((size_nisp)**2) > FRAC_ZERO: continue
-            if mirror_nisp: # Mirror NISP-Y
+            # Mirror nisp clip, if requested
+            if mirror_nisp:
                 clip_nisp.data = np.fliplr(clip_nisp.data)
-            
-            # if deconvolve:
-            #     psf_clip = psf.get_closest_stamp_at_radec([gal_coords[i].ra.degree, 
-            #                                                 gal_coords[i].dec.degree])
-            #     psf_clip.normalize()
-            #     psf_data = psf_clip.get_data()
+                clip_mask = np.fliplr(clip_mask)
+
+            # Deconvolve nisp clip, if requested
+            if deconvolve:
+                clip_nisp.data, _ = restoration.unsupervised_wiener(clip_nisp.data, 
+                                                    nisp_zoomed, clip=False)
+                # clip_jwst.data, _ = restoration.unsupervised_wiener(clip_jwst.data, jwst_zoomed, clip=False)
             
             # Rotate JWST image 20 degrees counter-clockwise and crop
             # This loses the WCS
@@ -327,6 +356,7 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
 
             if mask: # Mask JWST too
                 zoom_factor = size_jwst / size_nisp
+                clip_mask = np.fliplr(clip_mask)
                 zoomed_mask = ndimage.zoom(clip_mask, zoom_factor, order=0, 
                                            mode='grid-constant', grid_mode=True)
                 masked_clip = np.ma.array(clip_jwst.data, mask=zoomed_mask)
@@ -370,7 +400,9 @@ def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_c
     # Get NISP files for specific field
     nisp_path = f'/{euclid_type}/{field}/'
     nisp_files = get_shared_folder_metadata(dbx_url, dbx=dbx, path=nisp_path)
+    psf_filenames = [nisp_path+file.name for file in nisp_files if 'PSF' in file.name]
     nisp_files = [nisp_path+file.name for file in nisp_files if 'IMAGE' in file.name]
+    psf_files = [psf_filename(file, psf_filenames) for file in nisp_files]
 
     # Try to load cat file from disk
     if os.path.exists(params['matched_cat']) and not redo_cat:
@@ -387,11 +419,12 @@ def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_c
                                        hdu_idx=params['jwst_hdu'])
             my_cat.loc[found_idxs, 'jwst_image'] = str(file)
     
-        # Match NISP files
-        for file in nisp_files:
+        # Match NISP files and PSFs
+        for file,psf_file in zip(nisp_files,psf_files):
             found_idxs = match_catalog(file, gal_coords, url=dbx_url, dbx=dbx,
                                        hdu_idx=params['nisp_hdu'])
             my_cat.loc[found_idxs, 'nisp_image'] = str(file)
+            my_cat.loc[found_idxs, 'psf_image'] = str(psf_file)
     
         my_cat = my_cat[my_cat.nisp_image!='']
         my_cat = my_cat[my_cat.jwst_image!='']
@@ -401,14 +434,9 @@ def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_c
     
     # Clip images
     clips = clip_images(my_cat, url=dbx_url, dbx=dbx, **params)
-    # clips = clip_images(my_cat, url=dbx_url, dbx=dbx, jwst_hdu=params['jwst_hdu'], 
-    #                     size_jwst=params['size_jwst'], rot_jwst=params['rot_jwst'], 
-    #                     size_nisp=params['size_nisp'], pad=params['pad_jwst'],
-    #                     nisp_hdu=params['nisp_hdu'], deconvolve=deconvolve)
     
     # Arrange data
     jwst_cutouts = np.array([clip[1].data for clip in clips])
-
     nisp_cutouts = np.array([clip[2].data for clip in clips])
     
     if save_clips:

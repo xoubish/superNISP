@@ -1,20 +1,30 @@
+import os
 import numpy as np
 import pandas as pd
-from claude_loader import create_data_loaders
-from claude_model import MER2JWSTSuperResolution, train_model
+import torch
+from torch.utils.data import DataLoader, Dataset
+from torchvision.utils import save_image
+import matplotlib.pyplot as plt
+# from claude_loader import EnhancedAstroSRDataset, train_two_stage
+# from claude_model import EnhancedSuperResolution
 
-# Create data loaders with flux-preserving normalization
-train_loader, val_loader = create_data_loaders(
-    '../data/euclid_MER_cosmos_41px_Y.npy',
-    '../data/jwst_cosmos_69px_F115W.npy',
-    val_split=0.2,
-    batch_size=8,
-    normalize_method='flux_preserving',
-    seed=42
-)
+from claude_model_NIR import EuclidToJWSTSuperResolution, EuclidToJWSTDataset, train_two_stage
+
+# Paths to your numpy files
+# mer_train_path = '../data/euclid_MER_cosmos_41px_Y.npy'
+# jwst_train_path = '../data/jwst_cosmos_69px_F115W.npy'
+nir_train_path = '../data/euclid_NIR_cosmos_41px_Y.npy'
+jwst_train_path = '../data/jwst_cosmos_205px_F115W.npy'
 
 # Train the model
-model = MER2JWSTSuperResolution()
-trained_model = train_model(model, train_loader, val_loader, num_epochs=100)
+trained_model = train_two_stage(
+    nir_train_path, 
+    jwst_train_path, 
+    val_split=0.2,      # 20% validation split
+    batch_size=8,       # Adjust based on GPU memory
+    num_epochs_stage1=100,  # Epochs in first training stage
+    num_epochs_stage2=100   # Epochs in fine-tuning stage
+)
 
-torch.save(trained_model.state_dict(), "claude_model.pth")
+# Save the final model
+torch.save(trained_model.state_dict(), 'claude_model_NIR.pth')
