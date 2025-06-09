@@ -1,18 +1,7 @@
-import os
-import numpy as np
-import pandas as pd
 import torch
-from torch.utils.data import DataLoader, Dataset
-from torchvision.utils import save_image
-import matplotlib.pyplot as plt
-# from claude_loader import EnhancedAstroSRDataset, train_two_stage
-# from claude_model import EnhancedSuperResolution
-
 from claude_model_NIR import EuclidToJWSTSuperResolution, EuclidToJWSTDataset, train_two_stage
 
 # Paths to your numpy files
-# mer_train_path = '../data/euclid_MER_cosmos_41px_Y.npy'
-# jwst_train_path = '../data/jwst_cosmos_69px_F115W.npy'
 nir_train_path = '../data/euclid_NIR_cosmos_41px_Y.npy'
 jwst_train_path = '../data/jwst_cosmos_205px_F115W.npy'
 
@@ -28,3 +17,4 @@ trained_model = train_two_stage(
 
 # Save the final model
 torch.save(trained_model.state_dict(), 'claude_model_NIR.pth')
+print("Training completed and model saved!")

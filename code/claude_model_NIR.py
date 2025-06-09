@@ -4,8 +4,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 import numpy as np
-import skimage.exposure as exposure
-import skimage.util as util
+import math
 
 class ResidualDenseBlock(nn.Module):
     """Enhanced Residual Dense Block with local feature fusion"""
@@ -33,24 +32,26 @@ class DetailEnhancementModule(nn.Module):
         self.edge_conv = nn.Sequential(
             nn.Conv2d(channels, channels, kernel_size=3, padding=1),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            nn.Conv2d(channels, channels, kernel_size=1)  # Changed to 1x1 conv
         )
         self.attention = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(channels, channels//4, kernel_size=1),
+            nn.Conv2d(channels, max(1, channels//4), kernel_size=1),  # Ensure at least 1 channel
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(channels//4, channels, kernel_size=1),
+            nn.Conv2d(max(1, channels//4), channels, kernel_size=1),
             nn.Sigmoid()
         )
         
+        # Register edge detection kernel as buffer
+        edge_kernel = torch.tensor([[-1, -1, -1], 
+                                   [-1, 8, -1], 
+                                   [-1, -1, -1]], dtype=torch.float32)
+        self.register_buffer('edge_kernel', edge_kernel.reshape(1, 1, 3, 3))
+        
     def forward(self, x):
         # Edge-aware feature extraction
-        edges = F.conv2d(x, torch.tensor([[-1, -1, -1], 
-                                          [-1, 8, -1], 
-                                          [-1, -1, -1]], 
-                                         dtype=x.dtype, 
-                                         device=x.device).reshape(1, 1, 3, 3).repeat(x.size(1), 1, 1, 1), 
-                         padding=1, groups=x.size(1))
+        edge_kernel = self.edge_kernel.repeat(x.size(1), 1, 1, 1)
+        edges = F.conv2d(x, edge_kernel, padding=1, groups=x.size(1))
         
         # Feature enhancement
         enhanced = self.edge_conv(x + edges)
@@ -76,14 +77,19 @@ class EuclidToJWSTSuperResolution(nn.Module):
         # Detail enhancement module
         self.detail_enhancer = DetailEnhancementModule(features)
         
-        # Upsampling pathway
-        # Given the large upscale (41x41 → 205x205), we'll use multiple upsampling stages
+        # Upsampling pathway - Fixed for proper scaling
+        # 41x41 -> 82x82 -> 164x164 -> then interpolate to 205x205
         self.upsampling_blocks = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(features, features * 4, kernel_size=3, padding=1),
                 nn.PixelShuffle(2),
                 nn.LeakyReLU(0.2, inplace=True)
-            ) for _ in range(2)  # Two upsampling stages to go from 41x41 to 205x205
+            ),
+            nn.Sequential(
+                nn.Conv2d(features, features * 4, kernel_size=3, padding=1),
+                nn.PixelShuffle(2),
+                nn.LeakyReLU(0.2, inplace=True)
+            )
         ])
         
         # Final reconstruction layers
@@ -108,65 +114,75 @@ class EuclidToJWSTSuperResolution(nn.Module):
         # Detail enhancement
         features = self.detail_enhancer(features)
         
-        # Upsampling
+        # Upsampling (41x41 -> 82x82 -> 164x164)
         for upsampling_block in self.upsampling_blocks:
             features = upsampling_block(features)
         
         # Final reconstruction
         output = self.final_conv(features)
         
+        # Interpolate to exact target size (164x164 -> 205x205)
+        output = F.interpolate(output, size=(205, 205), mode='bilinear', align_corners=False)
+        
         return output
 
-# Custom Loss Function
-class MultiScaleSSIMLoss(nn.Module):
-    def __init__(self, window_sizes=[11, 17, 23]):
-        super().__init__()
-        self.window_sizes = window_sizes
-    
-    def forward(self, pred, target):
-        total_loss = 0
-        for window_size in self.window_sizes:
-            # Compute SSIM at different window sizes
-            ssim = self._ssim(pred, target, window_size)
-            total_loss += 1 - ssim
-        
-        return total_loss / len(self.window_sizes)
-    
-    def _ssim(self, img1, img2, window_size):
-        # SSIM implementation (similar to previous implementations)
-        # This is a placeholder - you'll want to implement a full SSIM calculation
-        channel = img1.size(1)
-        window = self._create_window(window_size, channel).to(img1.device)
-        
-        mu1 = F.conv2d(img1, window, padding=window_size//2, groups=channel)
-        mu2 = F.conv2d(img2, window, padding=window_size//2, groups=channel)
-        
-        mu1_sq = mu1.pow(2)
-        mu2_sq = mu2.pow(2)
-        mu1_mu2 = mu1 * mu2
-        
-        sigma1_sq = F.conv2d(img1 * img1, window, padding=window_size//2, groups=channel) - mu1_sq
-        sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size//2, groups=channel) - mu2_sq
-        sigma12 = F.conv2d(img1 * img2, window, padding=window_size//2, groups=channel) - mu1_mu2
-        
-        C1 = (0.01 * 1) ** 2
-        C2 = (0.03 * 1) ** 2
-        
-        ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / \
-                   ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
-        
-        return ssim_map.mean()
-    
-    def _create_window(self, window_size, channel):
-        # Create Gaussian window (similar to previous implementations)
-        def gaussian(window_size, sigma):
-            gauss = torch.Tensor([math.exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
-            return gauss/gauss.sum()
+# SSIM Loss Implementation
+class SSIMLoss(nn.Module):
+    def __init__(self, window_size=11, size_average=True):
+        super(SSIMLoss, self).__init__()
+        self.window_size = window_size
+        self.size_average = size_average
+        self.channel = 1
+        self.window = self.create_window(window_size, self.channel)
 
-        _1D_window = gaussian(window_size, 1.5).unsqueeze(1)
+    def gaussian(self, window_size, sigma):
+        gauss = torch.Tensor([math.exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
+        return gauss/gauss.sum()
+
+    def create_window(self, window_size, channel):
+        _1D_window = self.gaussian(window_size, 1.5).unsqueeze(1)
         _2D_window = _1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
         window = _2D_window.expand(channel, 1, window_size, window_size).contiguous()
         return window
+
+    def _ssim(self, img1, img2, window, window_size, channel, size_average=True):
+        mu1 = F.conv2d(img1, window, padding=window_size//2, groups=channel)
+        mu2 = F.conv2d(img2, window, padding=window_size//2, groups=channel)
+
+        mu1_sq = mu1.pow(2)
+        mu2_sq = mu2.pow(2)
+        mu1_mu2 = mu1 * mu2
+
+        sigma1_sq = F.conv2d(img1 * img1, window, padding=window_size//2, groups=channel) - mu1_sq
+        sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size//2, groups=channel) - mu2_sq
+        sigma12 = F.conv2d(img1 * img2, window, padding=window_size//2, groups=channel) - mu1_mu2
+
+        C1 = 0.01**2
+        C2 = 0.03**2
+
+        ssim_map = ((2*mu1_mu2 + C1)*(2*sigma12 + C2))/((mu1_sq + mu2_sq + C1)*(sigma1_sq + sigma2_sq + C2))
+
+        if size_average:
+            return ssim_map.mean()
+        else:
+            return ssim_map.mean(1).mean(1).mean(1)
+
+    def forward(self, img1, img2):
+        (_, channel, _, _) = img1.size()
+
+        if channel == self.channel and self.window.data.type() == img1.data.type():
+            window = self.window
+        else:
+            window = self.create_window(self.window_size, channel)
+            
+            if img1.is_cuda:
+                window = window.cuda(img1.get_device())
+            window = window.type_as(img1)
+            
+            self.window = window
+            self.channel = channel
+
+        return 1 - self._ssim(img1, img2, window, self.window_size, channel, self.size_average)
 
 # Dataset class
 class EuclidToJWSTDataset(Dataset):
@@ -181,13 +197,10 @@ class EuclidToJWSTDataset(Dataset):
         assert self.jwst_data.shape[1:] == (205, 205), f"JWST images should be 205x205, got {self.jwst_data.shape[1:]}"
         
         self.normalize_method = normalize_method
+        self.transform = None  # Will be set externally if needed
         
     def normalize_data(self, euclid_img, jwst_img):
-        # Similar normalization logic to previous implementation
-        # Implement flux preservation or adaptive histogram equalization
-        # Return normalized images and normalization parameters
-        
-        # Flux preserving normalization (example)
+        # Flux preserving normalization
         euclid_flux = np.sum(euclid_img)
         jwst_flux = np.sum(jwst_img)
         
@@ -225,25 +238,30 @@ class EuclidToJWSTDataset(Dataset):
         euclid_tensor = torch.from_numpy(euclid_norm).unsqueeze(0)
         jwst_tensor = torch.from_numpy(jwst_norm).unsqueeze(0)
         
+        # Apply transforms if available (only to input, not target)
+        if self.transform is not None:
+            # For paired data, we need to apply the same transform to both
+            seed = torch.randint(0, 2**32, (1,)).item()
+            torch.manual_seed(seed)
+            euclid_tensor = self.transform(euclid_tensor)
+            torch.manual_seed(seed)
+            jwst_tensor = self.transform(jwst_tensor)
+        
         return euclid_tensor, jwst_tensor, norm_params
 
-# Training function (similar to previous implementation)
+# Training function
 def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8, 
                     num_epochs_stage1=50, num_epochs_stage2=50):
-    # Similar to previous two-stage training implementation
-    # Adjust for the new dataset and model
-    # Use EuclidToJWSTSuperResolution model
-    # Use EuclidToJWSTDataset for data loading
     
     # Determine device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
-    # Create dataset with adaptive histogram normalization
+    # Create dataset
     full_dataset = EuclidToJWSTDataset(
         euclid_path, 
         jwst_path, 
-        normalize_method='adaptive_hist'
+        normalize_method='flux_preserving'  # Fixed the method name
     )
     
     # Calculate split sizes
@@ -255,21 +273,11 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
     torch.manual_seed(42)  # For reproducible splits
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
     
-    # Data augmentation for training
-    train_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
-        transforms.RandomRotation(20)  # Add rotation for more variety
-    ])
-    
-    # Add transforms only to training set
-    train_dataset.dataset.transform = train_transform
-    
     print(f"Dataset split: {train_size} training samples, {val_size} validation samples")
     
     # Create dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
     
     # Initialize model
     model = EuclidToJWSTSuperResolution(num_rrdb=8, features=64).to(device)
@@ -294,16 +302,16 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         model.train()
         train_loss = 0.0
         
-        for mer_images, jwst_images, _ in train_loader:
+        for euclid_images, jwst_images, _ in train_loader:
             # Move data to device
-            mer_images = mer_images.to(device)
+            euclid_images = euclid_images.to(device)
             jwst_images = jwst_images.to(device)
             
             # Zero the parameter gradients
             stage1_optimizer.zero_grad()
             
             # Forward pass
-            outputs = model(mer_images)
+            outputs = model(euclid_images)
             
             # Compute loss
             loss = 0.7 * l1_criterion(outputs, jwst_images) + 0.3 * mse_criterion(outputs, jwst_images)
@@ -320,11 +328,11 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         val_loss = 0.0
         
         with torch.no_grad():
-            for mer_images, jwst_images, _ in val_loader:
-                mer_images = mer_images.to(device)
+            for euclid_images, jwst_images, _ in val_loader:
+                euclid_images = euclid_images.to(device)
                 jwst_images = jwst_images.to(device)
                 
-                outputs = model(mer_images)
+                outputs = model(euclid_images)
                 loss = 0.7 * l1_criterion(outputs, jwst_images) + 0.3 * mse_criterion(outputs, jwst_images)
                 val_loss += loss.item()
         
@@ -351,7 +359,7 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
     model.load_state_dict(torch.load('stage1_best_model.pth'))
     
     # Advanced loss terms
-    ssim_criterion = SSIMLoss()  # You'll need to define this custom SSIM loss
+    ssim_criterion = SSIMLoss()
     
     # Stage 2 optimizer with lower learning rate
     stage2_optimizer = torch.optim.Adam(model.parameters(), lr=0.00005)
@@ -368,16 +376,16 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         model.train()
         train_loss = 0.0
         
-        for mer_images, jwst_images, _ in train_loader:
+        for euclid_images, jwst_images, _ in train_loader:
             # Move data to device
-            mer_images = mer_images.to(device)
+            euclid_images = euclid_images.to(device)
             jwst_images = jwst_images.to(device)
             
             # Zero the parameter gradients
             stage2_optimizer.zero_grad()
             
             # Forward pass
-            outputs = model(mer_images)
+            outputs = model(euclid_images)
             
             # Compute advanced multi-component loss
             l1_loss = l1_criterion(outputs, jwst_images)
@@ -401,11 +409,11 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         val_loss = 0.0
         
         with torch.no_grad():
-            for mer_images, jwst_images, _ in val_loader:
-                mer_images = mer_images.to(device)
+            for euclid_images, jwst_images, _ in val_loader:
+                euclid_images = euclid_images.to(device)
                 jwst_images = jwst_images.to(device)
                 
-                outputs = model(mer_images)
+                outputs = model(euclid_images)
                 
                 # Compute validation loss similarly
                 l1_loss = l1_criterion(outputs, jwst_images)
@@ -434,5 +442,6 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
             best_val_loss_stage2 = avg_val_loss
             torch.save(model.state_dict(), 'final_best_model.pth')
     
-    # Return the final trained model
+    # Load and return the best model
+    model.load_state_dict(torch.load('final_best_model.pth'))
     return model
