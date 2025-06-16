@@ -6,13 +6,14 @@ nir_train_path = '../data/euclid_NIR_cosmos_41px_Y.npy'
 jwst_train_path = '../data/jwst_cosmos_205px_F115W.npy'
 
 # Train the model
+# Use the optimized version
 trained_model = train_two_stage(
     nir_train_path, 
     jwst_train_path, 
-    val_split=0.2,      # 20% validation split
-    batch_size=8,       # Adjust based on GPU memory
-    num_epochs_stage1=100,  # Epochs in first training stage
-    num_epochs_stage2=100   # Epochs in fine-tuning stage
+    val_split=0.2,
+    batch_size=16,  # Increased from 8
+    num_epochs_stage1=30,  # Reduced from 100
+    num_epochs_stage2=20   # Reduced from 100
 )
 
 # Save the final model

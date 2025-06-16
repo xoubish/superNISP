@@ -2,9 +2,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, random_split
+from torch.cuda.amp import autocast, GradScaler
 from torchvision import transforms
 import numpy as np
 import math
+
+# Set these at the beginning of your script
+torch.backends.cudnn.benchmark = True  # Optimize for consistent input sizes
+torch.backends.cuda.matmul.allow_tf32 = True  # Allow TF32 for faster computation
+torch.backends.cudnn.allow_tf32 = True
+
+# Use channels_last memory format for better performance
+def convert_to_channels_last(model):
+    return model.to(memory_format=torch.channels_last)
 
 class ResidualDenseBlock(nn.Module):
     """Enhanced Residual Dense Block with local feature fusion"""
@@ -62,67 +72,58 @@ class DetailEnhancementModule(nn.Module):
         return enhanced * attention
 
 class EuclidToJWSTSuperResolution(nn.Module):
-    def __init__(self, num_rrdb=16, features=64):
+    def __init__(self, num_rrdb=8, features=64):  # Reduced from 16 to 8 blocks
         super(EuclidToJWSTSuperResolution, self).__init__()
         
         # Initial feature extraction
         self.conv_first = nn.Conv2d(1, features, kernel_size=3, padding=1)
         
-        # Residual Dense Blocks
-        self.rrdb_blocks = nn.ModuleList([ResidualDenseBlock(features) for _ in range(num_rrdb)])
+        # Fewer but more efficient residual blocks
+        self.rrdb_blocks = nn.ModuleList([ResidualDenseBlock(features, growth_rate=24) for _ in range(num_rrdb)])  # Reduced growth rate
         
-        # Trunk convolution after RRDBs
+        # Trunk convolution
         self.trunk_conv = nn.Conv2d(features, features, kernel_size=3, padding=1)
         
-        # Detail enhancement module
-        self.detail_enhancer = DetailEnhancementModule(features)
-        
-        # Upsampling pathway - Fixed for proper scaling
-        # 41x41 -> 82x82 -> 164x164 -> then interpolate to 205x205
-        self.upsampling_blocks = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(features, features * 4, kernel_size=3, padding=1),
-                nn.PixelShuffle(2),
-                nn.LeakyReLU(0.2, inplace=True)
-            ),
-            nn.Sequential(
-                nn.Conv2d(features, features * 4, kernel_size=3, padding=1),
-                nn.PixelShuffle(2),
-                nn.LeakyReLU(0.2, inplace=True)
-            )
-        ])
-        
-        # Final reconstruction layers
-        self.final_conv = nn.Sequential(
+        # Simplified detail enhancement
+        self.detail_enhancer = nn.Sequential(
             nn.Conv2d(features, features, kernel_size=3, padding=1),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(features, 1, kernel_size=3, padding=1)
+            nn.Conv2d(features, features, kernel_size=1)  # 1x1 conv is faster
+        )
+        
+        # More efficient upsampling - direct to target size
+        self.upsample = nn.Sequential(
+            nn.Conv2d(features, features * 25, kernel_size=3, padding=1),  # 25 = 5x5 for 5x upsampling
+            nn.PixelShuffle(5),  # Direct 5x upsampling (41*5 = 205)
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+        
+        # Final reconstruction
+        self.final_conv = nn.Sequential(
+            nn.Conv2d(features, features//2, kernel_size=3, padding=1),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(features//2, 1, kernel_size=1)
         )
         
     def forward(self, x):
-        # Initial feature extraction
+        # Initial features
         features = self.conv_first(x)
         
-        # Residual dense blocks
+        # Residual processing
         trunk = features
         for block in self.rrdb_blocks:
             trunk = block(trunk)
         
-        # Combine initial and trunk features
         features = features + self.trunk_conv(trunk)
         
         # Detail enhancement
         features = self.detail_enhancer(features)
         
-        # Upsampling (41x41 -> 82x82 -> 164x164)
-        for upsampling_block in self.upsampling_blocks:
-            features = upsampling_block(features)
+        # Direct upsampling to target size
+        features = self.upsample(features)
         
-        # Final reconstruction
+        # Final output
         output = self.final_conv(features)
-        
-        # Interpolate to exact target size (164x164 -> 205x205)
-        output = F.interpolate(output, size=(205, 205), mode='bilinear', align_corners=False)
         
         return output
 
@@ -186,82 +187,67 @@ class SSIMLoss(nn.Module):
 
 # Dataset class
 class EuclidToJWSTDataset(Dataset):
-    def __init__(self, euclid_path, jwst_path, normalize_method='flux_preserving'):
-        # Load data
-        self.euclid_data = np.load(euclid_path)
-        self.jwst_data = np.load(jwst_path)
+    def __init__(self, euclid_path, jwst_path, normalize_method='flux_preserving', preload=True):
+        # Load and preprocess all data at initialization
+        print("Loading and preprocessing data...")
+        self.euclid_data = np.load(euclid_path).astype(np.float32)
+        self.jwst_data = np.load(jwst_path).astype(np.float32)
         
         # Verify shapes
-        assert self.euclid_data.shape[0] == self.jwst_data.shape[0], "Number of Euclid and JWST images must match"
-        assert self.euclid_data.shape[1:] == (41, 41), f"Euclid images should be 41x41, got {self.euclid_data.shape[1:]}"
-        assert self.jwst_data.shape[1:] == (205, 205), f"JWST images should be 205x205, got {self.jwst_data.shape[1:]}"
+        assert self.euclid_data.shape[0] == self.jwst_data.shape[0]
+        assert self.euclid_data.shape[1:] == (41, 41)
+        assert self.jwst_data.shape[1:] == (205, 205)
         
+        if preload:
+            # Preprocess all data
+            self.preprocessed_data = []
+            for i in range(len(self.euclid_data)):
+                euclid_norm, jwst_norm, _ = self.normalize_data(
+                    self.euclid_data[i], self.jwst_data[i]
+                )
+                self.preprocessed_data.append((
+                    torch.from_numpy(euclid_norm).unsqueeze(0),
+                    torch.from_numpy(jwst_norm).unsqueeze(0)
+                ))
+            print(f"Preprocessed {len(self.preprocessed_data)} samples")
+        
+        self.preload = preload
         self.normalize_method = normalize_method
-        self.transform = None  # Will be set externally if needed
         
     def normalize_data(self, euclid_img, jwst_img):
-        # Flux preserving normalization
-        euclid_flux = np.sum(euclid_img)
-        jwst_flux = np.sum(jwst_img)
+        # Simplified normalization for speed
+        euclid_norm = (euclid_img - euclid_img.min()) / (euclid_img.max() - euclid_img.min() + 1e-8)
+        jwst_norm = (jwst_img - jwst_img.min()) / (jwst_img.max() - jwst_img.min() + 1e-8)
         
-        scale_factor = euclid_flux / (jwst_flux + 1e-10)
-        
-        # Normalize to [0, 1]
-        max_val = max(np.max(euclid_img), np.max(jwst_img * scale_factor))
-        min_val = min(np.min(euclid_img), np.min(jwst_img * scale_factor))
-        
-        range_val = max_val - min_val
-        if range_val == 0:
-            range_val = 1
-        
-        euclid_norm = (euclid_img - min_val) / range_val
-        jwst_norm = (jwst_img * scale_factor - min_val) / range_val
-        
-        return euclid_norm, jwst_norm, {
-            'method': 'flux_preserving',
-            'min_val': min_val,
-            'max_val': max_val,
-            'scale_factor': scale_factor
-        }
+        return euclid_norm, jwst_norm, {}
     
     def __len__(self):
-        return self.euclid_data.shape[0]
+        return len(self.euclid_data)
     
     def __getitem__(self, idx):
-        euclid_img = self.euclid_data[idx].astype(np.float32)
-        jwst_img = self.jwst_data[idx].astype(np.float32)
-        
-        # Normalize
-        euclid_norm, jwst_norm, norm_params = self.normalize_data(euclid_img, jwst_img)
-        
-        # Convert to tensors
-        euclid_tensor = torch.from_numpy(euclid_norm).unsqueeze(0)
-        jwst_tensor = torch.from_numpy(jwst_norm).unsqueeze(0)
-        
-        # Apply transforms if available (only to input, not target)
-        if self.transform is not None:
-            # For paired data, we need to apply the same transform to both
-            seed = torch.randint(0, 2**32, (1,)).item()
-            torch.manual_seed(seed)
-            euclid_tensor = self.transform(euclid_tensor)
-            torch.manual_seed(seed)
-            jwst_tensor = self.transform(jwst_tensor)
-        
-        return euclid_tensor, jwst_tensor, norm_params
+        if self.preload:
+            return self.preprocessed_data[idx][0], self.preprocessed_data[idx][1], {}
+        else:
+            # Original processing
+            euclid_img = self.euclid_data[idx]
+            jwst_img = self.jwst_data[idx]
+            euclid_norm, jwst_norm, norm_params = self.normalize_data(euclid_img, jwst_img)
+            return torch.from_numpy(euclid_norm).unsqueeze(0), torch.from_numpy(jwst_norm).unsqueeze(0), norm_params
 
-# Training function
 def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8, 
-                    num_epochs_stage1=50, num_epochs_stage2=50):
+                    num_epochs_stage1=50, num_epochs_stage2=50, use_amp=True):
     
-    # Determine device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
+    
+    # Initialize mixed precision scaler
+    scaler = GradScaler('cuda') if use_amp and device.type == 'cuda' else None
 
     # Create dataset
     full_dataset = EuclidToJWSTDataset(
         euclid_path, 
         jwst_path, 
-        normalize_method='flux_preserving'  # Fixed the method name
+        preload=True
     )
     
     # Calculate split sizes
@@ -276,19 +262,43 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
     print(f"Dataset split: {train_size} training samples, {val_size} validation samples")
     
     # Create dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+    # Optimized data loaders
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=batch_size, 
+        shuffle=True, 
+        num_workers=4,  # Adjust based on your CPU cores
+        pin_memory=True,  # Faster GPU transfer
+        persistent_workers=True  # Keep workers alive between epochs
+    )
     
-    # Initialize model
-    model = EuclidToJWSTSuperResolution(num_rrdb=8, features=64).to(device)
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=batch_size * 2,  # Larger batch for validation
+        shuffle=False, 
+        num_workers=2,
+        pin_memory=True,
+        persistent_workers=True
+    )
+    
+    # Use the efficient model
+    model = EuclidToJWSTSuperResolution(num_rrdb=6, features=48).to(device)  # Smaller model
+
+    # After model initialization
+    if hasattr(torch, 'compile'):
+        model = torch.compile(model)
+        print("Model compiled for faster execution")
+    model = convert_to_channels_last(model)
     
     # Stage 1: Initial Training with Basic Loss Functions
     print("\n=== Stage 1: Initial Training ===")
-    stage1_optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    stage1_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+    # More aggressive learning rate schedule
+    stage1_optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)  # Higher LR, AdamW
+    stage1_scheduler = torch.optim.lr_scheduler.OneCycleLR(
         stage1_optimizer, 
-        T_max=num_epochs_stage1, 
-        eta_min=1e-6
+        max_lr=0.001,
+        epochs=num_epochs_stage1,
+        steps_per_epoch=len(train_loader)
     )
     
     # Loss functions
@@ -297,29 +307,34 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
     
     best_val_loss_stage1 = float('inf')
     
+    # Stage 1 training loop modification:
     for epoch in range(num_epochs_stage1):
-        # Training phase
         model.train()
         train_loss = 0.0
         
         for euclid_images, jwst_images, _ in train_loader:
-            # Move data to device
-            euclid_images = euclid_images.to(device)
-            jwst_images = jwst_images.to(device)
+            euclid_images = euclid_images.to(device, memory_format=torch.channels_last, non_blocking=True)
+            jwst_images = jwst_images.to(device, memory_format=torch.channels_last, non_blocking=True)
             
-            # Zero the parameter gradients
             stage1_optimizer.zero_grad()
             
-            # Forward pass
-            outputs = model(euclid_images)
-            
-            # Compute loss
-            loss = 0.7 * l1_criterion(outputs, jwst_images) + 0.3 * mse_criterion(outputs, jwst_images)
-            
-            # Backward pass and optimize
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
-            stage1_optimizer.step()
+            # Mixed precision forward pass
+            if use_amp and scaler is not None:
+                with autocast('cuda'):
+                    outputs = model(euclid_images)
+                    loss = 0.7 * l1_criterion(outputs, jwst_images) + 0.3 * mse_criterion(outputs, jwst_images)
+                
+                scaler.scale(loss).backward()
+                scaler.unscale_(stage1_optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
+                scaler.step(stage1_optimizer)
+                scaler.update()
+            else:
+                outputs = model(euclid_images)
+                loss = 0.7 * l1_criterion(outputs, jwst_images) + 0.3 * mse_criterion(outputs, jwst_images)
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
+                stage1_optimizer.step()
             
             train_loss += loss.item()
         
