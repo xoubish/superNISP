@@ -17,8 +17,8 @@ parameters:
 
   batch_size:
     distribution: int_uniform
-    min: 16
-    max: 128
+    min: 8
+    max: 64
 
   epochs:
     distribution: int_uniform
@@ -55,8 +55,8 @@ parameters:
     max: 0.2
 
   perceptual_weight:
-    distribution: uniform
-    min: 0.0
+    distribution: log_uniform_values
+    min: 1e-4
     max: 0.2
 
   shape_weight:

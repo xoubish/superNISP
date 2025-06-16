@@ -19,6 +19,7 @@ def setup_config_defaults():
         "epochs": 100,
         "learning_rate": 0.001,
         "activation_function": "ReLU",
+        "optimizer":"AdamW"
         "in_channels": 1,
         "out_channels": 1,
         "hidden_dim": 64,
@@ -121,7 +122,9 @@ upsampler = Upsampler(
 model = SuperResolutionDiffusion(unet, upsampler).to(device)
 
 criterion = get_loss_function(config).to(device)
-optimizer = optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+optimizer_cls = getattr(optim, config.optimizer)
+optimizer = optimizer_cls(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
 transform = transforms.Compose([
