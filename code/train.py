@@ -19,12 +19,11 @@ def setup_config_defaults():
         "epochs": 100,
         "learning_rate": 0.001,
         "activation_function": "ReLU",
-        "optimizer":"AdamW"
+        "optimizer": "AdamW",
         "in_channels": 1,
         "out_channels": 1,
         "hidden_dim": 64,
         "timesteps": 500,
-        "upscale_factor": 2,
         "mse_weight": 1.0,
         "l1_weight": 0.1,
         "perceptual_weight": 0.01,
@@ -115,8 +114,7 @@ unet = SuperResDiffusionUNet(
 
 upsampler = Upsampler(
     in_channels=config.in_channels,
-    out_channels=config.out_channels,
-    upscale_factor=config.upscale_factor
+    out_channels=config.out_channels
 ).to(device)
 
 model = SuperResolutionDiffusion(unet, upsampler).to(device)

@@ -27,8 +27,8 @@ parameters:
 
   learning_rate:
     distribution: uniform
-    min: 5e-05
-    max: 0.0006
+    min: 0.00005
+    max: 0.001
 
   optimizer:
     distribution: categorical
@@ -55,8 +55,8 @@ parameters:
     max: 0.2
 
   perceptual_weight:
-    distribution: log_uniform_values
-    min: 1e-4
+    distribution: uniform
+    min: 0.0001
     max: 0.2
 
   shape_weight:
