@@ -195,8 +195,9 @@ class EuclidToJWSTDataset(Dataset):
         
         # Verify shapes
         assert self.euclid_data.shape[0] == self.jwst_data.shape[0]
-        assert self.euclid_data.shape[1:] == (41, 41)
-        assert self.jwst_data.shape[1:] == (205, 205)
+        assert self.euclid_data.shape[1:] == (25, 25)
+        assert self.jwst_data.shape[1:] == (125, 125)
+
         
         if preload:
             # Preprocess all data
