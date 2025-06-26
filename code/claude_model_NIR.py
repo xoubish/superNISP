@@ -162,8 +162,9 @@ class StableFastEuclidToJWSTDataset(Dataset):
         
         # Verify shapes
         assert self.euclid_data.shape[0] == self.jwst_data.shape[0]
-        assert self.euclid_data.shape[1:] == (41, 41)
-        assert self.jwst_data.shape[1:] == (205, 205)
+        assert self.euclid_data.shape[1:] == (25, 25)
+        assert self.jwst_data.shape[1:] == (125, 125)
+
         
         self.augment = augment
         
@@ -472,6 +473,6 @@ def train_two_stage_stable(euclid_path, jwst_path, val_split=0.2, batch_size=12,
     
     print("Stage 1 completed successfully!")
     
-    # Load best model and continue with stage 2 if needed
-    model.load_state_dict(torch.load('stage1_best_model_stable.pth'))
+    # Load and return the best model
+    model.load_state_dict(torch.load('final_best_model.pth'))
     return model
