@@ -1,8 +1,10 @@
+import os
+import json
 import wandb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader, random_split, Subset
 from torch.cuda.amp import autocast, GradScaler
 from torchvision import transforms
 from dataset import SuperResolutionDataset
@@ -25,6 +27,34 @@ def compute_psnr_ssim(pred, target):
 # Use channels_last memory format for better performance
 def convert_to_channels_last(model):
     return model.to(memory_format=torch.channels_last)
+
+def get_data_splits(dataset, val_split=0.2, test_split=0.1, seed=42, split_save_path="splits.json"):
+    n_total = len(dataset)
+    n_val = int(val_split * n_total)
+    n_test = int(test_split * n_total)
+    n_train = n_total - n_val - n_test
+
+    if os.path.exists(split_save_path):
+        with open(split_save_path, "r") as f:
+            indices = json.load(f)
+        print(f"Loaded split indices from {split_save_path}")
+    else:
+        torch.manual_seed(seed)
+        all_indices = torch.randperm(n_total).tolist()
+        indices = {
+            "train": all_indices[:n_train],
+            "val":   all_indices[n_train:n_train + n_val],
+            "test":  all_indices[n_train + n_val:]
+        }
+        with open(split_save_path, "w") as f:
+            json.dump(indices, f)
+        print(f"Saved split indices to {split_save_path}")
+
+    return {
+        "train": Subset(dataset, indices["train"]),
+        "val":   Subset(dataset, indices["val"]),
+        "test":  Subset(dataset, indices["test"])
+    }
 
 class ResidualDenseBlock(nn.Module):
     """Enhanced Residual Dense Block with local feature fusion"""
@@ -222,10 +252,15 @@ def train_two_stage(
     n = len(full_dataset)
     n_val = int(val_split * n)
     n_train = n - n_val
-    train_ds, val_ds = random_split(full_dataset, [n_train, n_val])
+
+    splits = get_data_splits(full_dataset, val_split=val_split, test_split=0.1)
+    train_ds = splits["train"]
+    val_ds   = splits["val"]
+
+    #train_ds, val_ds = random_split(full_dataset, [n_train, n_val])
     print(f"Dataset split: {n_train} train, {n_val} val samples")
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, persistent_workers=True)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True, persistent_workers=True)
     val_loader   = DataLoader(val_ds,   batch_size=batch_size*2, shuffle=False, num_workers=2, pin_memory=True, persistent_workers=True)
 
     model = EuclidToJWSTSuperResolution(num_rrdb=6, features=48).to(device)
@@ -235,18 +270,22 @@ def train_two_stage(
 
     wandb.watch(model, log="all", log_freq=100)
 
-    def log_wandb_image_triplet(lr_img, hr_img, out_img, stage_name, step):
-        lr = lr_img[0].detach().cpu()
-        hr = hr_img[0].detach().cpu()
-        sr = out_img[0].detach().cpu()
-        psnr_val, ssim_val = compute_psnr_ssim(sr, hr)
-        wandb.log({
-            f"{stage_name}/Low-Res": wandb.Image(lr),
-            f"{stage_name}/Super-Res": wandb.Image(sr),
-            f"{stage_name}/High-Res": wandb.Image(hr),
-            f"{stage_name}/PSNR": psnr_val,
-            f"{stage_name}/SSIM": ssim_val
-        }, step=step)
+    def log_wandb_image_triplet_batch(lr_imgs, hr_imgs, out_imgs, stage_name, step, num_samples=4):
+        """
+        Log a few (num_samples) LR/SR/HR image triplets as a wandb image grid.
+        """
+        images = []
+        for i in range(min(num_samples, lr_imgs.size(0))):
+            lr = lr_imgs[i].detach().cpu().squeeze().numpy()
+            hr = hr_imgs[i].detach().cpu().squeeze().numpy()
+            sr = out_imgs[i].detach().cpu().squeeze().numpy()
+            psnr_val, ssim_val = compute_psnr_ssim(torch.tensor(sr), torch.tensor(hr))
+    
+            caption = f"Sample {i} | PSNR: {psnr_val:.2f} | SSIM: {ssim_val:.3f}"
+            images.append(wandb.Image(np.concatenate([lr, sr, hr], axis=1), caption=caption))
+    
+        wandb.log({f"{stage_name}/ImageTriplets": images}, step=step)
+
 
     # --- Stage 1 ---
     print("\n=== Stage 1: Initial Training ===")
@@ -299,7 +338,8 @@ def train_two_stage(
         wandb.log({"Stage1/train_loss": avg_train, "Stage1/val_loss": avg_val}, step=ep)
 
         if ep % 10 == 0:
-            log_wandb_image_triplet(lr_img, hr_img, out, "Stage1", ep)
+            log_wandb_image_triplet_batch(lr_img, hr_img, out, "Stage1", ep)
+
 
         if avg_val < best1:
             best1 = avg_val
@@ -343,8 +383,9 @@ def train_two_stage(
         print(f"Stage2 Ep{ep+1}: train={avg_train:.4e}, val={avg_val:.4e}")
         wandb.log({"Stage2/train_loss": avg_train, "Stage2/val_loss": avg_val}, step=ep)
 
-        if ep % 10 == 0:
-            log_wandb_image_triplet(lr_img, hr_img, out, "Stage2", ep)
+        if ep % 5 == 0:
+            log_wandb_image_triplet_batch(lr_img, hr_img, out, "Stage2", ep)
+
 
         if avg_val < best2:
             best2 = avg_val
