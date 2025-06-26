@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
+# === Cosine Noise Schedule ===
+def cosine_schedule(t, total_timesteps=500):
+    return torch.cos((t / total_timesteps) * (0.5 * torch.pi))
+
 # === Timestep Embedding ===
 def get_timestep_embedding(timesteps, embedding_dim):
     half_dim = embedding_dim // 2
@@ -15,21 +19,18 @@ class SuperResDiffusionUNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=1, hidden_dim=64, activation_fn=nn.ReLU, time_embed_dim=128):
         super().__init__()
         self.activation_fn = activation_fn
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.hidden_dim = hidden_dim
 
         # Encoder
         self.encoder1 = nn.Sequential(
-            nn.Conv2d(in_channels, hidden_dim, kernel_size=4, stride=2, padding=1),  # 66 → 33
+            nn.Conv2d(in_channels, hidden_dim, kernel_size=4, stride=2, padding=1),  # 125 -> 62
             activation_fn()
         )
         self.encoder2 = nn.Sequential(
-            nn.Conv2d(hidden_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1),  # 33 → 16
+            nn.Conv2d(hidden_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1),  # 62 -> 31
             activation_fn()
         )
         self.encoder3 = nn.Sequential(
-            nn.Conv2d(hidden_dim * 2, hidden_dim * 4, kernel_size=4, stride=2, padding=1),  # 16 → 8
+            nn.Conv2d(hidden_dim * 2, hidden_dim * 4, kernel_size=4, stride=2, padding=1),  # 31 -> 15
             activation_fn()
         )
 
@@ -41,7 +42,7 @@ class SuperResDiffusionUNet(nn.Module):
         )
         self.cross_attention = nn.Conv2d(hidden_dim * 4 * 2, hidden_dim * 4, kernel_size=1)
 
-        # Decoder using Upsample + Conv2d (checkerboard-free)
+        # Decoder
         self.decoder1 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.Conv2d(hidden_dim * 4, hidden_dim * 2, kernel_size=3, padding=1),
@@ -58,7 +59,6 @@ class SuperResDiffusionUNet(nn.Module):
             activation_fn()
         )
 
-        # Final output layer
         self.output_conv = nn.Conv2d(hidden_dim // 2, out_channels, kernel_size=3, padding=1)
 
     def forward(self, x, condition, t_embed):
@@ -84,9 +84,7 @@ class SuperResDiffusionUNet(nn.Module):
         x = self.decoder3(x)
         x = self.output_conv(x)
 
-        # Pad to exactly 66×66
-        x = self.align_dims(x, target=torch.empty(x.size(0), x.size(1), 66, 66, device=x.device))
-        return x
+        return self.align_dims(x, target=(125, 125))
 
     def align_dims(self, x, target):
         if isinstance(target, torch.Tensor):
@@ -95,25 +93,30 @@ class SuperResDiffusionUNet(nn.Module):
             target_h, target_w = target[0], target[1]
         diffY = target_h - x.size(2)
         diffX = target_w - x.size(3)
-        if diffX != 0 or diffY != 0:
-            x = F.pad(x, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
-        return x
+        return F.pad(x, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
 
-# === Upsampler Module ===
+# === Upsampler Module (25 -> 125) ===
 class Upsampler(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1, upscale_factor=2):
+    def __init__(self, in_channels=1, out_channels=1):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels, in_channels * (upscale_factor ** 2), kernel_size=3, padding=1)
-        self.pixel_shuffle = nn.PixelShuffle(upscale_factor)
-        self.relu = nn.ReLU()
-        self.conv2 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.block = nn.Sequential(
+            nn.Conv2d(in_channels, 64, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64 * 4, 3, padding=1),
+            nn.PixelShuffle(2),  # 25 -> 50
+            nn.ReLU(),
+            nn.Conv2d(64, 64 * 4, 3, padding=1),
+            nn.PixelShuffle(2),  # 50 -> 100
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.Conv2d(64, out_channels, 3, padding=1),
+        )
 
     def forward(self, x):
-        x = self.relu(self.pixel_shuffle(self.conv1(x)))
-        x = self.conv2(x)
-        return x
+        x = self.block(x)
+        return F.interpolate(x, size=(125, 125), mode='bilinear', align_corners=False)
 
-# === Diffusion Wrapper with Time Embedding ===
+# === Diffusion Model ===
 class DiffusionModel(nn.Module):
     def __init__(self, unet_model, timesteps=500, time_embed_dim=128):
         super().__init__()
@@ -125,7 +128,7 @@ class DiffusionModel(nn.Module):
         t_embed = get_timestep_embedding(t, self.time_embed_dim)
         return self.unet(x, condition, t_embed)
 
-# === Main Super-Resolution Diffusion Model ===
+# === Full Super-Resolution Diffusion Wrapper ===
 class SuperResolutionDiffusion(nn.Module):
     def __init__(self, unet_model, upsampler):
         super().__init__()
@@ -133,13 +136,8 @@ class SuperResolutionDiffusion(nn.Module):
         self.diffusion = DiffusionModel(unet_model)
 
     def forward(self, x, t):
-        upscaled = self.upsampler(x)
+        upscaled = self.upsampler(x)  # (B, 1, 125, 125)
         noise = torch.randn_like(upscaled, device=upscaled.device)
         alpha_t = cosine_schedule(t, self.diffusion.timesteps).view(-1, 1, 1, 1)
-        noisy_image = alpha_t * upscaled + (1 - alpha_t) * noise
-        output = self.diffusion(noisy_image, t, upscaled)
-        return F.interpolate(output, size=(66, 66), mode="bilinear", align_corners=True)
-
-# === Cosine Noise Schedule ===
-def cosine_schedule(t, total_timesteps=500):
-    return torch.cos((t / total_timesteps) * (0.5 * torch.pi))
+        noisy = alpha_t * upscaled + (1 - alpha_t) * noise
+        return self.diffusion(noisy, t, upscaled)
