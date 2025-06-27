@@ -11,11 +11,15 @@ from dataset import SuperResolutionDataset
 import numpy as np
 import math
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
+import cv2
 
 # Set these at the beginning of your script
 torch.backends.cudnn.benchmark = True  # Optimize for consistent input sizes
 torch.backends.cuda.matmul.allow_tf32 = True  # Allow TF32 for faster computation
 torch.backends.cudnn.allow_tf32 = True
+
+def resize_to_match(img, target_shape):
+    return cv2.resize(img, (target_shape[1], target_shape[0]), interpolation=cv2.INTER_NEAREST)
 
 def compute_psnr_ssim(pred, target):
     pred_np = pred.squeeze().numpy()
@@ -279,10 +283,15 @@ def train_two_stage(
             lr = lr_imgs[i].detach().cpu().squeeze().numpy()
             hr = hr_imgs[i].detach().cpu().squeeze().numpy()
             sr = out_imgs[i].detach().cpu().squeeze().numpy()
+
+
+            # Resize LR to match HR shape
+            lr_resized = resize_to_match(lr, hr.shape)
+            
             psnr_val, ssim_val = compute_psnr_ssim(torch.tensor(sr), torch.tensor(hr))
     
             caption = f"Sample {i} | PSNR: {psnr_val:.2f} | SSIM: {ssim_val:.3f}"
-            images.append(wandb.Image(np.concatenate([lr, sr, hr], axis=1), caption=caption))
+            images.append(wandb.Image(np.concatenate([lr_resized, sr, hr], axis=1), caption=caption))
     
         wandb.log({f"{stage_name}/ImageTriplets": images}, step=step)
 
