@@ -69,8 +69,12 @@ class EuclidToJWSTSuperResolution(nn.Module):
     def __init__(self, num_rrdb=16, features=64):
         super(EuclidToJWSTSuperResolution, self).__init__()
         
-        # Initial feature extraction
-        self.conv_first = nn.Conv2d(1, features, kernel_size=3, padding=1)
+        # Input normalization and feature extraction
+        self.input_processing = nn.Sequential(
+            nn.BatchNorm2d(1),  # Normalize raw input
+            nn.Conv2d(1, features, kernel_size=3, padding=1),
+            nn.BatchNorm2d(features)  # Normalize initial features
+        )
         
         # Residual Dense Blocks
         self.rrdb_blocks = nn.ModuleList([ResidualDenseBlock(features) for _ in range(num_rrdb)])
@@ -100,12 +104,14 @@ class EuclidToJWSTSuperResolution(nn.Module):
         self.final_conv = nn.Sequential(
             nn.Conv2d(features, features, kernel_size=3, padding=1),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(features, 1, kernel_size=3, padding=1)
+            nn.Conv2d(features, 1, kernel_size=3, padding=1),
+            nn.BatchNorm2d(1)  # Normalize final output
         )
         
     def forward(self, x):
         # Initial feature extraction
-        features = self.conv_first(x)
+        # Batch normalization
+        features = self.input_processing(x)
         
         # Residual dense blocks
         trunk = features
@@ -267,7 +273,7 @@ class CenterWeightedLoss(nn.Module):
 
 # Dataset class
 class EuclidToJWSTDataset(Dataset):
-    def __init__(self, euclid_path, jwst_path, normalize_method='flux_preserving'):
+    def __init__(self, euclid_path, jwst_path):
         # Load data
         self.euclid_data = np.load(euclid_path)
         self.jwst_data = np.load(jwst_path)
@@ -277,90 +283,7 @@ class EuclidToJWSTDataset(Dataset):
         assert self.euclid_data.shape[1:] == (41, 41), f"Euclid images should be 41x41, got {self.euclid_data.shape[1:]}"
         assert self.jwst_data.shape[1:] == (205, 205), f"JWST images should be 205x205, got {self.jwst_data.shape[1:]}"
         
-        self.normalize_method = normalize_method
         self.transform = None  # Will be set externally if needed
-        
-    def normalize_data(self, euclid_img, jwst_img):
-        """Truly flux-preserving normalization"""
-        
-        # Calculate total flux for both images
-        euclid_flux = np.sum(euclid_img)
-        jwst_flux = np.sum(jwst_img)
-        
-        # Store original flux ratio for later restoration
-        flux_ratio = jwst_flux / (euclid_flux + 1e-10)
-        
-        # Normalize both images to [0, 1] based on their individual ranges
-        # but preserve the flux relationship
-        euclid_min, euclid_max = np.min(euclid_img), np.max(euclid_img)
-        jwst_min, jwst_max = np.min(jwst_img), np.max(jwst_img)
-        
-        # Avoid division by zero
-        euclid_range = euclid_max - euclid_min if euclid_max > euclid_min else 1.0
-        jwst_range = jwst_max - jwst_min if jwst_max > jwst_min else 1.0
-        
-        # Normalize to [0, 1] while preserving relative intensities
-        euclid_norm = (euclid_img - euclid_min) / euclid_range
-        jwst_norm = (jwst_img - jwst_min) / jwst_range
-        
-        # Scale to preserve flux relationship
-        # The key insight: don't artificially boost the target
-        scale_factor = min(1.0, flux_ratio)  # Don't amplify beyond original
-        jwst_norm = jwst_norm * scale_factor
-        
-        return euclid_norm, jwst_norm, {
-            'method': 'flux_preserving',
-            'euclid_min': euclid_min,
-            'euclid_max': euclid_max,
-            'jwst_min': jwst_min,
-            'jwst_max': jwst_max,
-            'flux_ratio': flux_ratio,
-            'scale_factor': scale_factor
-        }
-
-    def adaptive_histogram_normalization(self, image, clip_limit=2.0, tile_grid_size=(8, 8)):
-        """
-        Adaptive histogram equalization for astronomical images
-        """
-        # Convert to uint16 for CLAHE (OpenCV requirement)
-        img_min, img_max = np.percentile(image, [0.5, self.clip_percentile])
-        image_clipped = np.clip(image, img_min, img_max)
-        
-        # Normalize to 0-65535 range
-        if img_max > img_min:
-            image_norm = ((image_clipped - img_min) / (img_max - img_min) * 65535).astype(np.uint16)
-        else:
-            image_norm = np.zeros_like(image_clipped, dtype=np.uint16)
-        
-        # Apply CLAHE
-        clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
-        image_clahe = clahe.apply(image_norm)
-        
-        # Convert back to float and normalize to [-1, 1]
-        image_final = (image_clahe.astype(np.float32) / 32767.5) - 1.0
-        
-        return image_final
-    
-    def flux_preserving_normalization(self, image):
-        """
-        Flux-preserving normalization that maintains relative intensities
-        """
-        # Robust statistics to handle outliers
-        img_median = np.median(image)
-        img_mad = np.median(np.abs(image - img_median))  # Median Absolute Deviation
-        
-        # Use MAD-based scaling (more robust than std)
-        if img_mad > 0:
-            # Scale by MAD but preserve flux ratios
-            image_norm = (image - img_median) / (img_mad * 1.4826)  # 1.4826 makes MAD comparable to std
-            
-            # Soft clipping to preserve dynamic range
-            image_norm = np.tanh(image_norm / 3.0) * 3.0
-        else:
-            # Fallback for constant images
-            image_norm = image - img_median
-            
-        return image_norm.astype(np.float32)
     
     def __len__(self):
         return self.euclid_data.shape[0]
@@ -369,23 +292,23 @@ class EuclidToJWSTDataset(Dataset):
         euclid_img = self.euclid_data[idx].astype(np.float32)
         jwst_img = self.jwst_data[idx].astype(np.float32)
         
-        # Normalize
-        euclid_norm, jwst_norm, norm_params = self.normalize_data(euclid_img, jwst_img)
+        # REMOVE all normalization - just convert to tensors
+        # No more: euclid_norm, jwst_norm, norm_params = self.normalize_data(euclid_img, jwst_img)
         
-        # Convert to tensors
-        euclid_tensor = torch.from_numpy(euclid_norm).unsqueeze(0)
-        jwst_tensor = torch.from_numpy(jwst_norm).unsqueeze(0)
+        # Convert directly to tensors without normalization
+        euclid_tensor = torch.from_numpy(euclid_img).unsqueeze(0)  # Add channel dimension
+        jwst_tensor = torch.from_numpy(jwst_img).unsqueeze(0)      # Add channel dimension
         
-        # Apply transforms if available (only to input, not target)
+        # Apply transforms if available (data augmentation only)
         if self.transform is not None:
-            # For paired data, we need to apply the same transform to both
             seed = torch.randint(0, 2**32, (1,)).item()
             torch.manual_seed(seed)
             euclid_tensor = self.transform(euclid_tensor)
             torch.manual_seed(seed)
             jwst_tensor = self.transform(jwst_tensor)
         
-        return euclid_tensor, jwst_tensor, norm_params
+        # Return without normalization parameters
+        return euclid_tensor, jwst_tensor
 
 def calculate_metrics(pred, target):
     """Calculate various image quality metrics"""
@@ -479,7 +402,7 @@ def log_sample_predictions(model, val_loader, device, stage_name, epoch, num_sam
     model.eval()
     
     with torch.no_grad():
-        for euclid_imgs, jwst_imgs, _ in val_loader:
+        for euclid_imgs, jwst_imgs in val_loader:
             euclid_imgs = euclid_imgs.to(device)
             jwst_imgs = jwst_imgs.to(device)
             
@@ -497,34 +420,6 @@ def log_sample_predictions(model, val_loader, device, stage_name, epoch, num_sam
             
             plt.close(fig)
             break  # Only log first batch
-
-def apply_flux_correction(pred_images, target_images, correction_strength=0.8):
-    """
-    Post-processing step to correct flux while preserving details
-    
-    Args:
-        pred_images: Predicted images (batch_size, channels, height, width)
-        target_images: Target images for flux reference
-        correction_strength: How strongly to apply correction (0=none, 1=full)
-    """
-    corrected_images = pred_images.clone()
-    
-    for i in range(pred_images.shape[0]):
-        pred_img = pred_images[i, 0]  # Remove channel dim
-        target_img = target_images[i, 0]
-        
-        # Calculate flux ratio
-        pred_flux = torch.sum(pred_img)
-        target_flux = torch.sum(target_img)
-        
-        if pred_flux > 0:
-            flux_ratio = target_flux / pred_flux
-            
-            # Apply correction with strength parameter
-            correction_factor = 1.0 + correction_strength * (flux_ratio - 1.0)
-            corrected_images[i, 0] = pred_img * correction_factor
-    
-    return corrected_images
 
 def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size=8, 
                                num_epochs_stage1=50, num_epochs_stage2=50, 
@@ -560,8 +455,7 @@ def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size
     # Create dataset
     full_dataset = EuclidToJWSTDataset(
         euclid_path, 
-        jwst_path, 
-        normalize_method='flux_preserving'
+        jwst_path
     )
     
     # Calculate split sizes
@@ -614,7 +508,7 @@ def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size
         train_pred_fluxes = []  # ADD THIS
         train_target_fluxes = []  # ADD THIS
         
-        for batch_idx, (euclid_images, jwst_images, _) in enumerate(train_loader):
+        for batch_idx, (euclid_images, jwst_images) in enumerate(train_loader):
             euclid_images = euclid_images.to(device)
             jwst_images = jwst_images.to(device)
             
@@ -661,7 +555,7 @@ def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size
         val_target_fluxes = []  # ADD THIS
         
         with torch.no_grad():
-            for batch_idx, (euclid_images, jwst_images, _) in enumerate(val_loader):
+            for batch_idx, (euclid_images, jwst_images) in enumerate(val_loader):
                 euclid_images = euclid_images.to(device)
                 jwst_images = jwst_images.to(device)
                 
@@ -780,7 +674,7 @@ def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size
         train_pred_fluxes = []  # ADD THIS
         train_target_fluxes = []  # ADD THIS
         
-        for batch_idx, (euclid_images, jwst_images, _) in enumerate(train_loader):
+        for batch_idx, (euclid_images, jwst_images) in enumerate(train_loader):
             euclid_images = euclid_images.to(device)
             jwst_images = jwst_images.to(device)
             
@@ -837,7 +731,7 @@ def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size
         val_target_fluxes = []  # ADD THIS
         
         with torch.no_grad():
-            for batch_idx, (euclid_images, jwst_images, _) in enumerate(val_loader):
+            for batch_idx, (euclid_images, jwst_images) in enumerate(val_loader):
                 euclid_images = euclid_images.to(device)
                 jwst_images = jwst_images.to(device)
                 
@@ -933,8 +827,9 @@ def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size
     log_sample_predictions(model, val_loader, device, "final", num_epochs_stage1 + num_epochs_stage2, num_samples=8)
     
     # Log final metrics summary
+    wandb.summary['best_stage1_val_loss']: best_val_loss_stage1
     wandb.log({
-        "summary/best_stage1_val_loss": best_val_loss_stage1,
+        # "summary/best_stage1_val_loss": best_val_loss_stage1,
         "summary/best_stage2_val_loss": best_val_loss_stage2,
         "summary/total_epochs": num_epochs_stage1 + num_epochs_stage2
     })
@@ -956,5 +851,5 @@ if __name__ == "__main__":
         num_epochs_stage1=50,
         num_epochs_stage2=50,
         project_name="euclid-jwst-superres",
-        run_name="two-stage-training-deconv-v1"
+        run_name="two-stage-training-deconv-v2"
     )
