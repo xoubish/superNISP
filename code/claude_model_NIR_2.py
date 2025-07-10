@@ -640,14 +640,14 @@ def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size
         # Save best model from stage 1
         if avg_val_loss < best_val_loss_stage1:
             best_val_loss_stage1 = avg_val_loss
-            torch.save(model.state_dict(), 'stage1_best_model.pth')
-            wandb.save('stage1_best_model.pth')
+            torch.save(model.state_dict(), 'stage1_best_model_BN.pth')
+            wandb.save('stage1_best_model_BN.pth')
     
     # Stage 2: Fine-tuning
     print("\n=== Stage 2: Fine-tuning ===")
     
     # Load best model from stage 1
-    model.load_state_dict(torch.load('stage1_best_model.pth'))
+    model.load_state_dict(torch.load('stage1_best_model_BN.pth'))
     
     # Advanced loss terms
     ssim_criterion = SSIMLoss()
@@ -817,11 +817,11 @@ def train_two_stage_with_wandb(euclid_path, jwst_path, val_split=0.2, batch_size
         # Save best model from stage 2
         if avg_val_loss < best_val_loss_stage2:
             best_val_loss_stage2 = avg_val_loss
-            torch.save(model.state_dict(), 'models/final_best_model_2.pth')
-            wandb.save('models/final_best_model_2.pth')
+            torch.save(model.state_dict(), 'models/final_best_model_2_BN.pth')
+            wandb.save('models/final_best_model_2_BN.pth')
     
     # Final evaluation and logging
-    model.load_state_dict(torch.load('models/final_best_model_2.pth'))
+    model.load_state_dict(torch.load('models/final_best_model_2_BN.pth'))
     
     # Log final sample predictions
     log_sample_predictions(model, val_loader, device, "final", num_epochs_stage1 + num_epochs_stage2, num_samples=8)
@@ -851,5 +851,5 @@ if __name__ == "__main__":
         num_epochs_stage1=50,
         num_epochs_stage2=50,
         project_name="euclid-jwst-superres",
-        run_name="two-stage-training-deconv-v2"
+        run_name="two-stage-training-deconv-batch-norm"
     )
