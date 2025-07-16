@@ -10,10 +10,17 @@ import matplotlib.pyplot as plt
 from skimage.metrics import peak_signal_noise_ratio
 import cv2
 
-class ConfigurableResidualDenseBlock(nn.Module):
-    """RDB with configurable growth rate"""
+from claude_sweep import sweep_config
+
+# Global variable to track best overall performance
+GLOBAL_BEST_LOSS = float('inf')
+GLOBAL_BEST_CONFIG = None
+GLOBAL_BEST_MODEL_PATH = None
+
+class ResidualDenseBlock(nn.Module):
+    """Enhanced Residual Dense Block with local feature fusion"""
     def __init__(self, channels, growth_rate=32):
-        super(ConfigurableResidualDenseBlock, self).__init__()
+        super(ResidualDenseBlock, self).__init__()
         self.conv1 = nn.Conv2d(channels, growth_rate, 3, padding=1)
         self.conv2 = nn.Conv2d(channels + growth_rate, growth_rate, 3, padding=1)
         self.conv3 = nn.Conv2d(channels + 2 * growth_rate, growth_rate, 3, padding=1)
@@ -27,7 +34,7 @@ class ConfigurableResidualDenseBlock(nn.Module):
         x3 = self.lrelu(self.conv3(torch.cat((x, x1, x2), 1)))
         x4 = self.lrelu(self.conv4(torch.cat((x, x1, x2, x3), 1)))
         x5 = self.conv5(torch.cat((x, x1, x2, x3, x4), 1))
-        return x + x5
+        return x + x5  # Residual connection
 
 class DetailEnhancementModule(nn.Module):
     """Advanced detail enhancement module"""
@@ -65,18 +72,15 @@ class DetailEnhancementModule(nn.Module):
         
         return enhanced * attention
 
-class ConfigurableEuclidToJWSTSuperResolution(nn.Module):
-    def __init__(self, num_rrdb=16, features=64, growth_rate=32):
-        super(ConfigurableEuclidToJWSTSuperResolution, self).__init__()
+class EuclidToJWSTSuperResolution(nn.Module):
+    def __init__(self, num_rrdb=16, features=64):
+        super(EuclidToJWSTSuperResolution, self).__init__()
         
         # Initial feature extraction
         self.conv_first = nn.Conv2d(1, features, kernel_size=3, padding=1)
         
-        # Residual Dense Blocks with configurable parameters
-        self.rrdb_blocks = nn.ModuleList([
-            ConfigurableResidualDenseBlock(features, growth_rate) 
-            for _ in range(num_rrdb)
-        ])
+        # Residual Dense Blocks
+        self.rrdb_blocks = nn.ModuleList([ResidualDenseBlock(features) for _ in range(num_rrdb)])
         
         # Trunk convolution after RRDBs
         self.trunk_conv = nn.Conv2d(features, features, kernel_size=3, padding=1)
@@ -84,7 +88,8 @@ class ConfigurableEuclidToJWSTSuperResolution(nn.Module):
         # Detail enhancement module
         self.detail_enhancer = DetailEnhancementModule(features)
         
-        # Upsampling pathway
+        # Upsampling pathway - Fixed for proper scaling
+        # 41x41 -> 82x82 -> 164x164 -> then interpolate to 205x205
         self.upsampling_blocks = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(features, features * 4, kernel_size=3, padding=1),
@@ -120,14 +125,14 @@ class ConfigurableEuclidToJWSTSuperResolution(nn.Module):
         # Detail enhancement
         features = self.detail_enhancer(features)
         
-        # Upsampling
+        # Upsampling (41x41 -> 82x82 -> 164x164)
         for upsampling_block in self.upsampling_blocks:
             features = upsampling_block(features)
         
         # Final reconstruction
         output = self.final_conv(features)
         
-        # Interpolate to exact target size
+        # Interpolate to exact target size (164x164 -> 205x205)
         output = F.interpolate(output, size=(205, 205), mode='bilinear', align_corners=False)
         
         return output
@@ -190,58 +195,137 @@ class SSIMLoss(nn.Module):
 
         return 1 - self._ssim(img1, img2, window, self.window_size, channel, self.size_average)
 
+# Flux conservation implementation
+class FluxConservationLoss(nn.Module):
+    """Loss to enforce flux conservation"""
+    def __init__(self, weight=1.0):
+        super(FluxConservationLoss, self).__init__()
+        self.weight = weight
+    
+    def forward(self, pred, target):
+        # Calculate total flux for each image in the batch
+        pred_flux = torch.sum(pred.view(pred.size(0), -1), dim=1)
+        target_flux = torch.sum(target.view(target.size(0), -1), dim=1)
+        
+        # L1 loss on flux difference
+        flux_loss = torch.mean(torch.abs(pred_flux - target_flux))
+        
+        return self.weight * flux_loss
+
+# Adds center weighting to the model
+class CenterWeightedLoss(nn.Module):
+    """Loss that weights the center of the image more heavily"""
+    def __init__(self, center_weight=3.0, base_loss=nn.L1Loss()):
+        super(CenterWeightedLoss, self).__init__()
+        self.center_weight = center_weight
+        self.base_loss = base_loss
+        self.weight_mask = None
+    
+    def create_weight_mask(self, height, width, device):
+        """Create a mask that weights center pixels more heavily"""
+        if self.weight_mask is not None and self.weight_mask.shape[-2:] == (height, width):
+            return self.weight_mask.to(device)
+        
+        # Create coordinate grids
+        y, x = torch.meshgrid(
+            torch.linspace(-1, 1, height),
+            torch.linspace(-1, 1, width),
+            indexing='ij'
+        )
+        
+        # Calculate distance from center
+        distance = torch.sqrt(x**2 + y**2)
+        
+        # Create weight mask (higher weight for center, lower for edges)
+        # Use gaussian-like weighting
+        weight_mask = torch.exp(-distance**2 / 0.5)  # Adjust 0.5 to control falloff
+        
+        # Normalize so average weight is 1.0
+        weight_mask = weight_mask / weight_mask.mean()
+        
+        # Apply center weighting
+        weight_mask = 1.0 + (self.center_weight - 1.0) * weight_mask
+        
+        # Add batch and channel dimensions
+        self.weight_mask = weight_mask.unsqueeze(0).unsqueeze(0)
+        
+        return self.weight_mask.to(device)
+    
+    def forward(self, pred, target):
+        batch_size, channels, height, width = pred.shape
+        
+        # Create weight mask
+        weight_mask = self.create_weight_mask(height, width, pred.device)
+        weight_mask = weight_mask.expand(batch_size, channels, -1, -1)
+        
+        # Calculate weighted loss
+        if isinstance(self.base_loss, nn.L1Loss):
+            loss_map = torch.abs(pred - target)
+        elif isinstance(self.base_loss, nn.MSELoss):
+            loss_map = (pred - target) ** 2
+        else:
+            # Fallback to standard loss
+            return self.base_loss(pred, target)
+        
+        # Apply weights
+        weighted_loss = loss_map * weight_mask
+        
+        return weighted_loss.mean()
+
 # Dataset class
-class ConfigurableEuclidToJWSTDataset(Dataset):
-    def __init__(self, euclid_path, jwst_path, normalize_method='flux_preserving', 
-                 augmentation_prob=0.5):
+class EuclidToJWSTDataset(Dataset):
+    def __init__(self, euclid_path, jwst_path, normalize_method='flux_preserving'):
         # Load data
         self.euclid_data = np.load(euclid_path)
         self.jwst_data = np.load(jwst_path)
         
         # Verify shapes
-        assert self.euclid_data.shape[0] == self.jwst_data.shape[0], "Number of images must match"
-        assert self.euclid_data.shape[1:] == (41, 41), f"Euclid images should be 41x41"
-        assert self.jwst_data.shape[1:] == (205, 205), f"JWST images should be 205x205"
+        assert self.euclid_data.shape[0] == self.jwst_data.shape[0], "Number of Euclid and JWST images must match"
+        assert self.euclid_data.shape[1:] == (41, 41), f"Euclid images should be 41x41, got {self.euclid_data.shape[1:]}"
+        assert self.jwst_data.shape[1:] == (205, 205), f"JWST images should be 205x205, got {self.jwst_data.shape[1:]}"
         
         self.normalize_method = normalize_method
-        self.augmentation_prob = augmentation_prob
+        self.transform = None  # Will be set externally if needed
         
     def normalize_data(self, euclid_img, jwst_img):
-        if self.normalize_method == 'flux_preserving':
-            return self._flux_preserving_norm(euclid_img), self._flux_preserving_norm(jwst_img), {'method': 'flux_preserving'}
-        elif self.normalize_method == 'adaptive_hist':
-            return self._adaptive_hist_norm(euclid_img), self._adaptive_hist_norm(jwst_img), {'method': 'adaptive_hist'}
-        elif self.normalize_method == 'percentile':
-            return self._percentile_norm(euclid_img, jwst_img)
-        elif self.normalize_method == 'z_score':
-            return self._z_score_norm(euclid_img, jwst_img)
-        elif self.normalize_method == 'none':
-            return euclid_img, jwst_img
-        else:
-            raise ValueError(f"Unknown normalization method: {self.normalize_method}")
-    
-    def _flux_preserving_norm(self, image):
-        """
-        Flux-preserving normalization that maintains relative intensities
-        """
-        # Robust statistics to handle outliers
-        img_median = np.median(image)
-        img_mad = np.median(np.abs(image - img_median))  # Median Absolute Deviation
+        """Truly flux-preserving normalization"""
         
-        # Use MAD-based scaling (more robust than std)
-        if img_mad > 0:
-            # Scale by MAD but preserve flux ratios
-            image_norm = (image - img_median) / (img_mad * 1.4826)  # 1.4826 makes MAD comparable to std
-            
-            # Soft clipping to preserve dynamic range
-            image_norm = np.tanh(image_norm / 3.0) * 3.0
-        else:
-            # Fallback for constant images
-            image_norm = image - img_median
-            
-        return image_norm.astype(np.float32)
-    
-    def _adaptive_hist_norm(self, image, clip_limit=2.0, tile_grid_size=(8, 8)):
+        # Calculate total flux for both images
+        euclid_flux = np.sum(euclid_img)
+        jwst_flux = np.sum(jwst_img)
+        
+        # Store original flux ratio for later restoration
+        flux_ratio = jwst_flux / (euclid_flux + 1e-10)
+        
+        # Normalize both images to [0, 1] based on their individual ranges
+        # but preserve the flux relationship
+        euclid_min, euclid_max = np.min(euclid_img), np.max(euclid_img)
+        jwst_min, jwst_max = np.min(jwst_img), np.max(jwst_img)
+        
+        # Avoid division by zero
+        euclid_range = euclid_max - euclid_min if euclid_max > euclid_min else 1.0
+        jwst_range = jwst_max - jwst_min if jwst_max > jwst_min else 1.0
+        
+        # Normalize to [0, 1] while preserving relative intensities
+        euclid_norm = (euclid_img - euclid_min) / euclid_range
+        jwst_norm = (jwst_img - jwst_min) / jwst_range
+        
+        # Scale to preserve flux relationship
+        # The key insight: don't artificially boost the target
+        scale_factor = min(1.0, flux_ratio)  # Don't amplify beyond original
+        jwst_norm = jwst_norm * scale_factor
+        
+        return euclid_norm, jwst_norm, {
+            'method': 'flux_preserving',
+            'euclid_min': euclid_min,
+            'euclid_max': euclid_max,
+            'jwst_min': jwst_min,
+            'jwst_max': jwst_max,
+            'flux_ratio': flux_ratio,
+            'scale_factor': scale_factor
+        }
+
+    def adaptive_histogram_normalization(self, image, clip_limit=2.0, tile_grid_size=(8, 8)):
         """
         Adaptive histogram equalization for astronomical images
         """
@@ -264,46 +348,26 @@ class ConfigurableEuclidToJWSTDataset(Dataset):
         
         return image_final
     
-    def _percentile_norm(self, euclid_img, jwst_img):
-        # Percentile-based normalization
-        p_low, p_high = 1, 99
+    def flux_preserving_normalization(self, image):
+        """
+        Flux-preserving normalization that maintains relative intensities
+        """
+        # Robust statistics to handle outliers
+        img_median = np.median(image)
+        img_mad = np.median(np.abs(image - img_median))  # Median Absolute Deviation
         
-        euclid_p_low, euclid_p_high = np.percentile(euclid_img, [p_low, p_high])
-        jwst_p_low, jwst_p_high = np.percentile(jwst_img, [p_low, p_high])
-        
-        euclid_norm = np.clip((euclid_img - euclid_p_low) / (euclid_p_high - euclid_p_low), 0, 1)
-        jwst_norm = np.clip((jwst_img - jwst_p_low) / (jwst_p_high - jwst_p_low), 0, 1)
-        
-        return euclid_norm, jwst_norm, {'method': 'percentile'}
-    
-    def _z_score_norm(self, euclid_img, jwst_img):
-        # Z-score normalization
-        euclid_norm = (euclid_img - np.mean(euclid_img)) / (np.std(euclid_img) + 1e-8)
-        jwst_norm = (jwst_img - np.mean(jwst_img)) / (np.std(jwst_img) + 1e-8)
-        
-        return euclid_norm, jwst_norm, {'method': 'z_score'}
-    
-    def apply_augmentation(self, euclid_img, jwst_img):
-        """Apply data augmentation with configurable probability"""
-        if np.random.random() > self.augmentation_prob:
-            return euclid_img, jwst_img
-        
-        # Random rotation
-        if np.random.random() > 0.5:
-            k = np.random.choice([1, 2, 3])
-            euclid_img = np.rot90(euclid_img, k).copy()
-            jwst_img = np.rot90(jwst_img, k).copy()
-        
-        # Random flips
-        if np.random.random() > 0.5:
-            euclid_img = np.fliplr(euclid_img).copy()
-            jwst_img = np.fliplr(jwst_img).copy()
-        
-        if np.random.random() > 0.5:
-            euclid_img = np.flipud(euclid_img).copy()
-            jwst_img = np.flipud(jwst_img).copy()
-        
-        return euclid_img, jwst_img
+        # Use MAD-based scaling (more robust than std)
+        if img_mad > 0:
+            # Scale by MAD but preserve flux ratios
+            image_norm = (image - img_median) / (img_mad * 1.4826)  # 1.4826 makes MAD comparable to std
+            
+            # Soft clipping to preserve dynamic range
+            image_norm = np.tanh(image_norm / 3.0) * 3.0
+        else:
+            # Fallback for constant images
+            image_norm = image - img_median
+            
+        return image_norm.astype(np.float32)
     
     def __len__(self):
         return self.euclid_data.shape[0]
@@ -312,15 +376,21 @@ class ConfigurableEuclidToJWSTDataset(Dataset):
         euclid_img = self.euclid_data[idx].astype(np.float32)
         jwst_img = self.jwst_data[idx].astype(np.float32)
         
-        # Apply augmentation
-        euclid_img, jwst_img = self.apply_augmentation(euclid_img, jwst_img)
-        
         # Normalize
         euclid_norm, jwst_norm, norm_params = self.normalize_data(euclid_img, jwst_img)
         
         # Convert to tensors
         euclid_tensor = torch.from_numpy(euclid_norm).unsqueeze(0)
         jwst_tensor = torch.from_numpy(jwst_norm).unsqueeze(0)
+        
+        # Apply transforms if available (only to input, not target)
+        if self.transform is not None:
+            # For paired data, we need to apply the same transform to both
+            seed = torch.randint(0, 2**32, (1,)).item()
+            torch.manual_seed(seed)
+            euclid_tensor = self.transform(euclid_tensor)
+            torch.manual_seed(seed)
+            jwst_tensor = self.transform(jwst_tensor)
         
         return euclid_tensor, jwst_tensor, norm_params
 
@@ -453,40 +523,39 @@ def get_scheduler(optimizer, scheduler_type, **kwargs):
     else:
         raise ValueError(f"Unknown scheduler type: {scheduler_type}")
 
-def train_with_config():
-    """Training function that uses W&B config"""
-    # Initialize W&B run
+def train_with_config_subset():
+    """Complete training function for hyperparameter sweep with data subset"""
     wandb.init()
     config = wandb.config
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
     
     # Create full dataset
-    full_dataset = ConfigurableEuclidToJWSTDataset(
+    full_dataset = EuclidToJWSTDataset(
         euclid_path='../data/euclid_NIR_cosmos_41px_Y.npy',
         jwst_path='../data/jwst_cosmos_205px_F115W.npy',
-        normalize_method=config.normalization_method,
-        augmentation_prob=config.augmentation_prob
+        normalize_method='flux_preserving'  # Use your preferred normalization
     )
     
     # SUBSET THE DATA FOR SWEEP
     total_samples = len(full_dataset)
     subset_size = min(8000, total_samples)  # Use max 8000 samples for sweep
     
-    # Create subset indices
-    torch.manual_seed(42)  # Reproducible subset
-    all_indices = torch.randperm(total_samples)[:subset_size]
+    print(f"Full dataset size: {total_samples}, using subset: {subset_size}")
     
-    # Create subset dataset
+    # Create reproducible subset
+    torch.manual_seed(42)
+    all_indices = torch.randperm(total_samples)[:subset_size]
     subset_dataset = torch.utils.data.Subset(full_dataset, all_indices)
     
     # Split subset into train/val
-    val_size = int(0.2 * subset_size)  # 20% for validation
+    val_size = int(0.2 * subset_size)
     train_size = subset_size - val_size
     
     train_dataset, val_dataset = random_split(subset_dataset, [train_size, val_size])
     
-    print(f"Sweep using subset: {train_size} train, {val_size} val samples")
+    print(f"Sweep training on: {train_size} train, {val_size} val samples")
     
     # Create dataloaders
     train_loader = DataLoader(
@@ -502,196 +571,337 @@ def train_with_config():
         num_workers=2
     )
     
-    # Initialize model
-    model = ConfigurableEuclidToJWSTSuperResolution(
-        num_rrdb=config.num_rrdb,
-        features=config.features,
-        growth_rate=config.growth_rate
+    # Initialize model with config parameters
+    model = EuclidToJWSTSuperResolution(
+        num_rrdb=config.get('num_rrdb', 8),
+        features=config.get('features', 64)
     ).to(device)
     
-    # Watch model
+    # Watch model for W&B
     wandb.watch(model, log_freq=100)
     
     # Loss functions
     l1_criterion = nn.L1Loss()
     mse_criterion = nn.MSELoss()
-    ssim_criterion = SSIMLoss()
+    flux_criterion = FluxConservationLoss(weight=0.5)
+    center_weighted_l1 = CenterWeightedLoss(center_weight=3.0, base_loss=nn.L1Loss())
     
-    # Stage 1 Training
-    stage1_optimizer = torch.optim.Adam(
-        model.parameters(), 
-        lr=config.lr_stage1,
-        weight_decay=config.weight_decay
-    )
-    
-    stage1_scheduler = get_scheduler(
-        stage1_optimizer, 
-        config.scheduler_type,
-        T_max=30,  # Reduced epochs for sweep
-        patience=config.scheduler_patience
-    )
-    
-    # Reduced epochs for hyperparameter search
+    # REDUCED EPOCHS FOR SWEEP
     num_epochs_stage1 = 30
     num_epochs_stage2 = 20
     
-    best_val_psnr = 0.0
+    # =================================================================
+    # STAGE 1: Initial Training
+    # =================================================================
+    print(f"\n=== Stage 1: Initial Training ({num_epochs_stage1} epochs) ===")
     
-    # Stage 1 training loop (abbreviated)
+    stage1_optimizer = torch.optim.Adam(
+        model.parameters(), 
+        lr=config.get('lr_stage1', 0.0001),
+        weight_decay=config.get('weight_decay', 1e-4)
+    )
+    
+    stage1_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        stage1_optimizer, 
+        T_max=num_epochs_stage1, 
+        eta_min=1e-6
+    )
+    
+    best_val_loss_stage1 = float('inf')
+    
     for epoch in range(num_epochs_stage1):
+        # Training phase
         model.train()
         train_loss = 0.0
+        train_l1_loss = 0.0
+        train_mse_loss = 0.0
+        train_flux_loss = 0.0
+        train_center_loss = 0.0
         
-        for euclid_images, jwst_images, _ in train_loader:
+        for batch_data in train_loader:
+            # Handle both old and new dataset formats
+            if len(batch_data) == 3:
+                euclid_images, jwst_images, _ = batch_data
+            else:
+                euclid_images, jwst_images = batch_data
+            
             euclid_images = euclid_images.to(device)
             jwst_images = jwst_images.to(device)
             
             stage1_optimizer.zero_grad()
+            
             outputs = model(euclid_images)
             
-            # Configurable loss weights
+            # Compute individual losses
             l1_loss = l1_criterion(outputs, jwst_images)
             mse_loss = mse_criterion(outputs, jwst_images)
-            loss = config.l1_weight_stage1 * l1_loss + (1 - config.l1_weight_stage1) * mse_loss
+            flux_loss = flux_criterion(outputs, jwst_images)
+            center_loss = center_weighted_l1(outputs, jwst_images)
+            
+            # Combine losses with configurable weights
+            l1_weight = config.get('l1_weight_stage1', 0.4)
+            loss = (l1_weight * l1_loss + 
+                    0.2 * mse_loss + 
+                    0.2 * flux_loss + 
+                    0.2 * center_loss)
             
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=config.gradient_clip_norm)
+            torch.nn.utils.clip_grad_norm_(
+                model.parameters(), 
+                max_norm=config.get('gradient_clip_norm', 0.5)
+            )
             stage1_optimizer.step()
             
             train_loss += loss.item()
+            train_l1_loss += l1_loss.item()
+            train_mse_loss += mse_loss.item()
+            train_flux_loss += flux_loss.item()
+            train_center_loss += center_loss.item()
         
-        # Validation
+        # Validation phase
         model.eval()
         val_loss = 0.0
-        val_metrics = {'psnr': 0, 'ssim': 0}
+        val_l1_loss = 0.0
+        val_mse_loss = 0.0
+        val_flux_loss = 0.0
+        val_center_loss = 0.0
         
         with torch.no_grad():
-            for euclid_images, jwst_images, _ in val_loader:
+            for batch_data in val_loader:
+                if len(batch_data) == 3:
+                    euclid_images, jwst_images, _ = batch_data
+                else:
+                    euclid_images, jwst_images = batch_data
+                
                 euclid_images = euclid_images.to(device)
                 jwst_images = jwst_images.to(device)
+                
                 outputs = model(euclid_images)
                 
                 l1_loss = l1_criterion(outputs, jwst_images)
                 mse_loss = mse_criterion(outputs, jwst_images)
-                loss = config.l1_weight_stage1 * l1_loss + (1 - config.l1_weight_stage1) * mse_loss
-                val_loss += loss.item()
+                flux_loss = flux_criterion(outputs, jwst_images)
+                center_loss = center_weighted_l1(outputs, jwst_images)
                 
-                # Calculate metrics
-                batch_metrics = calculate_metrics(outputs, jwst_images)
-                val_metrics['psnr'] += batch_metrics['psnr']
-                val_metrics['ssim'] += batch_metrics['ssim']
+                l1_weight = config.get('l1_weight_stage1', 0.4)
+                loss = (l1_weight * l1_loss + 
+                        0.2 * mse_loss + 
+                        0.2 * flux_loss + 
+                        0.2 * center_loss)
+                
+                val_loss += loss.item()
+                val_l1_loss += l1_loss.item()
+                val_mse_loss += mse_loss.item()
+                val_flux_loss += flux_loss.item()
+                val_center_loss += center_loss.item()
         
-        # Average metrics
-        avg_val_psnr = val_metrics['psnr'] / len(val_loader)
-        avg_val_ssim = val_metrics['ssim'] / len(val_loader)
+        # Update learning rate
+        stage1_scheduler.step()
         
-        # Update scheduler
-        if config.scheduler_type == 'plateau':
-            stage1_scheduler.step(val_loss / len(val_loader))
-        else:
-            stage1_scheduler.step()
+        # Compute averages
+        avg_train_loss = train_loss / len(train_loader)
+        avg_val_loss = val_loss / len(val_loader)
         
-        # Log metrics
+        # Log to W&B
         wandb.log({
             'stage1/epoch': epoch + 1,
-            'stage1/train_loss': train_loss / len(train_loader),
-            'stage1/val_loss': val_loss / len(val_loader),
-            'stage1/val_psnr': avg_val_psnr,
-            'stage1/val_ssim': avg_val_ssim,
-            'stage1/learning_rate': stage1_optimizer.param_groups[0]['lr']
+            'stage1/train_loss': avg_train_loss,
+            'stage1/val_loss': avg_val_loss,
+            'stage1/train_l1_loss': train_l1_loss / len(train_loader),
+            'stage1/val_l1_loss': val_l1_loss / len(val_loader),
+            'stage1/train_flux_loss': train_flux_loss / len(train_loader),
+            'stage1/val_flux_loss': val_flux_loss / len(val_loader),
+            'stage1/learning_rate': stage1_optimizer.param_groups[0]['lr'],
         })
         
-        best_val_psnr = max(best_val_psnr, avg_val_psnr)
+        # Track best validation loss
+        if avg_val_loss < best_val_loss_stage1:
+            best_val_loss_stage1 = avg_val_loss
+        
+        # Print progress
+        if (epoch + 1) % 5 == 0:
+            print(f'Stage 1 - Epoch {epoch+1}/{num_epochs_stage1}: '
+                  f'Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}')
     
-    # Stage 2 Training (similar structure with configurable parameters)
+    # =================================================================
+    # STAGE 2: Fine-tuning with Advanced Losses
+    # =================================================================
+    print(f"\n=== Stage 2: Fine-tuning ({num_epochs_stage2} epochs) ===")
+    
+    # Add SSIM loss for stage 2
+    ssim_criterion = SSIMLoss()
+    
     stage2_optimizer = torch.optim.Adam(
         model.parameters(), 
-        lr=config.lr_stage2,
-        weight_decay=config.weight_decay
+        lr=config.get('lr_stage2', 0.00005),
+        weight_decay=config.get('weight_decay', 1e-4)
     )
     
-    stage2_scheduler = get_scheduler(
+    stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         stage2_optimizer, 
-        config.scheduler_type,
-        T_max=num_epochs_stage2,
-        patience=config.scheduler_patience
+        T_max=num_epochs_stage2, 
+        eta_min=1e-6
     )
+    
+    best_val_loss_stage2 = float('inf')
     
     for epoch in range(num_epochs_stage2):
+        # Training phase
         model.train()
         train_loss = 0.0
+        train_l1_loss = 0.0
+        train_mse_loss = 0.0
+        train_ssim_loss = 0.0
+        train_flux_loss = 0.0
+        train_center_loss = 0.0
         
-        for euclid_images, jwst_images, _ in train_loader:
+        for batch_data in train_loader:
+            if len(batch_data) == 3:
+                euclid_images, jwst_images, _ = batch_data
+            else:
+                euclid_images, jwst_images = batch_data
+            
             euclid_images = euclid_images.to(device)
             jwst_images = jwst_images.to(device)
             
             stage2_optimizer.zero_grad()
+            
             outputs = model(euclid_images)
             
-            # Configurable loss combination
+            # Compute individual losses
             l1_loss = l1_criterion(outputs, jwst_images)
             mse_loss = mse_criterion(outputs, jwst_images)
             ssim_loss = ssim_criterion(outputs, jwst_images)
+            flux_loss = flux_criterion(outputs, jwst_images)
+            center_loss = center_weighted_l1(outputs, jwst_images)
+            
+            # Combine losses with configurable weights
+            l1_weight = config.get('l1_weight_stage2', 0.3)
+            mse_weight = config.get('mse_weight_stage2', 0.2)
+            ssim_weight = config.get('ssim_weight_stage2', 0.1)
             
             # Normalize weights
-            total_weight = config.l1_weight_stage2 + config.mse_weight_stage2 + config.ssim_weight_stage2
-            l1_w = config.l1_weight_stage2 / total_weight
-            mse_w = config.mse_weight_stage2 / total_weight
-            ssim_w = config.ssim_weight_stage2 / total_weight
+            total_weight = l1_weight + mse_weight + ssim_weight + 0.2 + 0.2  # +flux +center
+            l1_w = l1_weight / total_weight
+            mse_w = mse_weight / total_weight
+            ssim_w = ssim_weight / total_weight
+            flux_w = 0.2 / total_weight
+            center_w = 0.2 / total_weight
             
-            loss = l1_w * l1_loss + mse_w * mse_loss + ssim_w * ssim_loss
+            loss = (l1_w * l1_loss + 
+                    mse_w * mse_loss + 
+                    ssim_w * ssim_loss + 
+                    flux_w * flux_loss + 
+                    center_w * center_loss)
             
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=config.gradient_clip_norm)
+            torch.nn.utils.clip_grad_norm_(
+                model.parameters(), 
+                max_norm=config.get('gradient_clip_norm', 0.5)
+            )
             stage2_optimizer.step()
             
             train_loss += loss.item()
+            train_l1_loss += l1_loss.item()
+            train_mse_loss += mse_loss.item()
+            train_ssim_loss += ssim_loss.item()
+            train_flux_loss += flux_loss.item()
+            train_center_loss += center_loss.item()
         
-        # Validation (similar to stage 1)
+        # Validation phase
         model.eval()
         val_loss = 0.0
-        val_metrics = {'psnr': 0, 'ssim': 0}
+        val_l1_loss = 0.0
+        val_mse_loss = 0.0
+        val_ssim_loss = 0.0
+        val_flux_loss = 0.0
+        val_center_loss = 0.0
         
         with torch.no_grad():
-            for euclid_images, jwst_images, _ in val_loader:
+            for batch_data in val_loader:
+                if len(batch_data) == 3:
+                    euclid_images, jwst_images, _ = batch_data
+                else:
+                    euclid_images, jwst_images = batch_data
+                
                 euclid_images = euclid_images.to(device)
                 jwst_images = jwst_images.to(device)
+                
                 outputs = model(euclid_images)
                 
                 l1_loss = l1_criterion(outputs, jwst_images)
                 mse_loss = mse_criterion(outputs, jwst_images)
                 ssim_loss = ssim_criterion(outputs, jwst_images)
+                flux_loss = flux_criterion(outputs, jwst_images)
+                center_loss = center_weighted_l1(outputs, jwst_images)
                 
-                loss = l1_w * l1_loss + mse_w * mse_loss + ssim_w * ssim_loss
+                # Use same weights as training
+                loss = (l1_w * l1_loss + 
+                        mse_w * mse_loss + 
+                        ssim_w * ssim_loss + 
+                        flux_w * flux_loss + 
+                        center_w * center_loss)
+                
                 val_loss += loss.item()
-                
-                batch_metrics = calculate_metrics(outputs, jwst_images)
-                val_metrics['psnr'] += batch_metrics['psnr']
-                val_metrics['ssim'] += batch_metrics['ssim']
+                val_l1_loss += l1_loss.item()
+                val_mse_loss += mse_loss.item()
+                val_ssim_loss += ssim_loss.item()
+                val_flux_loss += flux_loss.item()
+                val_center_loss += center_loss.item()
         
-        avg_val_psnr = val_metrics['psnr'] / len(val_loader)
-        avg_val_ssim = val_metrics['ssim'] / len(val_loader)
+        # Update learning rate
+        stage2_scheduler.step()
         
-        # Update scheduler
-        if config.scheduler_type == 'plateau':
-            stage2_scheduler.step(val_loss / len(val_loader))
-        else:
-            stage2_scheduler.step()
+        # Compute averages
+        avg_train_loss = train_loss / len(train_loader)
+        avg_val_loss = val_loss / len(val_loader)
         
-        # Log metrics
+        # Log to W&B
         wandb.log({
             'stage2/epoch': epoch + 1,
-            'stage2/train_loss': train_loss / len(train_loader),
-            'stage2/val_loss': val_loss / len(val_loader),
-            'stage2/val_psnr': avg_val_psnr,
-            'stage2/val_ssim': avg_val_ssim,
-            'stage2/learning_rate': stage2_optimizer.param_groups[0]['lr']
+            'stage2/train_loss': avg_train_loss,
+            'stage2/val_loss': avg_val_loss,
+            'stage2/train_l1_loss': train_l1_loss / len(train_loader),
+            'stage2/val_l1_loss': val_l1_loss / len(val_loader),
+            'stage2/train_ssim_loss': train_ssim_loss / len(train_loader),
+            'stage2/val_ssim_loss': val_ssim_loss / len(val_loader),
+            'stage2/train_flux_loss': train_flux_loss / len(train_loader),
+            'stage2/val_flux_loss': val_flux_loss / len(val_loader),
+            'stage2/learning_rate': stage2_optimizer.param_groups[0]['lr'],
         })
         
-        # best_val_psnr = max(best_val_psnr, avg_val_psnr)
+        # Track best validation loss
+        if avg_val_loss < best_val_loss_stage2:
+            best_val_loss_stage2 = avg_val_loss
+        
+        # Print progress
+        if (epoch + 1) % 5 == 0:
+            print(f'Stage 2 - Epoch {epoch+1}/{num_epochs_stage2}: '
+                  f'Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}')
     
-    # Log final best metric
-    wandb.log({'final_best_val_loss': val_loss / len(val_loader)})
+    # =================================================================
+    # Final Logging for Sweep Optimization
+    # =================================================================
+    
+    # Log final metrics for sweep to optimize
+    final_metrics = {
+        'final_val_loss': best_val_loss_stage2,  # Primary metric for sweep
+        'stage1_best_val_loss': best_val_loss_stage1,
+        'stage2_best_val_loss': best_val_loss_stage2,
+        'combined_val_loss': best_val_loss_stage1 + best_val_loss_stage2,
+        'total_epochs': num_epochs_stage1 + num_epochs_stage2,
+        'subset_size': subset_size
+    }
+    
+    wandb.log(final_metrics)
+    
+    print(f"\nSweep run completed!")
+    print(f"Stage 1 best val loss: {best_val_loss_stage1:.6f}")
+    print(f"Stage 2 best val loss: {best_val_loss_stage2:.6f}")
+    print(f"Final val loss (sweep metric): {best_val_loss_stage2:.6f}")
+    
+    # Clean up
+    wandb.finish()
 
 # Create and run the sweep
 def run_sweep():
@@ -702,7 +912,7 @@ def run_sweep():
     )
     
     # Run the sweep
-    wandb.agent(sweep_id, train_with_config, count=50)  # Run 50 experiments
+    wandb.agent(sweep_id, train_with_config_subset, count=50)  # Run 50 experiments
 
 if __name__ == "__main__":
     run_sweep()
