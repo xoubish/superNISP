@@ -1,6 +1,3 @@
-import os
-from datetime import datetime
-import json
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,17 +5,10 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 import numpy as np
 import math
-import wandb
-import matplotlib.pyplot as plt
-from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 import cv2
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
-from claude_sweep import sweep_config
-
-# Global variable to track best overall performance
-GLOBAL_BEST_LOSS = float('inf')
-GLOBAL_BEST_CONFIG = None
-GLOBAL_BEST_MODEL_PATH = None
+LOG_FREQ = 20
 
 class ResidualDenseBlock(nn.Module):
     """Enhanced Residual Dense Block with local feature fusion"""
@@ -198,86 +188,16 @@ class SSIMLoss(nn.Module):
 
         return 1 - self._ssim(img1, img2, window, self.window_size, channel, self.size_average)
 
-# Flux conservation implementation
-class FluxConservationLoss(nn.Module):
-    """Loss to enforce flux conservation"""
-    def __init__(self, weight=1.0):
-        super(FluxConservationLoss, self).__init__()
-        self.weight = weight
-    
-    def forward(self, pred, target):
-        # Calculate total flux for each image in the batch
-        pred_flux = torch.sum(pred.view(pred.size(0), -1), dim=1)
-        target_flux = torch.sum(target.view(target.size(0), -1), dim=1)
-        
-        # L1 loss on flux difference
-        flux_loss = torch.mean(torch.abs(pred_flux - target_flux))
-        
-        return self.weight * flux_loss
-
-# Adds center weighting to the model
-class CenterWeightedLoss(nn.Module):
-    """Loss that weights the center of the image more heavily"""
-    def __init__(self, center_weight=3.0, base_loss=nn.L1Loss()):
-        super(CenterWeightedLoss, self).__init__()
-        self.center_weight = center_weight
-        self.base_loss = base_loss
-        self.weight_mask = None
-    
-    def create_weight_mask(self, height, width, device):
-        """Create a mask that weights center pixels more heavily"""
-        if self.weight_mask is not None and self.weight_mask.shape[-2:] == (height, width):
-            return self.weight_mask.to(device)
-        
-        # Create coordinate grids
-        y, x = torch.meshgrid(
-            torch.linspace(-1, 1, height),
-            torch.linspace(-1, 1, width),
-            indexing='ij'
-        )
-        
-        # Calculate distance from center
-        distance = torch.sqrt(x**2 + y**2)
-        
-        # Create weight mask (higher weight for center, lower for edges)
-        # Use gaussian-like weighting
-        weight_mask = torch.exp(-distance**2 / 0.5)  # Adjust 0.5 to control falloff
-        
-        # Normalize so average weight is 1.0
-        weight_mask = weight_mask / weight_mask.mean()
-        
-        # Apply center weighting
-        weight_mask = 1.0 + (self.center_weight - 1.0) * weight_mask
-        
-        # Add batch and channel dimensions
-        self.weight_mask = weight_mask.unsqueeze(0).unsqueeze(0)
-        
-        return self.weight_mask.to(device)
-    
-    def forward(self, pred, target):
-        batch_size, channels, height, width = pred.shape
-        
-        # Create weight mask
-        weight_mask = self.create_weight_mask(height, width, pred.device)
-        weight_mask = weight_mask.expand(batch_size, channels, -1, -1)
-        
-        # Calculate weighted loss
-        if isinstance(self.base_loss, nn.L1Loss):
-            loss_map = torch.abs(pred - target)
-        elif isinstance(self.base_loss, nn.MSELoss):
-            loss_map = (pred - target) ** 2
-        else:
-            # Fallback to standard loss
-            return self.base_loss(pred, target)
-        
-        # Apply weights
-        weighted_loss = loss_map * weight_mask
-        
-        return weighted_loss.mean()
-
 # Dataset class
 class EuclidToJWSTDataset(Dataset):
-    def __init__(self, euclid_path, jwst_path, normalize_method='flux_preserving'):
+    # Table linking strings to functions
+    norm_methods = {
+            'z_score': self.z_score_normalization,
+            'adaptive_hist': self.adaptive_histogram_normalization,
+            'flux_preserving': self.flux_preserving_normalization,
+        }
+    
+    def __init__(self, euclid_path, jwst_path, normalize_method='z_score'):
         # Load data
         self.euclid_data = np.load(euclid_path)
         self.jwst_data = np.load(jwst_path)
@@ -286,48 +206,33 @@ class EuclidToJWSTDataset(Dataset):
         assert self.euclid_data.shape[0] == self.jwst_data.shape[0], "Number of Euclid and JWST images must match"
         assert self.euclid_data.shape[1:] == (41, 41), f"Euclid images should be 41x41, got {self.euclid_data.shape[1:]}"
         assert self.jwst_data.shape[1:] == (205, 205), f"JWST images should be 205x205, got {self.jwst_data.shape[1:]}"
-        
         self.normalize_method = normalize_method
+        self.norm_method = self.norm_methods[normalize_method]
         self.transform = None  # Will be set externally if needed
-        
-    def normalize_data(self, euclid_img, jwst_img):
-        """Truly flux-preserving normalization"""
-        
-        # Calculate total flux for both images
-        euclid_flux = np.sum(euclid_img)
-        jwst_flux = np.sum(jwst_img)
-        
-        # Store original flux ratio for later restoration
-        flux_ratio = jwst_flux / (euclid_flux + 1e-10)
-        
-        # Normalize both images to [0, 1] based on their individual ranges
-        # but preserve the flux relationship
-        euclid_min, euclid_max = np.min(euclid_img), np.max(euclid_img)
-        jwst_min, jwst_max = np.min(jwst_img), np.max(jwst_img)
-        
-        # Avoid division by zero
-        euclid_range = euclid_max - euclid_min if euclid_max > euclid_min else 1.0
-        jwst_range = jwst_max - jwst_min if jwst_max > jwst_min else 1.0
-        
-        # Normalize to [0, 1] while preserving relative intensities
-        euclid_norm = (euclid_img - euclid_min) / euclid_range
-        jwst_norm = (jwst_img - jwst_min) / jwst_range
-        
-        # Scale to preserve flux relationship
-        # The key insight: don't artificially boost the target
-        scale_factor = min(1.0, flux_ratio)  # Don't amplify beyond original
-        jwst_norm = jwst_norm * scale_factor
-        
-        return euclid_norm, jwst_norm, {
-            'method': 'flux_preserving',
-            'euclid_min': euclid_min,
-            'euclid_max': euclid_max,
-            'jwst_min': jwst_min,
-            'jwst_max': jwst_max,
-            'flux_ratio': flux_ratio,
-            'scale_factor': scale_factor
-        }
 
+    def normalize_data(self, euclid_img, jwst_img):
+
+        euclid_norm, euclid_stats = self.norm_method(euclid_img)
+        jwst_norm, jwst_stats = self.norm_method(jwst_img)
+
+        stats = {'method': self.normalize_method}
+        stats.update({'euclid_'+str(key): euclid_stats[key] for key in euclid_stats})
+        stats.update({'jwst_'+str(key): jwst_stats[key] for key in jwst_stats})
+        
+        return euclid_norm, jwst_norm, stats
+
+    ### TODO: Make a return function that scales the images back to their pre-normalized value
+    
+    def z_score_normalization(self, image):
+
+        img_mean, img_std = np.mean(image), np.std(image)
+
+        img_norm = (image - img_mean) / img_std
+
+        return img_norm, {'mean': img_mean,
+                          'std': img_std,
+                         }
+    
     def adaptive_histogram_normalization(self, image, clip_limit=2.0, tile_grid_size=(8, 8)):
         """
         Adaptive histogram equalization for astronomical images
@@ -421,11 +326,13 @@ def calculate_metrics(pred, target):
         target_img = target_np[i, 0] if target_np.ndim == 4 else target_np[i]
         
         # PSNR
-        psnr = peak_signal_noise_ratio(target_img, pred_img, data_range=target_img.max() - target_img.min())
+        psnr = peak_signal_noise_ratio(target_img, pred_img, 
+                                       data_range=target_img.max() - target_img.min())
         batch_psnr.append(psnr)
         
         # SSIM
-        ssim = structural_similarity(target_img, pred_img, data_range=target_img.max() - target_img.min())
+        ssim = structural_similarity(target_img, pred_img, 
+                                     data_range=target_img.max() - target_img.min())
         batch_ssim.append(ssim)
         
         # MAE
@@ -452,28 +359,34 @@ def create_comparison_figure(euclid_imgs, pred_imgs, jwst_imgs, num_samples=4):
     
     for i in range(min(num_samples, euclid_imgs.shape[0])):
         # Convert tensors to numpy and remove channel dimension
-        euclid_np = euclid_imgs[i, 0].detach().cpu().numpy() if torch.is_tensor(euclid_imgs) else euclid_imgs[i, 0]
-        pred_np = pred_imgs[i, 0].detach().cpu().numpy() if torch.is_tensor(pred_imgs) else pred_imgs[i, 0]
-        jwst_np = jwst_imgs[i, 0].detach().cpu().numpy() if torch.is_tensor(jwst_imgs) else jwst_imgs[i, 0]
+        euclid_np = euclid_imgs[i, 0].detach().cpu().numpy() \
+                    if torch.is_tensor(euclid_imgs) else euclid_imgs[i, 0]
+        pred_np = pred_imgs[i, 0].detach().cpu().numpy() \
+                    if torch.is_tensor(pred_imgs) else pred_imgs[i, 0]
+        jwst_np = jwst_imgs[i, 0].detach().cpu().numpy() \
+                    if torch.is_tensor(jwst_imgs) else jwst_imgs[i, 0]
         
         # Calculate metrics for this sample
         psnr = peak_signal_noise_ratio(jwst_np, pred_np, data_range=jwst_np.max() - jwst_np.min())
         ssim = structural_similarity(jwst_np, pred_np, data_range=jwst_np.max() - jwst_np.min())
+
+        vmin = pred_np.min()
+        vmax = pred_np.max()
         
         # Euclid input
-        im1 = axes[0, i].imshow(euclid_np, cmap='viridis')
+        im1 = axes[0, i].imshow(euclid_np, cmap='viridis', vmin=vmin, vmax=vmax)
         axes[0, i].set_title(f'Euclid Input {i+1}\n(41×41)')
         axes[0, i].axis('off')
         plt.colorbar(im1, ax=axes[0, i], fraction=0.046)
         
         # Predicted output
-        im2 = axes[1, i].imshow(pred_np, cmap='viridis')
+        im2 = axes[1, i].imshow(pred_np, cmap='viridis', vmin=vmin, vmax=vmax)
         axes[1, i].set_title(f'Super-Resolved {i+1}\n(205×205)\nPSNR: {psnr:.2f}')
         axes[1, i].axis('off')
         plt.colorbar(im2, ax=axes[1, i], fraction=0.046)
         
         # JWST target
-        im3 = axes[2, i].imshow(jwst_np, cmap='viridis')
+        im3 = axes[2, i].imshow(jwst_np, cmap='viridis', vmin=vmin, vmax=vmax)
         axes[2, i].set_title(f'JWST Target {i+1}\n(205×205)\nSSIM: {ssim:.3f}')
         axes[2, i].axis('off')
         plt.colorbar(im3, ax=axes[2, i], fraction=0.046)
@@ -486,7 +399,7 @@ def log_sample_predictions(model, val_loader, device, stage_name, epoch, num_sam
     model.eval()
     
     with torch.no_grad():
-        for euclid_imgs, jwst_imgs, _ in val_loader:
+        for euclid_imgs, jwst_imgs in val_loader:
             euclid_imgs = euclid_imgs.to(device)
             jwst_imgs = jwst_imgs.to(device)
             
@@ -505,283 +418,77 @@ def log_sample_predictions(model, val_loader, device, stage_name, epoch, num_sam
             plt.close(fig)
             break  # Only log first batch
 
-def get_scheduler(optimizer, scheduler_type, **kwargs):
-    """Get scheduler based on type"""
-    if scheduler_type == 'cosine':
-        return torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=kwargs.get('T_max', 50), eta_min=kwargs.get('eta_min', 1e-6)
-        )
-    elif scheduler_type == 'step':
-        return torch.optim.lr_scheduler.StepLR(
-            optimizer, step_size=kwargs.get('step_size', 20), gamma=kwargs.get('gamma', 0.5)
-        )
-    elif scheduler_type == 'exponential':
-        return torch.optim.lr_scheduler.ExponentialLR(
-            optimizer, gamma=kwargs.get('gamma', 0.95)
-        )
-    elif scheduler_type == 'plateau':
-        return torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='min', patience=kwargs.get('patience', 10), factor=0.5
-        )
-    else:
-        raise ValueError(f"Unknown scheduler type: {scheduler_type}")
+# Training function
+def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8, 
+                    num_epochs_stage1=50, num_epochs_stage2=50, 
+                    project_name='euclid_jwst_superres', run_name=None):
 
-def save_model_and_config(model, config, val_loss, run_id, save_dir='sweep_models'):
-    """
-    Save model checkpoint and configuration for each run
-    
-    Args:
-        model: Trained model
-        config: W&B config object
-        val_loss: Final validation loss
-        run_id: Unique run identifier
-        save_dir: Directory to save models
-    """
-    global GLOBAL_BEST_LOSS, GLOBAL_BEST_CONFIG, GLOBAL_BEST_MODEL_PATH
-    
-    # Create save directory
-    os.makedirs(save_dir, exist_ok=True)
-    
-    # Create unique filename for this run
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    model_filename = f"model_run_{run_id}_{timestamp}_loss_{val_loss:.6f}.pth"
-    config_filename = f"config_run_{run_id}_{timestamp}_loss_{val_loss:.6f}.json"
-    
-    model_path = os.path.join(save_dir, model_filename)
-    config_path = os.path.join(save_dir, config_filename)
-    
-    # Save model checkpoint
-    checkpoint = {
-        'model_state_dict': model.state_dict(),
-        'config': dict(config),
-        'final_val_loss': val_loss,
-        'run_id': run_id,
-        'timestamp': timestamp,
-        'model_architecture': {
-            'num_rrdb': config.get('num_rrdb', 8),
-            'features': config.get('features', 64)
+    # Initialize W&B
+    wandb.init(
+        project=project_name,
+        name=run_name,
+        config={
+            "architecture": "EuclidToJWSTSuperResolution",
+            "batch_size": batch_size,
+            "num_epochs_stage1": num_epochs_stage1,
+            "num_epochs_stage2": num_epochs_stage2,
+            "val_split": val_split,
+            "optimizer_stage1": "Adam",
+            "optimizer_stage2": "Adam",
+            "lr_stage1": 0.0001,
+            "lr_stage2": 0.00005,
+            "num_rrdb": 8,
+            "features": 64,
+            "loss_stage1": "L1 + MSE",
+            "loss_stage2": "L1 + MSE + SSIM",
+            "normalization": "z_score"
         }
-    }
-    
-    torch.save(checkpoint, model_path)
-    
-    # Save configuration as JSON
-    config_dict = {
-        'run_id': run_id,
-        'timestamp': timestamp,
-        'final_val_loss': val_loss,
-        'model_path': model_path,
-        'hyperparameters': dict(config),
-        'model_architecture': {
-            'num_rrdb': config.get('num_rrdb', 8),
-            'features': config.get('features', 64)
-        }
-    }
-    
-    with open(config_path, 'w') as f:
-        json.dump(config_dict, f, indent=2, default=str)
-    
-    print(f"Saved model: {model_path}")
-    print(f"Saved config: {config_path}")
-    
-    # Check if this is the best model overall
-    if val_loss < GLOBAL_BEST_LOSS:
-        GLOBAL_BEST_LOSS = val_loss
-        GLOBAL_BEST_CONFIG = dict(config)
-        GLOBAL_BEST_MODEL_PATH = model_path
-        
-        # Save as overall best model
-        best_model_path = os.path.join(save_dir, 'BEST_OVERALL_MODEL.pth')
-        best_config_path = os.path.join(save_dir, 'BEST_OVERALL_CONFIG.json')
-        
-        # Copy the best model
-        torch.save(checkpoint, best_model_path)
-        
-        # Save best config with additional info
-        best_config_dict = config_dict.copy()
-        best_config_dict['note'] = 'BEST OVERALL MODEL FROM SWEEP'
-        best_config_dict['original_model_path'] = model_path
-        
-        with open(best_config_path, 'w') as f:
-            json.dump(best_config_dict, f, indent=2, default=str)
-        
-        print(f"🏆 NEW BEST MODEL! Loss: {val_loss:.6f}")
-        print(f"🏆 Saved as: {best_model_path}")
-        
-        # Log to W&B as artifact
-        artifact = wandb.Artifact(
-            name=f"best-model-{run_id}", 
-            type="model",
-            description=f"Best model with validation loss {val_loss:.6f}"
-        )
-        artifact.add_file(model_path)
-        artifact.add_file(config_path)
-        wandb.log_artifact(artifact)
-    
-    # Always save this run's model as W&B artifact
-    artifact = wandb.Artifact(
-        name=f"model-run-{run_id}", 
-        type="model",
-        description=f"Model from run {run_id} with validation loss {val_loss:.6f}"
-    )
-    artifact.add_file(model_path)
-    artifact.add_file(config_path)
-    wandb.log_artifact(artifact)
-    
-    return model_path, config_path
-
-def print_sweep_summary(save_dir='sweep_models'):
-    """Print summary of all sweep runs and best model"""
-    global GLOBAL_BEST_LOSS, GLOBAL_BEST_CONFIG, GLOBAL_BEST_MODEL_PATH
-    
-    print("\n" + "="*80)
-    print("HYPERPARAMETER SWEEP SUMMARY")
-    print("="*80)
-    
-    if GLOBAL_BEST_CONFIG is not None:
-        print(f"\n🏆 BEST OVERALL MODEL:")
-        print(f"   Validation Loss: {GLOBAL_BEST_LOSS:.6f}")
-        print(f"   Model Path: {GLOBAL_BEST_MODEL_PATH}")
-        print(f"\n🏆 BEST HYPERPARAMETERS:")
-        for key, value in GLOBAL_BEST_CONFIG.items():
-            print(f"   {key}: {value}")
-        
-        # Save best parameters to a separate file
-        best_params_file = os.path.join(save_dir, 'BEST_HYPERPARAMETERS.json')
-        best_summary = {
-            'best_validation_loss': GLOBAL_BEST_LOSS,
-            'best_model_path': GLOBAL_BEST_MODEL_PATH,
-            'best_hyperparameters': GLOBAL_BEST_CONFIG,
-            'summary_generated': datetime.now().isoformat()
-        }
-        
-        with open(best_params_file, 'w') as f:
-            json.dump(best_summary, f, indent=2, default=str)
-        
-        print(f"\n📄 Best parameters saved to: {best_params_file}")
-    else:
-        print("No models were saved during the sweep.")
-    
-    # List all saved models
-    if os.path.exists(save_dir):
-        model_files = [f for f in os.listdir(save_dir) if f.endswith('.pth') and not f.startswith('BEST_OVERALL')]
-        print(f"\n📁 Total models saved: {len(model_files)}")
-        print(f"📁 Models directory: {save_dir}")
-    
-    print("="*80)
-
-def load_best_model():
-    """Function to load the best model from the sweep"""
-    best_model_path = 'sweep_models/BEST_OVERALL_MODEL.pth'
-    
-    if not os.path.exists(best_model_path):
-        raise FileNotFoundError(f"Best model not found at {best_model_path}")
-    
-    # Load checkpoint
-    checkpoint = torch.load(best_model_path, map_location='cpu')
-    
-    # Initialize model with saved architecture
-    model = EuclidToJWSTSuperResolution(
-        num_rrdb=checkpoint['model_architecture']['num_rrdb'],
-        features=checkpoint['model_architecture']['features']
     )
     
-    # Load weights
-    model.load_state_dict(checkpoint['model_state_dict'])
-    
-    print(f"Loaded best model with validation loss: {checkpoint['final_val_loss']:.6f}")
-    print(f"Model architecture: {checkpoint['model_architecture']}")
-    print(f"Best hyperparameters: {checkpoint['config']}")
-    
-    return model, checkpoint['config']
-
-def train_with_config_subset():
-    """Complete training function for hyperparameter sweep with model saving"""
-    wandb.login()
-    
-    run = wandb.init()
-    config = wandb.config
-    run_id = run.id  # Get unique run ID
-    
+    # Determine device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
-    print(f"Run ID: {run_id}")
-    
-    # Create full dataset
+    wandb.config.update({"device": str(device)})
+
+    # Create dataset
     full_dataset = EuclidToJWSTDataset(
-        euclid_path='../data/euclid_NIR_cosmos_41px_Y.npy',
-        jwst_path='../data/jwst_cosmos_205px_F115W.npy',
-        normalize_method='flux_preserving'
+        euclid_path, 
+        jwst_path, 
+        normalize_method='flux_preserving'  # Fixed the method name
     )
     
-    # SUBSET THE DATA FOR SWEEP
-    total_samples = len(full_dataset)
-    subset_size = min(8000, total_samples)
+    # Calculate split sizes
+    dataset_size = len(full_dataset)
+    val_size = int(val_split * dataset_size)
+    train_size = dataset_size - val_size
     
-    print(f"Full dataset size: {total_samples}, using subset: {subset_size}")
+    # Split the dataset
+    torch.manual_seed(42)  # For reproducible splits
+    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
     
-    # Create reproducible subset
-    torch.manual_seed(42)
-    all_indices = torch.randperm(total_samples)[:subset_size]
-    subset_dataset = torch.utils.data.Subset(full_dataset, all_indices)
-    
-    # Split subset into train/val
-    val_size = int(0.2 * subset_size)
-    train_size = subset_size - val_size
-    
-    train_dataset, val_dataset = random_split(subset_dataset, [train_size, val_size])
-    
-    print(f"Sweep training on: {train_size} train, {val_size} val samples")
+    print(f"Dataset split: {train_size} training samples, {val_size} validation samples")
+    wandb.config.update({"train_size": train_size, "val_size": val_size})
     
     # Create dataloaders
-    train_loader = DataLoader(
-        train_dataset, 
-        batch_size=config.batch_size, 
-        shuffle=True, 
-        num_workers=2
-    )
-    val_loader = DataLoader(
-        val_dataset, 
-        batch_size=config.batch_size, 
-        shuffle=False, 
-        num_workers=2
-    )
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
     
-    # Initialize model with config parameters
-    model = EuclidToJWSTSuperResolution(
-        num_rrdb=config.get('num_rrdb', 8),
-        features=config.get('features', 64)
-    ).to(device)
-    
-    # Watch model for W&B
+    # Initialize model
+    model = EuclidToJWSTSuperResolution(num_rrdb=8, features=64).to(device)
     wandb.watch(model, log_freq=100)
     
-    # Loss functions
-    l1_criterion = nn.L1Loss()
-    mse_criterion = nn.MSELoss()
-    flux_criterion = FluxConservationLoss(weight=0.5)
-    center_weighted_l1 = CenterWeightedLoss(center_weight=3.0, base_loss=nn.L1Loss())
-    
-    # REDUCED EPOCHS FOR SWEEP
-    num_epochs_stage1 = 30
-    num_epochs_stage2 = 20
-    
-    # =================================================================
-    # STAGE 1: Initial Training
-    # =================================================================
-    print(f"\n=== Stage 1: Initial Training ({num_epochs_stage1} epochs) ===")
-    
-    stage1_optimizer = torch.optim.Adam(
-        model.parameters(), 
-        lr=config.get('lr_stage1', 0.0001),
-        weight_decay=config.get('weight_decay', 1e-4)
-    )
-    
+    # Stage 1: Initial Training with Basic Loss Functions
+    print("\n=== Stage 1: Initial Training ===")
+    stage1_optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     stage1_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         stage1_optimizer, 
         T_max=num_epochs_stage1, 
         eta_min=1e-6
     )
+    
+    # Loss functions
+    l1_criterion = nn.L1Loss()
+    mse_criterion = nn.MSELoss()
     
     best_val_loss_stage1 = float('inf')
     
@@ -791,128 +498,124 @@ def train_with_config_subset():
         train_loss = 0.0
         train_l1_loss = 0.0
         train_mse_loss = 0.0
-        train_flux_loss = 0.0
-        train_center_loss = 0.0
+        train_metrics = {'psnr': 0, 'ssim': 0, 'mae': 0, 'mse': 0}
         
-        for batch_data in train_loader:
-            # Handle both old and new dataset formats
-            if len(batch_data) == 3:
-                euclid_images, jwst_images, _ = batch_data
-            else:
-                euclid_images, jwst_images = batch_data
-            
+        for batch_idx, (euclid_images, jwst_images, _) in enumerate(train_loader):
+            # Move data to device
             euclid_images = euclid_images.to(device)
             jwst_images = jwst_images.to(device)
             
+            # Zero the parameter gradients
             stage1_optimizer.zero_grad()
             
+            # Forward pass
             outputs = model(euclid_images)
             
             # Compute individual losses
             l1_loss = l1_criterion(outputs, jwst_images)
             mse_loss = mse_criterion(outputs, jwst_images)
-            flux_loss = flux_criterion(outputs, jwst_images)
-            center_loss = center_weighted_l1(outputs, jwst_images)
+            loss = 0.7 * l1_loss + 0.3 * mse_loss
             
-            # Combine losses with configurable weights
-            l1_weight = config.get('l1_weight_stage1', 0.4)
-            loss = (l1_weight * l1_loss + 
-                    0.2 * mse_loss + 
-                    0.2 * flux_loss + 
-                    0.2 * center_loss)
-            
+            # Backward pass and optimize
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(
-                model.parameters(), 
-                max_norm=config.get('gradient_clip_norm', 0.5)
-            )
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
             stage1_optimizer.step()
             
             train_loss += loss.item()
             train_l1_loss += l1_loss.item()
             train_mse_loss += mse_loss.item()
-            train_flux_loss += flux_loss.item()
-            train_center_loss += center_loss.item()
+
+            # Calculate metrics for a subset of batches to avoid slowdown
+            if batch_idx % LOG_FREQ == 0:
+                batch_metrics = calculate_metrics(outputs, jwst_images)
+                for key in train_metrics:
+                    train_metrics[key] += batch_metrics[key]
         
         # Validation phase
         model.eval()
         val_loss = 0.0
         val_l1_loss = 0.0
         val_mse_loss = 0.0
-        val_flux_loss = 0.0
-        val_center_loss = 0.0
+        val_metrics = {'psnr': 0, 'ssim': 0, 'mae': 0, 'mse': 0}
         
         with torch.no_grad():
-            for batch_data in val_loader:
-                if len(batch_data) == 3:
-                    euclid_images, jwst_images, _ = batch_data
-                else:
-                    euclid_images, jwst_images = batch_data
-                
+            for batch_idx, (euclid_images, jwst_images, _) in enumerate(val_loader):
                 euclid_images = euclid_images.to(device)
                 jwst_images = jwst_images.to(device)
                 
                 outputs = model(euclid_images)
                 
+                # Calculate individual losses
                 l1_loss = l1_criterion(outputs, jwst_images)
                 mse_loss = mse_criterion(outputs, jwst_images)
-                flux_loss = flux_criterion(outputs, jwst_images)
-                center_loss = center_weighted_l1(outputs, jwst_images)
-                
-                l1_weight = config.get('l1_weight_stage1', 0.4)
-                loss = (l1_weight * l1_loss + 
-                        0.2 * mse_loss + 
-                        0.2 * flux_loss + 
-                        0.2 * center_loss)
+                loss = 0.7 * l1_loss + 0.3 * mse_loss
                 
                 val_loss += loss.item()
                 val_l1_loss += l1_loss.item()
                 val_mse_loss += mse_loss.item()
-                val_flux_loss += flux_loss.item()
-                val_center_loss += center_loss.item()
+
+                # Calculate metrics
+                batch_metrics = calculate_metrics(outputs, jwst_images)
+                for key in val_metrics:
+                    val_metrics[key] += batch_metrics[key]
         
         # Update learning rate
         stage1_scheduler.step()
         
-        # Compute averages
+        # Compute average losses
         avg_train_loss = train_loss / len(train_loader)
         avg_val_loss = val_loss / len(val_loader)
-        
+        avg_train_l1 = train_l1_loss / len(train_loader)
+        avg_val_l1 = val_l1_loss / len(val_loader)
+        avg_train_mse = train_mse_loss / len(train_loader)
+        avg_val_mse = val_mse_loss / len(val_loader)
+
+        # Average metrics
+        for key in train_metrics:
+            train_metrics[key] /= (len(train_loader) // 10 + 1)  # Adjust for sampling
+            val_metrics[key] /= len(val_loader)
+
         # Log to W&B
         wandb.log({
-            'stage1/epoch': epoch + 1,
-            'stage1/train_loss': avg_train_loss,
-            'stage1/val_loss': avg_val_loss,
-            'stage1/train_l1_loss': train_l1_loss / len(train_loader),
-            'stage1/val_l1_loss': val_l1_loss / len(val_loader),
-            'stage1/train_flux_loss': train_flux_loss / len(train_loader),
-            'stage1/val_flux_loss': val_flux_loss / len(val_loader),
-            'stage1/learning_rate': stage1_optimizer.param_groups[0]['lr'],
+            "stage1/epoch": epoch + 1,
+            "stage1/train_loss": avg_train_loss,
+            "stage1/val_loss": avg_val_loss,
+            "stage1/train_l1_loss": avg_train_l1,
+            "stage1/val_l1_loss": avg_val_l1,
+            "stage1/train_mse_loss": avg_train_mse,
+            "stage1/val_mse_loss": avg_val_mse,
+            "stage1/train_psnr": train_metrics['psnr'],
+            "stage1/val_psnr": val_metrics['psnr'],
+            "stage1/train_ssim": train_metrics['ssim'],
+            "stage1/val_ssim": val_metrics['ssim'],
+            "stage1/learning_rate": stage1_optimizer.param_groups[0]['lr'],
         })
         
-        # Track best validation loss
+        # Print epoch statistics
+        print(f'Stage 1 - Epoch {epoch+1}/{num_epochs_stage1}:')
+        print(f'Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}')
+
+        # Log sample images every 10 epochs
+        if (epoch + 1) % LOG_FREQ == 0:
+            log_sample_predictions(model, val_loader, device, "stage1", epoch + 1)
+        
+        # Save best model from stage 1
         if avg_val_loss < best_val_loss_stage1:
             best_val_loss_stage1 = avg_val_loss
-        
-        # Print progress
-        if (epoch + 1) % 5 == 0:
-            print(f'Stage 1 - Epoch {epoch+1}/{num_epochs_stage1}: '
-                  f'Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}')
+            torch.save(model.state_dict(), 'stage1_best_model.pth')
+            wandb.save('stage1_best_model.pth')
     
-    # =================================================================
-    # STAGE 2: Fine-tuning with Advanced Losses
-    # =================================================================
-    print(f"\n=== Stage 2: Fine-tuning ({num_epochs_stage2} epochs) ===")
+    # Stage 2: Fine-tuning with Advanced Losses
+    print("\n=== Stage 2: Fine-tuning ===")
     
-    # Add SSIM loss for stage 2
+    # Load best model from stage 1
+    model.load_state_dict(torch.load('stage1_best_model.pth'))
+    
+    # Advanced loss terms
     ssim_criterion = SSIMLoss()
     
-    stage2_optimizer = torch.optim.Adam(
-        model.parameters(), 
-        lr=config.get('lr_stage2', 0.00005),
-        weight_decay=config.get('weight_decay', 1e-4)
-    )
-    
+    # Stage 2 optimizer with lower learning rate
+    stage2_optimizer = torch.optim.Adam(model.parameters(), lr=0.00005)
     stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         stage2_optimizer, 
         T_max=num_epochs_stage2, 
@@ -928,61 +631,44 @@ def train_with_config_subset():
         train_l1_loss = 0.0
         train_mse_loss = 0.0
         train_ssim_loss = 0.0
-        train_flux_loss = 0.0
-        train_center_loss = 0.0
+        train_metrics = {'psnr': 0, 'ssim': 0, 'mae': 0, 'mse': 0}
         
-        for batch_data in train_loader:
-            if len(batch_data) == 3:
-                euclid_images, jwst_images, _ = batch_data
-            else:
-                euclid_images, jwst_images = batch_data
-            
+        for batch_idx, (euclid_images, jwst_images, _) in enumerate(train_loader):
+            # Move data to device
             euclid_images = euclid_images.to(device)
             jwst_images = jwst_images.to(device)
             
+            # Zero the parameter gradients
             stage2_optimizer.zero_grad()
             
+            # Forward pass
             outputs = model(euclid_images)
             
-            # Compute individual losses
+            # Compute advanced multi-component loss
             l1_loss = l1_criterion(outputs, jwst_images)
             mse_loss = mse_criterion(outputs, jwst_images)
             ssim_loss = ssim_criterion(outputs, jwst_images)
-            flux_loss = flux_criterion(outputs, jwst_images)
-            center_loss = center_weighted_l1(outputs, jwst_images)
             
-            # Combine losses with configurable weights
-            l1_weight = config.get('l1_weight_stage2', 0.3)
-            mse_weight = config.get('mse_weight_stage2', 0.2)
-            ssim_weight = config.get('ssim_weight_stage2', 0.1)
+            # Combine losses with weights
+            loss = (0.5 * l1_loss + 
+                    0.3 * mse_loss + 
+                    0.2 * ssim_loss)
             
-            # Normalize weights
-            total_weight = l1_weight + mse_weight + ssim_weight + 0.2 + 0.2  # +flux +center
-            l1_w = l1_weight / total_weight
-            mse_w = mse_weight / total_weight
-            ssim_w = ssim_weight / total_weight
-            flux_w = 0.2 / total_weight
-            center_w = 0.2 / total_weight
-            
-            loss = (l1_w * l1_loss + 
-                    mse_w * mse_loss + 
-                    ssim_w * ssim_loss + 
-                    flux_w * flux_loss + 
-                    center_w * center_loss)
-            
+            # Backward pass and optimize
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(
-                model.parameters(), 
-                max_norm=config.get('gradient_clip_norm', 0.5)
-            )
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
             stage2_optimizer.step()
             
             train_loss += loss.item()
             train_l1_loss += l1_loss.item()
             train_mse_loss += mse_loss.item()
             train_ssim_loss += ssim_loss.item()
-            train_flux_loss += flux_loss.item()
-            train_center_loss += center_loss.item()
+
+            # Calculate metrics for a subset of batches
+            if batch_idx % LOG_FREQ == 0:
+                batch_metrics = calculate_metrics(outputs, jwst_images)
+                for key in train_metrics:
+                    train_metrics[key] += batch_metrics[key]
         
         # Validation phase
         model.eval()
@@ -990,150 +676,115 @@ def train_with_config_subset():
         val_l1_loss = 0.0
         val_mse_loss = 0.0
         val_ssim_loss = 0.0
-        val_flux_loss = 0.0
-        val_center_loss = 0.0
+        val_metrics = {'psnr': 0, 'ssim': 0, 'mae': 0, 'mse': 0}
         
         with torch.no_grad():
-            for batch_data in val_loader:
-                if len(batch_data) == 3:
-                    euclid_images, jwst_images, _ = batch_data
-                else:
-                    euclid_images, jwst_images = batch_data
-                
+            for batch_idx, (euclid_images, jwst_images, _) in enumerate(val_loader):
                 euclid_images = euclid_images.to(device)
                 jwst_images = jwst_images.to(device)
                 
                 outputs = model(euclid_images)
                 
+                # Compute validation loss similarly
                 l1_loss = l1_criterion(outputs, jwst_images)
                 mse_loss = mse_criterion(outputs, jwst_images)
                 ssim_loss = ssim_criterion(outputs, jwst_images)
-                flux_loss = flux_criterion(outputs, jwst_images)
-                center_loss = center_weighted_l1(outputs, jwst_images)
                 
-                # Use same weights as training
-                loss = (l1_w * l1_loss + 
-                        mse_w * mse_loss + 
-                        ssim_w * ssim_loss + 
-                        flux_w * flux_loss + 
-                        center_w * center_loss)
+                loss = (0.5 * l1_loss + 
+                        0.3 * mse_loss + 
+                        0.2 * ssim_loss)
                 
                 val_loss += loss.item()
                 val_l1_loss += l1_loss.item()
                 val_mse_loss += mse_loss.item()
                 val_ssim_loss += ssim_loss.item()
-                val_flux_loss += flux_loss.item()
-                val_center_loss += center_loss.item()
+
+                # Calculate metrics
+                batch_metrics = calculate_metrics(outputs, jwst_images)
+                for key in val_metrics:
+                    val_metrics[key] += batch_metrics[key]
         
         # Update learning rate
         stage2_scheduler.step()
         
-        # Compute averages
+        # Compute average losses
         avg_train_loss = train_loss / len(train_loader)
         avg_val_loss = val_loss / len(val_loader)
+        avg_train_l1 = train_l1_loss / len(train_loader)
+        avg_val_l1 = val_l1_loss / len(val_loader)
+        avg_train_mse = train_mse_loss / len(train_loader)
+        avg_val_mse = val_mse_loss / len(val_loader)
+        avg_train_ssim_loss = train_ssim_loss / len(train_loader)
+        avg_val_ssim_loss = val_ssim_loss / len(val_loader)
         
+        # Average metrics
+        for key in train_metrics:
+            train_metrics[key] /= (len(train_loader) // 10 + 1)
+            val_metrics[key] /= len(val_loader)
+
         # Log to W&B
         wandb.log({
-            'stage2/epoch': epoch + 1,
-            'stage2/train_loss': avg_train_loss,
-            'stage2/val_loss': avg_val_loss,
-            'stage2/train_l1_loss': train_l1_loss / len(train_loader),
-            'stage2/val_l1_loss': val_l1_loss / len(val_loader),
-            'stage2/train_ssim_loss': train_ssim_loss / len(train_loader),
-            'stage2/val_ssim_loss': val_ssim_loss / len(val_loader),
-            'stage2/train_flux_loss': train_flux_loss / len(train_loader),
-            'stage2/val_flux_loss': val_flux_loss / len(val_loader),
-            'stage2/learning_rate': stage2_optimizer.param_groups[0]['lr'],
+            "stage2/epoch": epoch + 1,
+            "stage2/train_loss": avg_train_loss,
+            "stage2/val_loss": avg_val_loss,
+            "stage2/train_l1_loss": avg_train_l1,
+            "stage2/val_l1_loss": avg_val_l1,
+            "stage2/train_mse_loss": avg_train_mse,
+            "stage2/val_mse_loss": avg_val_mse,
+            "stage2/train_ssim_loss": avg_train_ssim_loss,
+            "stage2/val_ssim_loss": avg_val_ssim_loss,
+            "stage2/train_psnr": train_metrics['psnr'],
+            "stage2/val_psnr": val_metrics['psnr'],
+            "stage2/train_ssim": train_metrics['ssim'],
+            "stage2/val_ssim": val_metrics['ssim'],
+            "stage2/learning_rate": stage2_optimizer.param_groups[0]['lr'],
         })
+
+        # Log sample images every 5 epochs in stage 2
+        if (epoch + 1) % LOG_FREQ == 0:
+            log_sample_predictions(model, val_loader, device, "stage2", epoch + 1)
         
-        # Track best validation loss
+        # Print epoch statistics
+        print(f'Stage 2 - Epoch {epoch+1}/{num_epochs_stage2}:')
+        print(f'Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}')
+        
+        # Save best model from stage 2
         if avg_val_loss < best_val_loss_stage2:
             best_val_loss_stage2 = avg_val_loss
-        
-        # Print progress
-        if (epoch + 1) % 5 == 0:
-            print(f'Stage 2 - Epoch {epoch+1}/{num_epochs_stage2}: '
-                  f'Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}')
+            torch.save(model.state_dict(), 'models/final_best_model_2.pth')
+            wandb.save('models/final_best_model_2.pth')
+    
+    # Load and return the best model
+    model.load_state_dict(torch.load('models/final_best_model_2.pth'))
 
-    # Save comparison figure
-    print("Generating final comparison figure...")
+    # Log final sample predictions
     log_sample_predictions(model, val_loader, device, "final", 
-                          num_epochs_stage1 + num_epochs_stage2, num_samples=8)
+                           num_epochs_stage1 + num_epochs_stage2, num_samples=8)
     
-    # =================================================================
-    # Save Model and Final Logging
-    # =================================================================
-    
-    # Save this run's model and config
-    model_path, config_path = save_model_and_config(
-        model, config, best_val_loss_stage2, run_id
-    )
-    
-    # Log final metrics for sweep to optimize
-    final_metrics = {
-        'final_val_loss': best_val_loss_stage2,  # Primary metric for sweep
-        'stage1_best_val_loss': best_val_loss_stage1,
-        'stage2_best_val_loss': best_val_loss_stage2,
-        'combined_val_loss': best_val_loss_stage1 + best_val_loss_stage2,
-        'total_epochs': num_epochs_stage1 + num_epochs_stage2,
-        'subset_size': subset_size,
-        'model_path': model_path,
-        'config_path': config_path,
-        'run_id': run_id
-    }
-    
-    wandb.log(final_metrics)
-
-    stage1_to_stage2_improvement = best_val_loss_stage1 - best_val_loss_stage2
-    
+    # Log final metrics summary
     wandb.log({
-        'stage_transition/improvement': stage1_to_stage2_improvement,
-        'stage_transition/improvement_ratio': stage1_to_stage2_improvement / best_val_loss_stage1,
-        'stage_transition/stage1_final': best_val_loss_stage1,
-        'stage_transition/stage2_final': best_val_loss_stage2,
+        "summary/best_stage1_val_loss": best_val_loss_stage1,
+        "summary/best_stage2_val_loss": best_val_loss_stage2,
+        "summary/total_epochs": num_epochs_stage1 + num_epochs_stage2
     })
     
-    print(f"\nSweep run completed!")
-    print(f"Run ID: {run_id}")
-    print(f"Stage 1 best val loss: {best_val_loss_stage1:.6f}")
-    print(f"Stage 2 best val loss: {best_val_loss_stage2:.6f}")
-    print(f"Final val loss (sweep metric): {best_val_loss_stage2:.6f}")
-    print(f"Model saved to: {model_path}")
-    print(f"Config saved to: {config_path}")
-    
-    # Clean up
     wandb.finish()
     
-    return best_val_loss_stage2
+    return model
 
-# Create and run the sweep
-def run_sweep():
-    """Initialize and run the hyperparameter sweep"""
-    global GLOBAL_BEST_LOSS, GLOBAL_BEST_CONFIG, GLOBAL_BEST_MODEL_PATH
-    
-    # Reset global variables
-    GLOBAL_BEST_LOSS = float('inf')
-    GLOBAL_BEST_CONFIG = None
-    GLOBAL_BEST_MODEL_PATH = None
-    
-    # Initialize the sweep
-    sweep_id = wandb.sweep(
-        sweep_config, 
-        project="euclid-jwst-hyperparameter-sweep-v2"
-    )
-    
-    print(f"Starting sweep with ID: {sweep_id}")
-    
-    # Run the sweep
-    try:
-        wandb.agent(sweep_id, train_with_config_subset, count=100) # Run experiments
-    except KeyboardInterrupt:
-        print("\nSweep interrupted by user.")
-    except Exception as e:
-        print(f"\nSweep ended with error: {e}")
-    finally:
-        # Always print summary at the end
-        print_sweep_summary()
-
+# Usage example
 if __name__ == "__main__":
-    run_sweep()
+    # Make sure to install wandb first: pip install wandb
+    # Then login: wandb login
+    wandb.login()
+    
+    model = train_two_stage_with_wandb(
+        euclid_path='../data/euclid_NIR_cosmos_deconv_41px_Y.npy',
+        jwst_path='../data/jwst_cosmos_205px_F115W.npy',
+        val_split=0.2,
+        batch_size=8,
+        num_epochs_stage1=50,
+        num_epochs_stage2=50,
+        project_name="euclid-jwst-superres",
+        run_name="two-stage-training-deconv-v1.1"
+    )
