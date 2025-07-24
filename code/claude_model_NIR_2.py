@@ -1,3 +1,6 @@
+import os
+from datetime import datetime
+import json
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,7 +10,7 @@ import numpy as np
 import math
 import wandb
 import matplotlib.pyplot as plt
-from skimage.metrics import peak_signal_noise_ratio
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 import cv2
 
 from claude_sweep import sweep_config
@@ -523,24 +526,197 @@ def get_scheduler(optimizer, scheduler_type, **kwargs):
     else:
         raise ValueError(f"Unknown scheduler type: {scheduler_type}")
 
+def save_model_and_config(model, config, val_loss, run_id, save_dir='sweep_models'):
+    """
+    Save model checkpoint and configuration for each run
+    
+    Args:
+        model: Trained model
+        config: W&B config object
+        val_loss: Final validation loss
+        run_id: Unique run identifier
+        save_dir: Directory to save models
+    """
+    global GLOBAL_BEST_LOSS, GLOBAL_BEST_CONFIG, GLOBAL_BEST_MODEL_PATH
+    
+    # Create save directory
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Create unique filename for this run
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_filename = f"model_run_{run_id}_{timestamp}_loss_{val_loss:.6f}.pth"
+    config_filename = f"config_run_{run_id}_{timestamp}_loss_{val_loss:.6f}.json"
+    
+    model_path = os.path.join(save_dir, model_filename)
+    config_path = os.path.join(save_dir, config_filename)
+    
+    # Save model checkpoint
+    checkpoint = {
+        'model_state_dict': model.state_dict(),
+        'config': dict(config),
+        'final_val_loss': val_loss,
+        'run_id': run_id,
+        'timestamp': timestamp,
+        'model_architecture': {
+            'num_rrdb': config.get('num_rrdb', 8),
+            'features': config.get('features', 64)
+        }
+    }
+    
+    torch.save(checkpoint, model_path)
+    
+    # Save configuration as JSON
+    config_dict = {
+        'run_id': run_id,
+        'timestamp': timestamp,
+        'final_val_loss': val_loss,
+        'model_path': model_path,
+        'hyperparameters': dict(config),
+        'model_architecture': {
+            'num_rrdb': config.get('num_rrdb', 8),
+            'features': config.get('features', 64)
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        json.dump(config_dict, f, indent=2, default=str)
+    
+    print(f"Saved model: {model_path}")
+    print(f"Saved config: {config_path}")
+    
+    # Check if this is the best model overall
+    if val_loss < GLOBAL_BEST_LOSS:
+        GLOBAL_BEST_LOSS = val_loss
+        GLOBAL_BEST_CONFIG = dict(config)
+        GLOBAL_BEST_MODEL_PATH = model_path
+        
+        # Save as overall best model
+        best_model_path = os.path.join(save_dir, 'BEST_OVERALL_MODEL.pth')
+        best_config_path = os.path.join(save_dir, 'BEST_OVERALL_CONFIG.json')
+        
+        # Copy the best model
+        torch.save(checkpoint, best_model_path)
+        
+        # Save best config with additional info
+        best_config_dict = config_dict.copy()
+        best_config_dict['note'] = 'BEST OVERALL MODEL FROM SWEEP'
+        best_config_dict['original_model_path'] = model_path
+        
+        with open(best_config_path, 'w') as f:
+            json.dump(best_config_dict, f, indent=2, default=str)
+        
+        print(f"🏆 NEW BEST MODEL! Loss: {val_loss:.6f}")
+        print(f"🏆 Saved as: {best_model_path}")
+        
+        # Log to W&B as artifact
+        artifact = wandb.Artifact(
+            name=f"best-model-{run_id}", 
+            type="model",
+            description=f"Best model with validation loss {val_loss:.6f}"
+        )
+        artifact.add_file(model_path)
+        artifact.add_file(config_path)
+        wandb.log_artifact(artifact)
+    
+    # Always save this run's model as W&B artifact
+    artifact = wandb.Artifact(
+        name=f"model-run-{run_id}", 
+        type="model",
+        description=f"Model from run {run_id} with validation loss {val_loss:.6f}"
+    )
+    artifact.add_file(model_path)
+    artifact.add_file(config_path)
+    wandb.log_artifact(artifact)
+    
+    return model_path, config_path
+
+def print_sweep_summary(save_dir='sweep_models'):
+    """Print summary of all sweep runs and best model"""
+    global GLOBAL_BEST_LOSS, GLOBAL_BEST_CONFIG, GLOBAL_BEST_MODEL_PATH
+    
+    print("\n" + "="*80)
+    print("HYPERPARAMETER SWEEP SUMMARY")
+    print("="*80)
+    
+    if GLOBAL_BEST_CONFIG is not None:
+        print(f"\n🏆 BEST OVERALL MODEL:")
+        print(f"   Validation Loss: {GLOBAL_BEST_LOSS:.6f}")
+        print(f"   Model Path: {GLOBAL_BEST_MODEL_PATH}")
+        print(f"\n🏆 BEST HYPERPARAMETERS:")
+        for key, value in GLOBAL_BEST_CONFIG.items():
+            print(f"   {key}: {value}")
+        
+        # Save best parameters to a separate file
+        best_params_file = os.path.join(save_dir, 'BEST_HYPERPARAMETERS.json')
+        best_summary = {
+            'best_validation_loss': GLOBAL_BEST_LOSS,
+            'best_model_path': GLOBAL_BEST_MODEL_PATH,
+            'best_hyperparameters': GLOBAL_BEST_CONFIG,
+            'summary_generated': datetime.now().isoformat()
+        }
+        
+        with open(best_params_file, 'w') as f:
+            json.dump(best_summary, f, indent=2, default=str)
+        
+        print(f"\n📄 Best parameters saved to: {best_params_file}")
+    else:
+        print("No models were saved during the sweep.")
+    
+    # List all saved models
+    if os.path.exists(save_dir):
+        model_files = [f for f in os.listdir(save_dir) if f.endswith('.pth') and not f.startswith('BEST_OVERALL')]
+        print(f"\n📁 Total models saved: {len(model_files)}")
+        print(f"📁 Models directory: {save_dir}")
+    
+    print("="*80)
+
+def load_best_model():
+    """Function to load the best model from the sweep"""
+    best_model_path = 'sweep_models/BEST_OVERALL_MODEL.pth'
+    
+    if not os.path.exists(best_model_path):
+        raise FileNotFoundError(f"Best model not found at {best_model_path}")
+    
+    # Load checkpoint
+    checkpoint = torch.load(best_model_path, map_location='cpu')
+    
+    # Initialize model with saved architecture
+    model = EuclidToJWSTSuperResolution(
+        num_rrdb=checkpoint['model_architecture']['num_rrdb'],
+        features=checkpoint['model_architecture']['features']
+    )
+    
+    # Load weights
+    model.load_state_dict(checkpoint['model_state_dict'])
+    
+    print(f"Loaded best model with validation loss: {checkpoint['final_val_loss']:.6f}")
+    print(f"Model architecture: {checkpoint['model_architecture']}")
+    print(f"Best hyperparameters: {checkpoint['config']}")
+    
+    return model, checkpoint['config']
+
 def train_with_config_subset():
-    """Complete training function for hyperparameter sweep with data subset"""
-    wandb.init()
+    """Complete training function for hyperparameter sweep with model saving"""
+    wandb.login()
+    
+    run = wandb.init()
     config = wandb.config
+    run_id = run.id  # Get unique run ID
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
+    print(f"Run ID: {run_id}")
     
     # Create full dataset
     full_dataset = EuclidToJWSTDataset(
         euclid_path='../data/euclid_NIR_cosmos_41px_Y.npy',
         jwst_path='../data/jwst_cosmos_205px_F115W.npy',
-        normalize_method='flux_preserving'  # Use your preferred normalization
+        normalize_method='flux_preserving'
     )
     
     # SUBSET THE DATA FOR SWEEP
     total_samples = len(full_dataset)
-    subset_size = min(8000, total_samples)  # Use max 8000 samples for sweep
+    subset_size = min(8000, total_samples)
     
     print(f"Full dataset size: {total_samples}, using subset: {subset_size}")
     
@@ -878,10 +1054,20 @@ def train_with_config_subset():
         if (epoch + 1) % 5 == 0:
             print(f'Stage 2 - Epoch {epoch+1}/{num_epochs_stage2}: '
                   f'Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}')
+
+    # Save comparison figure
+    print("Generating final comparison figure...")
+    log_sample_predictions(model, val_loader, device, "final", 
+                          num_epochs_stage1 + num_epochs_stage2, num_samples=8)
     
     # =================================================================
-    # Final Logging for Sweep Optimization
+    # Save Model and Final Logging
     # =================================================================
+    
+    # Save this run's model and config
+    model_path, config_path = save_model_and_config(
+        model, config, best_val_loss_stage2, run_id
+    )
     
     # Log final metrics for sweep to optimize
     final_metrics = {
@@ -890,29 +1076,64 @@ def train_with_config_subset():
         'stage2_best_val_loss': best_val_loss_stage2,
         'combined_val_loss': best_val_loss_stage1 + best_val_loss_stage2,
         'total_epochs': num_epochs_stage1 + num_epochs_stage2,
-        'subset_size': subset_size
+        'subset_size': subset_size,
+        'model_path': model_path,
+        'config_path': config_path,
+        'run_id': run_id
     }
     
     wandb.log(final_metrics)
+
+    stage1_to_stage2_improvement = best_val_loss_stage1 - best_val_loss_stage2
+    
+    wandb.log({
+        'stage_transition/improvement': stage1_to_stage2_improvement,
+        'stage_transition/improvement_ratio': stage1_to_stage2_improvement / best_val_loss_stage1,
+        'stage_transition/stage1_final': best_val_loss_stage1,
+        'stage_transition/stage2_final': best_val_loss_stage2,
+    })
     
     print(f"\nSweep run completed!")
+    print(f"Run ID: {run_id}")
     print(f"Stage 1 best val loss: {best_val_loss_stage1:.6f}")
     print(f"Stage 2 best val loss: {best_val_loss_stage2:.6f}")
     print(f"Final val loss (sweep metric): {best_val_loss_stage2:.6f}")
+    print(f"Model saved to: {model_path}")
+    print(f"Config saved to: {config_path}")
     
     # Clean up
     wandb.finish()
+    
+    return best_val_loss_stage2
 
 # Create and run the sweep
 def run_sweep():
+    """Initialize and run the hyperparameter sweep"""
+    global GLOBAL_BEST_LOSS, GLOBAL_BEST_CONFIG, GLOBAL_BEST_MODEL_PATH
+    
+    # Reset global variables
+    GLOBAL_BEST_LOSS = float('inf')
+    GLOBAL_BEST_CONFIG = None
+    GLOBAL_BEST_MODEL_PATH = None
+    
     # Initialize the sweep
     sweep_id = wandb.sweep(
         sweep_config, 
-        project="euclid-jwst-hyperparameter-sweep"
+        project="euclid-jwst-hyperparameter-sweep-v2"
     )
     
+    print(f"Starting sweep with ID: {sweep_id}")
+    
     # Run the sweep
-    wandb.agent(sweep_id, train_with_config_subset, count=50)  # Run 50 experiments
+    try:
+        wandb.agent(sweep_id, train_with_config_subset, count=100) # Run experiments
+    except KeyboardInterrupt:
+        print("\nSweep interrupted by user.")
+    except Exception as e:
+        print(f"\nSweep ended with error: {e}")
+    finally:
+        # Always print summary at the end
+        print_sweep_summary()
 
 if __name__ == "__main__":
     run_sweep()
