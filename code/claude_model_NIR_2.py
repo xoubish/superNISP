@@ -6,7 +6,9 @@ from torchvision import transforms
 import numpy as np
 import math
 import cv2
+import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
+import matplotlib.pyplot as plt
 
 LOG_FREQ = 20
 
@@ -190,14 +192,15 @@ class SSIMLoss(nn.Module):
 
 # Dataset class
 class EuclidToJWSTDataset(Dataset):
-    # Table linking strings to functions
-    norm_methods = {
+    
+    def __init__(self, euclid_path, jwst_path, normalize_method='z_score'):
+        # Table linking strings to functions
+        norm_methods = {
             'z_score': self.z_score_normalization,
             'adaptive_hist': self.adaptive_histogram_normalization,
             'flux_preserving': self.flux_preserving_normalization,
         }
-    
-    def __init__(self, euclid_path, jwst_path, normalize_method='z_score'):
+        
         # Load data
         self.euclid_data = np.load(euclid_path)
         self.jwst_data = np.load(jwst_path)
@@ -207,11 +210,10 @@ class EuclidToJWSTDataset(Dataset):
         assert self.euclid_data.shape[1:] == (41, 41), f"Euclid images should be 41x41, got {self.euclid_data.shape[1:]}"
         assert self.jwst_data.shape[1:] == (205, 205), f"JWST images should be 205x205, got {self.jwst_data.shape[1:]}"
         self.normalize_method = normalize_method
-        self.norm_method = self.norm_methods[normalize_method]
+        self.norm_method = norm_methods[normalize_method]
         self.transform = None  # Will be set externally if needed
 
     def normalize_data(self, euclid_img, jwst_img):
-
         euclid_norm, euclid_stats = self.norm_method(euclid_img)
         jwst_norm, jwst_stats = self.norm_method(jwst_img)
 
@@ -399,7 +401,7 @@ def log_sample_predictions(model, val_loader, device, stage_name, epoch, num_sam
     model.eval()
     
     with torch.no_grad():
-        for euclid_imgs, jwst_imgs in val_loader:
+        for euclid_imgs, jwst_imgs, _ in val_loader:
             euclid_imgs = euclid_imgs.to(device)
             jwst_imgs = jwst_imgs.to(device)
             
@@ -441,8 +443,9 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
             "features": 64,
             "loss_stage1": "L1 + MSE",
             "loss_stage2": "L1 + MSE + SSIM",
-            "normalization": "z_score"
-        }
+            "normalization": "z_score",
+        },
+        save_code=True
     )
     
     # Determine device
@@ -454,7 +457,7 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
     full_dataset = EuclidToJWSTDataset(
         euclid_path, 
         jwst_path, 
-        normalize_method='flux_preserving'  # Fixed the method name
+        normalize_method='z_score'
     )
     
     # Calculate split sizes
@@ -778,7 +781,7 @@ if __name__ == "__main__":
     # Then login: wandb login
     wandb.login()
     
-    model = train_two_stage_with_wandb(
+    model = train_two_stage(
         euclid_path='../data/euclid_NIR_cosmos_deconv_41px_Y.npy',
         jwst_path='../data/jwst_cosmos_205px_F115W.npy',
         val_split=0.2,
