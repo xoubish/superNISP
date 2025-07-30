@@ -9,7 +9,7 @@ import yaml
 sweep_config = {
     'method': 'bayes',
     'metric': {
-        'name': 'final_val_loss',  # This matches what we log above
+        'name': 'final_sweep_loss',  # This matches what we log above
         'goal': 'minimize'
     },
     'parameters': {
@@ -20,7 +20,6 @@ sweep_config = {
         'features': {
             'values': [32, 64, 96]
         },
-        
         # Training parameters
         'batch_size': {
             'values': [8, 16]
@@ -35,19 +34,25 @@ sweep_config = {
             'min': 1e-5,
             'max': 1e-4
         },
+        # 'num_epochs_stage1': {
+        #     'values': [20, 30, 40, 50]
+        # },
+        # 'num_epochs_stage2': {
+        #     'values': [20, 30, 40, 50]
+        # },
         
         # Loss function weights
         'l1_weight_stage1': {
-            'values': [0.3, 0.4, 0.5]
+            'values': [0.6, 0.7, 0.8]
         },
-        'l1_weight_stage2': {
-            'values': [0.2, 0.3, 0.4]
-        },
+        # 'l1_weight_stage2': {
+        #     'values': [0.2, 0.3, 0.4]
+        # },
         'mse_weight_stage2': {
-            'values': [0.1, 0.2, 0.3]
+            'values': [0.1, 0.2, 0.3, .4]
         },
         'ssim_weight_stage2': {
-            'values': [0.05, 0.1, 0.15]
+            'values': [0.05, 0.1, 0.15, .2, .3, .4, .5]
         },
         
         # Regularization

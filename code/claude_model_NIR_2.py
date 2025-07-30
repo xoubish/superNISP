@@ -6,11 +6,18 @@ from torchvision import transforms
 import numpy as np
 import math
 import cv2
+import json
 import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 import matplotlib.pyplot as plt
 
-LOG_FREQ = 20
+from claude_sweep import sweep_config
+
+LOG_FREQ = 10
+# Global variable to track best overall performance
+GLOBAL_BEST_LOSS = float('inf')
+best_model_path = f'models/final_best_sweep_model.pth'
+best_config_path = f'models/final_best_sweep_config.json'
 
 class ResidualDenseBlock(nn.Module):
     """Enhanced Residual Dense Block with local feature fusion"""
@@ -421,32 +428,25 @@ def log_sample_predictions(model, val_loader, device, stage_name, epoch, num_sam
             break  # Only log first batch
 
 # Training function
-def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8, 
-                    num_epochs_stage1=50, num_epochs_stage2=50, 
-                    project_name='euclid_jwst_superres', run_name=None):
+def train_for_sweep():
+
+    global GLOBAL_BEST_LOSS
 
     # Initialize W&B
-    wandb.init(
-        project=project_name,
-        name=run_name,
-        config={
-            "architecture": "EuclidToJWSTSuperResolution",
-            "batch_size": batch_size,
-            "num_epochs_stage1": num_epochs_stage1,
-            "num_epochs_stage2": num_epochs_stage2,
-            "val_split": val_split,
-            "optimizer_stage1": "Adam",
-            "optimizer_stage2": "Adam",
-            "lr_stage1": 0.0001,
-            "lr_stage2": 0.00005,
-            "num_rrdb": 8,
-            "features": 64,
-            "loss_stage1": "L1 + MSE",
-            "loss_stage2": "L1 + MSE + SSIM",
-            "normalization": "z_score",
-        },
-        save_code=True
-    )
+    run = wandb.init(save_code=True)
+    config = wandb.config
+    run_id = run.id  # Get unique run ID
+    
+    model_path = f'models/best_sweep_model_{run_id}.pth'
+    config_path = f'models/best_sweep_config_{run_id}.pth'
+
+    wandb.config.update({"optimizer_stage1": "Adam",
+                         "optimizer_stage2": "Adam",
+                         "euclid_path": "../data/euclid_NIR_cosmos_41px_Y.npy",
+                         "jwst_path": "../data/jwst_cosmos_205px_F115W.npy",
+                         "val_split": 0.2,
+                         "normalization": "z_score",
+                        })
     
     # Determine device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -455,14 +455,14 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
 
     # Create dataset
     full_dataset = EuclidToJWSTDataset(
-        euclid_path, 
-        jwst_path, 
-        normalize_method='z_score'
+        config.euclid_path, 
+        config.jwst_path, 
+        normalize_method=config.normalization
     )
     
     # Calculate split sizes
     dataset_size = len(full_dataset)
-    val_size = int(val_split * dataset_size)
+    val_size = int(config.val_split * dataset_size)
     train_size = dataset_size - val_size
     
     # Split the dataset
@@ -473,16 +473,24 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
     wandb.config.update({"train_size": train_size, "val_size": val_size})
     
     # Create dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=16)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=16)
     
     # Initialize model
-    model = EuclidToJWSTSuperResolution(num_rrdb=8, features=64).to(device)
+    model = EuclidToJWSTSuperResolution(
+        num_rrdb=config.get('num_rrdb', 8),
+        features=config.get('features', 64)
+    ).to(device)
     wandb.watch(model, log_freq=100)
+
+    num_epochs_stage1 = config.get('num_epochs_stage1', 30)
+    num_epochs_stage2 = config.get('num_epochs_stage2', 30)
     
     # Stage 1: Initial Training with Basic Loss Functions
     print("\n=== Stage 1: Initial Training ===")
-    stage1_optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    stage1_optimizer = torch.optim.Adam(model.parameters(), 
+                                        lr=config.get('lr_stage1', 0.0001),
+                                        weight_decay=config.get('weight_decay', 1e-4))
     stage1_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         stage1_optimizer, 
         T_max=num_epochs_stage1, 
@@ -492,6 +500,8 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
     # Loss functions
     l1_criterion = nn.L1Loss()
     mse_criterion = nn.MSELoss()
+    # Advanced loss terms
+    ssim_criterion = SSIMLoss()
     
     best_val_loss_stage1 = float('inf')
     
@@ -517,13 +527,23 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
             # Compute individual losses
             l1_loss = l1_criterion(outputs, jwst_images)
             mse_loss = mse_criterion(outputs, jwst_images)
-            loss = 0.7 * l1_loss + 0.3 * mse_loss
+            ssim_loss = ssim_criterion(outputs, jwst_images)
+
+            # Normalize weights
+            l1_weight, mse_weight = config.get('l1_weight_stage1', 0.7), 0.3
+            total_weight = l1_weight + mse_weight
+            l1_weight, mse_weight = l1_weight/total_weight, mse_weight/total_weight
+
+            # Compute overall loss
+            loss = l1_weight * l1_loss + mse_weight * mse_loss
             
             # Backward pass and optimize
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 
+                                           max_norm=config.get('gradient_clip_norm', 0.5))
             stage1_optimizer.step()
-            
+
+            # Update loss
             train_loss += loss.item()
             train_l1_loss += l1_loss.item()
             train_mse_loss += mse_loss.item()
@@ -539,6 +559,7 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         val_loss = 0.0
         val_l1_loss = 0.0
         val_mse_loss = 0.0
+        # val_sweep_loss = 0.0
         val_metrics = {'psnr': 0, 'ssim': 0, 'mae': 0, 'mse': 0}
         
         with torch.no_grad():
@@ -551,11 +572,14 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
                 # Calculate individual losses
                 l1_loss = l1_criterion(outputs, jwst_images)
                 mse_loss = mse_criterion(outputs, jwst_images)
-                loss = 0.7 * l1_loss + 0.3 * mse_loss
+                
+                loss = l1_weight * l1_loss + mse_weight * mse_loss
+                # sweep_loss = 0.5 * l1_loss + 0.5 * ssim_loss
                 
                 val_loss += loss.item()
                 val_l1_loss += l1_loss.item()
                 val_mse_loss += mse_loss.item()
+                # val_sweep_loss += sweep_loss.item()
 
                 # Calculate metrics
                 batch_metrics = calculate_metrics(outputs, jwst_images)
@@ -575,7 +599,7 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
 
         # Average metrics
         for key in train_metrics:
-            train_metrics[key] /= (len(train_loader) // 10 + 1)  # Adjust for sampling
+            train_metrics[key] /= (len(train_loader) // LOG_FREQ + 1)  # Adjust for sampling
             val_metrics[key] /= len(val_loader)
 
         # Log to W&B
@@ -599,26 +623,27 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         print(f'Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}')
 
         # Log sample images every 10 epochs
-        if (epoch + 1) % LOG_FREQ == 0:
-            log_sample_predictions(model, val_loader, device, "stage1", epoch + 1)
+        # if (epoch + 1) % LOG_FREQ == 0:
+        #     log_sample_predictions(model, val_loader, device, "stage1", epoch + 1)
         
         # Save best model from stage 1
         if avg_val_loss < best_val_loss_stage1:
             best_val_loss_stage1 = avg_val_loss
-            torch.save(model.state_dict(), 'stage1_best_model.pth')
-            wandb.save('stage1_best_model.pth')
+            torch.save(model.state_dict(), 'models/stage1_best_model.pth')
+            wandb.save('models/stage1_best_model.pth')
+
+    log_sample_predictions(model, val_loader, device, "stage1", epoch + 1)
     
     # Stage 2: Fine-tuning with Advanced Losses
     print("\n=== Stage 2: Fine-tuning ===")
     
     # Load best model from stage 1
-    model.load_state_dict(torch.load('stage1_best_model.pth'))
-    
-    # Advanced loss terms
-    ssim_criterion = SSIMLoss()
+    best_stage1 = wandb.restore('models/stage1_best_model.pth', replace=True)
+    checkpoint = torch.load(best_stage1.name, map_location=device)
+    model.load_state_dict(checkpoint)
     
     # Stage 2 optimizer with lower learning rate
-    stage2_optimizer = torch.optim.Adam(model.parameters(), lr=0.00005)
+    stage2_optimizer = torch.optim.Adam(model.parameters(), lr=config.get('lr_stage2', 0.00005))
     stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         stage2_optimizer, 
         T_max=num_epochs_stage2, 
@@ -626,6 +651,7 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
     )
     
     best_val_loss_stage2 = float('inf')
+    best_sweep_loss = float('inf')
     
     for epoch in range(num_epochs_stage2):
         # Training phase
@@ -651,15 +677,24 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
             l1_loss = l1_criterion(outputs, jwst_images)
             mse_loss = mse_criterion(outputs, jwst_images)
             ssim_loss = ssim_criterion(outputs, jwst_images)
+
+            # Compute weights
+            l1_weight = 0.4
+            mse_weight = config.get('mse_weight_stage2', .3)
+            ssim_weight = config.get('ssim_weight_stage2', .3)
+            total_weight = l1_weight + mse_weight + ssim_weight
+            l1_weight = l1_weight/total_weight
+            mse_weight, ssim_weight = mse_weight/total_weight, ssim_weight/total_weight
             
             # Combine losses with weights
-            loss = (0.5 * l1_loss + 
-                    0.3 * mse_loss + 
-                    0.2 * ssim_loss)
+            loss = (l1_weight * l1_loss + 
+                    mse_weight * mse_loss + 
+                    ssim_weight * ssim_loss)
             
             # Backward pass and optimize
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
+            torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                           max_norm=config.get('gradient_clip_norm', .5))
             stage2_optimizer.step()
             
             train_loss += loss.item()
@@ -679,6 +714,7 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         val_l1_loss = 0.0
         val_mse_loss = 0.0
         val_ssim_loss = 0.0
+        val_sweep_loss = 0.0
         val_metrics = {'psnr': 0, 'ssim': 0, 'mae': 0, 'mse': 0}
         
         with torch.no_grad():
@@ -693,14 +729,18 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
                 mse_loss = mse_criterion(outputs, jwst_images)
                 ssim_loss = ssim_criterion(outputs, jwst_images)
                 
-                loss = (0.5 * l1_loss + 
-                        0.3 * mse_loss + 
-                        0.2 * ssim_loss)
+                loss = (l1_weight * l1_loss + 
+                        mse_weight * mse_loss + 
+                        ssim_weight * ssim_loss)
+
+                sweep_loss = 0.5 * l1_loss + 0.5 * ssim_loss
                 
                 val_loss += loss.item()
                 val_l1_loss += l1_loss.item()
                 val_mse_loss += mse_loss.item()
                 val_ssim_loss += ssim_loss.item()
+
+                val_sweep_loss += sweep_loss.item()
 
                 # Calculate metrics
                 batch_metrics = calculate_metrics(outputs, jwst_images)
@@ -719,6 +759,8 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         avg_val_mse = val_mse_loss / len(val_loader)
         avg_train_ssim_loss = train_ssim_loss / len(train_loader)
         avg_val_ssim_loss = val_ssim_loss / len(val_loader)
+
+        avg_sweep_loss = val_sweep_loss / len(val_loader)
         
         # Average metrics
         for key in train_metrics:
@@ -740,12 +782,13 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
             "stage2/val_psnr": val_metrics['psnr'],
             "stage2/train_ssim": train_metrics['ssim'],
             "stage2/val_ssim": val_metrics['ssim'],
+            "stage2/val_sweep_loss": avg_sweep_loss,
             "stage2/learning_rate": stage2_optimizer.param_groups[0]['lr'],
         })
 
         # Log sample images every 5 epochs in stage 2
-        if (epoch + 1) % LOG_FREQ == 0:
-            log_sample_predictions(model, val_loader, device, "stage2", epoch + 1)
+        # if (epoch + 1) % 5 == 0:
+        #     log_sample_predictions(model, val_loader, device, "stage2", epoch + 1)
         
         # Print epoch statistics
         print(f'Stage 2 - Epoch {epoch+1}/{num_epochs_stage2}:')
@@ -754,26 +797,121 @@ def train_two_stage(euclid_path, jwst_path, val_split=0.2, batch_size=8,
         # Save best model from stage 2
         if avg_val_loss < best_val_loss_stage2:
             best_val_loss_stage2 = avg_val_loss
-            torch.save(model.state_dict(), 'models/final_best_model_2.pth')
-            wandb.save('models/final_best_model_2.pth')
+            torch.save(model.state_dict(), 'models/stage2_best_model.pth')
+            wandb.save('models/stage2_best_model.pth')
+
+        # Save best sweep loss metrics
+        if avg_sweep_loss < best_sweep_loss:
+            best_sweep_loss = avg_sweep_loss
+            torch.save(model.state_dict(), model_path)
+            wandb.save(model_path)
+            
+            # Save configuration as JSON
+            config_dict = {
+                'run_id': run_id,
+                'final_val_loss': avg_val_loss,
+                'final_sweep_loss': best_sweep_loss,
+                'epochs': num_epochs_stage1+num_epochs_stage2,
+                'model_path': model_path,
+                'hyperparameters': dict(config),
+                'model_architecture': {
+                    'num_rrdb': config.get('num_rrdb', 8),
+                    'features': config.get('features', 64)
+                }
+            }
+            
+            with open(config_path, 'w') as f:
+                json.dump(config_dict, f, indent=2, default=str)
+            
+            if avg_sweep_loss < GLOBAL_BEST_LOSS:
+                print(f"🏆 NEW BEST MODEL! Loss: {avg_sweep_loss:.6f}")
+                print(f"🏆 Saved as: {best_model_path}")
+                GLOBAL_BEST_LOSS = avg_sweep_loss
+                with open(best_config_path, 'w') as f:
+                    json.dump(config_dict, f, indent=2, default=str)
+                torch.save(model.state_dict(), best_model_path)
     
     # Load and return the best model
-    model.load_state_dict(torch.load('models/final_best_model_2.pth'))
+    # model.load_state_dict(torch.load('models/final_best_model_2.pth'))
 
     # Log final sample predictions
+    print("Generating final comparison figure...")
     log_sample_predictions(model, val_loader, device, "final", 
                            num_epochs_stage1 + num_epochs_stage2, num_samples=8)
     
     # Log final metrics summary
+    log_tbl = wandb.Table(columns=["total_epochs", "best_stage1_val_loss", "best_stage2_val_loss"])
+    log_tbl.add_data(num_epochs_stage1+num_epochs_stage2, best_val_loss_stage1, best_val_loss_stage2)
+    wandb.log({"final/table": log_tbl})
+    # wandb.log({
+    #     "summary/best_stage1_val_loss": best_val_loss_stage1,
+    #     "summary/best_stage2_val_loss": best_val_loss_stage2,
+    #     "summary/total_epochs": num_epochs_stage1 + num_epochs_stage2
+    # })
+
+    # Log final metrics for sweep to optimize
+    final_metrics = {
+        'final_val_loss': best_val_loss_stage2,  # Primary metric for sweep
+        'final_sweep_loss': best_sweep_loss,
+        'stage1_best_val_loss': best_val_loss_stage1,
+        'stage2_best_val_loss': best_val_loss_stage2,
+        'combined_val_loss': best_val_loss_stage1 + best_val_loss_stage2,
+        'total_epochs': num_epochs_stage1 + num_epochs_stage2,
+        'best_sweep_model_path': model_path,
+        'best_sweep_config_path': config_path,
+        'run_id': run_id
+    }
+    
+    wandb.log(final_metrics)
+
+    stage1_to_stage2_improvement = best_val_loss_stage1 - best_val_loss_stage2
+    
     wandb.log({
-        "summary/best_stage1_val_loss": best_val_loss_stage1,
-        "summary/best_stage2_val_loss": best_val_loss_stage2,
-        "summary/total_epochs": num_epochs_stage1 + num_epochs_stage2
+        'stage_transition/improvement': stage1_to_stage2_improvement,
+        'stage_transition/improvement_ratio': stage1_to_stage2_improvement / best_val_loss_stage1,
+        'stage_transition/stage1_final': best_val_loss_stage1,
+        'stage_transition/stage2_final': best_val_loss_stage2,
     })
+    
+    print(f"\nSweep run completed!")
+    print(f"Run ID: {run_id}")
+    print(f"Stage 1 best val loss: {best_val_loss_stage1:.6f}")
+    print(f"Stage 2 best val loss: {best_val_loss_stage2:.6f}")
+    print(f"Final loss (sweep metric): {best_sweep_loss:.6f}")
+    print(f"Model saved to: {model_path}")
     
     wandb.finish()
     
-    return model
+    # return model
+    return best_val_loss_stage2
+
+# Create and run the sweep
+def run_sweep():
+    """Initialize and run the hyperparameter sweep"""
+    global GLOBAL_BEST_LOSS
+    
+    # Reset global variables
+    GLOBAL_BEST_LOSS = float('inf')
+    
+    # Initialize the sweep
+    sweep_id = wandb.sweep(
+        sweep_config,
+        project="euclid-jwst-hyperparameter-sweep-v3"
+    )
+    
+    print(f"Starting sweep with ID: {sweep_id}")
+    
+    # Run the sweep
+    try:
+        wandb.agent(sweep_id, train_for_sweep, count=50) # Run experiments
+    except KeyboardInterrupt:
+        print("\nSweep interrupted by user.")
+    except Exception as e:
+        print(f"\nSweep ended with error: {e}")
+    finally:
+        # Always print summary at the end
+        # print_sweep_summary()
+        print("Summary here")
 
 # Usage example
 if __name__ == "__main__":
@@ -781,13 +919,4 @@ if __name__ == "__main__":
     # Then login: wandb login
     wandb.login()
     
-    model = train_two_stage(
-        euclid_path='../data/euclid_NIR_cosmos_deconv_41px_Y.npy',
-        jwst_path='../data/jwst_cosmos_205px_F115W.npy',
-        val_split=0.2,
-        batch_size=8,
-        num_epochs_stage1=50,
-        num_epochs_stage2=50,
-        project_name="euclid-jwst-superres",
-        run_name="two-stage-training-deconv-v1.1"
-    )
+    run_sweep()
