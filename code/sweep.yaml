@@ -40,10 +40,6 @@ parameters:
     min: 20
     max: 100
 
-  upscale_factor:
-    distribution: categorical
-    values: [2, 3, 4]
-
   weight_decay:
     distribution: uniform
     min: 0.0001
