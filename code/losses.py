@@ -1,12 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 from torchvision.models import vgg16, VGG16_Weights
 
-def gaussian_weight_map(shape, sigma=0.3):
+def gaussian_weight_map(shape, sigma=0.3, device=None):
     """Generates a Gaussian weight map centered in the middle of the image."""
     B, C, H, W = shape
-    y, x = torch.meshgrid(torch.linspace(-1, 1, H, device='cuda'), torch.linspace(-1, 1, W, device='cuda'))
+    if device is None:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    y, x = torch.meshgrid(
+        torch.linspace(-1, 1, H, device=device),
+        torch.linspace(-1, 1, W, device=device),
+        indexing='ij'
+    )
     d = torch.sqrt(x**2 + y**2)
     weights = torch.exp(- (d**2) / (2 * sigma**2))
     return weights.expand(B, C, H, W)
@@ -87,6 +94,3 @@ class HybridLoss(nn.Module):
             shape_loss = 0.0
 
         return mse_loss + l1_loss + perceptual_loss + shape_loss
-
-
-
