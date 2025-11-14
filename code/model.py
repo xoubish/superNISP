@@ -172,6 +172,14 @@ class SuperResolutionDiffusion(nn.Module):
             noisy_image = alpha_t * upscaled + (1 - alpha_t) * noise
             # Predict noise (standard diffusion training)
             predicted_noise = self.diffusion(noisy_image, t, upscaled)
+            # Interpolate predicted noise to match noise size (UNet may output different size)
+            if predicted_noise.shape != noise.shape:
+                predicted_noise = F.interpolate(
+                    predicted_noise, 
+                    size=noise.shape[2:], 
+                    mode="bilinear", 
+                    align_corners=True
+                )
             # Return predicted noise for loss computation
             return predicted_noise, noise
         else:
@@ -181,6 +189,9 @@ class SuperResolutionDiffusion(nn.Module):
             # Resize to target size if specified
             if self.output_size is not None:
                 output = F.interpolate(output, size=self.output_size, mode="bilinear", align_corners=True)
+            else:
+                # If no output_size specified, resize to match upscaled size
+                output = F.interpolate(output, size=upscaled.shape[2:], mode="bilinear", align_corners=True)
             return output
 
 # Diffusion noise schedule
