@@ -7,7 +7,7 @@ command:
 method: bayes
 
 metric:
-  name: train_loss
+  name: val_loss
   goal: minimize
 
 parameters:
@@ -30,14 +30,19 @@ parameters:
     min: 5e-05
     max: 0.0006
 
-  optimizer:
-    distribution: categorical
-    values: [Adam, AdamW]
-
   timesteps:
     distribution: int_uniform
     min: 250
     max: 1000
+
+  inference_timesteps:
+    distribution: int_uniform
+    min: 20
+    max: 100
+
+  upscale_factor:
+    distribution: categorical
+    values: [2, 3, 4]
 
   weight_decay:
     distribution: uniform
@@ -63,6 +68,36 @@ parameters:
     distribution: uniform
     min: 0.0
     max: 0.2
+
+  hybrid_loss_weight:
+    distribution: uniform
+    min: 0.01
+    max: 0.5
+
+  grad_clip:
+    distribution: uniform
+    min: 0.5
+    max: 2.0
+
+  warmup_epochs:
+    distribution: int_uniform
+    min: 0
+    max: 10
+
+  ema_decay:
+    distribution: uniform
+    min: 0.999
+    max: 0.9999
+
+  early_stop_patience:
+    distribution: int_uniform
+    min: 10
+    max: 25
+
+  early_stop_min_delta:
+    distribution: uniform
+    min: 0.00001
+    max: 0.001
 
 program: train.py
 
