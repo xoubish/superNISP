@@ -37,7 +37,8 @@ def validate_model(model, val_loader, device, config):
     """Validation loop."""
     model.eval()
     val_loss = 0.0
-    val_shape_errors = []
+    val_shape_errors_e1 = []
+    val_shape_errors_e2 = []
     
     with torch.no_grad():
         for lr_batch, hr_batch in val_loader:
@@ -53,25 +54,24 @@ def validate_model(model, val_loader, device, config):
             val_loss += loss.item()
             
             # Compute shape errors on a sample
-            if len(val_shape_errors) < 10:  # Sample a few for shape error
+            if len(val_shape_errors_e1) < 10:  # Sample a few for shape error
                 with torch.amp.autocast(device_type='cuda' if device.type == 'cuda' else 'cpu'):
                     # Inference mode: get denoised output
                     t_zero = torch.zeros((lr_batch.shape[0],), dtype=torch.long, device=device)
                     sr_output = model(lr_batch, t_zero, training=False)
                     e_pred = compute_ellipticity_from_moments(sr_output)
                     e_true = compute_ellipticity_from_moments(hr_batch)
-                    # Compute mean error across batch, then take mean of e1 and e2 separately
+                    # Compute mean error across batch for each component
                     shape_error = torch.abs(e_pred - e_true).mean(dim=0)  # Shape: [2]
-                    val_shape_errors.append(shape_error)
+                    val_shape_errors_e1.append(shape_error[0].item())  # Store scalar
+                    val_shape_errors_e2.append(shape_error[1].item())  # Store scalar
     
     avg_val_loss = val_loss / len(val_loader)
-    # Stack all shape errors and compute mean - should result in [2] shape
-    if val_shape_errors:
-        avg_shape_error = torch.stack(val_shape_errors).mean(dim=0)  # Shape: [2]
-    else:
-        avg_shape_error = torch.tensor([0.0, 0.0], device=device)
+    # Compute mean of scalar values
+    avg_shape_error_e1 = sum(val_shape_errors_e1) / len(val_shape_errors_e1) if val_shape_errors_e1 else 0.0
+    avg_shape_error_e2 = sum(val_shape_errors_e2) / len(val_shape_errors_e2) if val_shape_errors_e2 else 0.0
     
-    return avg_val_loss, avg_shape_error
+    return avg_val_loss, (avg_shape_error_e1, avg_shape_error_e2)
 
 def main():
     # Initialize Weights & Biases
@@ -152,15 +152,15 @@ def main():
         avg_loss = epoch_loss / len(train_loader)
         
         # Validation
-        val_loss, avg_shape_error = validate_model(model, val_loader, device, config)
+        val_loss, (avg_shape_error_e1, avg_shape_error_e2) = validate_model(model, val_loader, device, config)
         scheduler.step(val_loss)
 
         wandb.log({
             "epoch": epoch + 1,
             "train_loss": avg_loss,
             "val_loss": val_loss,
-            "val_shape_error_e1": avg_shape_error[0].item() if avg_shape_error.numel() > 0 else 0.0,
-            "val_shape_error_e2": avg_shape_error[1].item() if avg_shape_error.numel() > 1 else 0.0,
+            "val_shape_error_e1": avg_shape_error_e1,
+            "val_shape_error_e2": avg_shape_error_e2,
             "learning_rate": optimizer.param_groups[0]["lr"],
             "elapsed_time": time.time() - start_time
         })
