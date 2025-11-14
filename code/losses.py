@@ -35,25 +35,30 @@ def compute_ellipticity_from_moments(img):
     x = x[None, None, :, :].expand(B, 1, H, W)
     y = y[None, None, :, :].expand(B, 1, H, W)
 
-    # Total flux
-    flux = img.sum(dim=[2, 3], keepdim=True)
+    # Total flux - sum over spatial dimensions
+    flux = img.sum(dim=[2, 3])  # Shape: (B, 1)
 
     # Centroid
-    x_bar = (img * x).sum(dim=[2, 3], keepdim=True) / (flux + 1e-8)
-    y_bar = (img * y).sum(dim=[2, 3], keepdim=True) / (flux + 1e-8)
+    x_bar = (img * x).sum(dim=[2, 3]) / (flux + 1e-8)  # Shape: (B, 1)
+    y_bar = (img * y).sum(dim=[2, 3]) / (flux + 1e-8)  # Shape: (B, 1)
 
     # Centered coords
-    dx = x - x_bar
-    dy = y - y_bar
+    dx = x - x_bar.unsqueeze(-1).unsqueeze(-1)  # Broadcast: (B, 1, H, W)
+    dy = y - y_bar.unsqueeze(-1).unsqueeze(-1)  # Broadcast: (B, 1, H, W)
 
-    # Moments
-    Mxx = (img * dx**2).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
-    Myy = (img * dy**2).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
-    Mxy = (img * dx * dy).sum(dim=[2, 3]) / (flux.squeeze() + 1e-8)
+    # Moments - sum over spatial dimensions
+    Mxx = (img * dx**2).sum(dim=[2, 3]) / (flux + 1e-8)  # Shape: (B, 1)
+    Myy = (img * dy**2).sum(dim=[2, 3]) / (flux + 1e-8)  # Shape: (B, 1)
+    Mxy = (img * dx * dy).sum(dim=[2, 3]) / (flux + 1e-8)  # Shape: (B, 1)
+
+    # Squeeze the channel dimension to get (B,)
+    Mxx = Mxx.squeeze(1)  # Shape: (B,)
+    Myy = Myy.squeeze(1)  # Shape: (B,)
+    Mxy = Mxy.squeeze(1)  # Shape: (B,)
 
     # e1 and e2 (ellipticity)
-    e1 = (Mxx - Myy) / (Mxx + Myy + 1e-8)
-    e2 = 2 * Mxy / (Mxx + Myy + 1e-8)
+    e1 = (Mxx - Myy) / (Mxx + Myy + 1e-8)  # Shape: (B,)
+    e2 = 2 * Mxy / (Mxx + Myy + 1e-8)  # Shape: (B,)
 
     return torch.stack([e1, e2], dim=1)  # shape: (B, 2)
 
