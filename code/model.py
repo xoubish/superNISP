@@ -143,14 +143,15 @@ class DiffusionModel(nn.Module):
         return self.unet(x, condition, t_emb)
 
 class SuperResolutionDiffusion(nn.Module):
-    def __init__(self, unet_model, upsampler, timesteps=500, output_size=None):
+    def __init__(self, unet_model, upsampler, timesteps=500, output_size=None, inference_timesteps=None):
         super().__init__()
         self.upsampler = upsampler
         self.diffusion = DiffusionModel(unet_model, timesteps)
         self.timesteps = timesteps
-        self.output_size = output_size  # Make configurable
+        self.output_size = output_size
+        self.inference_timesteps = inference_timesteps if inference_timesteps is not None else timesteps
 
-    def forward(self, x, t, training=True):
+    def forward(self, x, t, training=True, hr_target=None):
         """
         Forward pass for diffusion-based super-resolution.
         
@@ -159,20 +160,28 @@ class SuperResolutionDiffusion(nn.Module):
             t: Timestep tensor
             training: If True, add noise and predict noise (training mode).
                      If False, predict denoised image (inference mode).
+            hr_target: High-resolution target (only used in training)
         """
         upscaled = self.upsampler(x)
         
         if training:
-            # Training: add noise and predict the noise
-            noise = torch.randn_like(upscaled, device=upscaled.device)
+            # Training: add noise to HIGH-RES target, condition on low-res
+            if hr_target is None:
+                raise ValueError("hr_target required for training")
+            
+            # Resize HR to match upscaled size if needed
+            if hr_target.shape[2:] != upscaled.shape[2:]:
+                hr_target = F.interpolate(hr_target, size=upscaled.shape[2:], mode="bilinear", align_corners=True)
+            
+            noise = torch.randn_like(hr_target, device=hr_target.device)
             alpha_t = cosine_schedule(t, self.timesteps)
-            # Ensure alpha_t has correct shape
             if alpha_t.dim() == 1:
                 alpha_t = alpha_t.view(-1, 1, 1, 1)
-            noisy_image = alpha_t * upscaled + (1 - alpha_t) * noise
-            # Predict noise (standard diffusion training)
+            # Add noise to HIGH-RES target
+            noisy_image = alpha_t * hr_target + (1 - alpha_t) * noise
+            
+            # Predict noise, conditioned on upscaled low-res
             predicted_noise = self.diffusion(noisy_image, t, upscaled)
-            # Interpolate predicted noise to match noise size (UNet may output different size)
             if predicted_noise.shape != noise.shape:
                 predicted_noise = F.interpolate(
                     predicted_noise, 
@@ -180,27 +189,23 @@ class SuperResolutionDiffusion(nn.Module):
                     mode="bilinear", 
                     align_corners=True
                 )
-            # Return predicted noise for loss computation
             return predicted_noise, noise
         else:
-            # Inference: Super-resolution refinement
-            # Start from upscaled image (not pure noise)
-            # Add a small amount of noise, then refine iteratively
-            start_timestep = self.timesteps // 4  # Start from 25% noise (adjustable)
-            t_start = torch.full((x.shape[0],), start_timestep, device=x.device, dtype=torch.long)
+            # Inference: Generate high-res from noise, conditioned on low-res
+            # Use fewer timesteps for faster inference
+            inference_steps = self.inference_timesteps
+            step_size = self.timesteps // inference_steps
             
-            # Add noise to upscaled image to start the refinement process
-            noise = torch.randn_like(upscaled, device=upscaled.device)
-            alpha_start = cosine_schedule(t_start, self.timesteps)
-            if alpha_start.dim() == 1:
-                alpha_start = alpha_start.view(-1, 1, 1, 1)
-            sample = alpha_start * upscaled + (1 - alpha_start) * noise
+            # Start from pure noise
+            sample = torch.randn_like(upscaled, device=upscaled.device)
             
-            # Iterative refinement from start_timestep down to 0
-            for i in range(start_timestep - 1, -1, -1):
-                t_batch = torch.full((x.shape[0],), i, device=x.device, dtype=torch.long)
+            # Iterative generation with fewer steps
+            for step_idx in range(inference_steps - 1, -1, -1):
+                # Map inference step to training timestep
+                t_val = step_idx * step_size
+                t_batch = torch.full((x.shape[0],), t_val, device=x.device, dtype=torch.long)
                 
-                # Predict noise
+                # Predict noise, conditioned on upscaled low-res
                 predicted_noise = self.diffusion(sample, t_batch, upscaled)
                 if predicted_noise.shape != sample.shape:
                     predicted_noise = F.interpolate(
@@ -215,23 +220,21 @@ class SuperResolutionDiffusion(nn.Module):
                 if alpha_t.dim() == 1:
                     alpha_t = alpha_t.view(-1, 1, 1, 1)
                 
-                if i > 0:
-                    alpha_t_prev = cosine_schedule(t_batch - 1, self.timesteps)
+                if step_idx > 0:
+                    t_prev_val = (step_idx - 1) * step_size
+                    t_prev_batch = torch.full((x.shape[0],), t_prev_val, device=x.device, dtype=torch.long)
+                    alpha_t_prev = cosine_schedule(t_prev_batch, self.timesteps)
                     if alpha_t_prev.dim() == 1:
                         alpha_t_prev = alpha_t_prev.view(-1, 1, 1, 1)
                 else:
                     alpha_t_prev = torch.ones_like(alpha_t)
                 
-                # Predict x_0 (refined image) from predicted noise
+                # Predict x_0 (generated high-res image) from predicted noise
                 pred_x0 = (sample - (1 - alpha_t) * predicted_noise) / (alpha_t + 1e-8)
                 
-                # Blend with upscaled image for guidance (optional, helps maintain structure)
-                # This keeps the refinement grounded in the upscaled image
-                pred_x0 = 0.9 * pred_x0 + 0.1 * upscaled
-                
                 # Predict previous noisy sample
-                if i > 0:
-                    noise_term = torch.randn_like(sample) if i > 1 else torch.zeros_like(sample)
+                if step_idx > 0:
+                    noise_term = torch.randn_like(sample) if step_idx > 1 else torch.zeros_like(sample)
                     sample = alpha_t_prev * pred_x0 + (1 - alpha_t_prev) * noise_term
                 else:
                     sample = pred_x0
@@ -240,7 +243,6 @@ class SuperResolutionDiffusion(nn.Module):
             if self.output_size is not None:
                 sample = F.interpolate(sample, size=self.output_size, mode="bilinear", align_corners=True)
             else:
-                # If no output_size specified, resize to match upscaled size
                 sample = F.interpolate(sample, size=upscaled.shape[2:], mode="bilinear", align_corners=True)
             
             return sample

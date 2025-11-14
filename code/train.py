@@ -21,13 +21,17 @@ def setup_config_defaults():
         "out_channels": 1,
         "hidden_dim": 64,
         "timesteps": 500,
-        "upscale_factor": 2,
+        "inference_timesteps": 50,  # Faster inference with fewer steps
+        "upscale_factor": 3,
         "mse_weight": 1.0,
         "l1_weight": 0.1,
         "perceptual_weight": 0.01,
         "shape_weight": 0.1,
         "weight_decay": 0.01,
-        "output_size": [66, 66]  # Make output size configurable
+        "output_size": [66, 66],
+        "grad_clip": 1.0,  # Gradient clipping
+        "warmup_epochs": 5,  # Learning rate warmup
+        "checkpoint_interval": 20  # Save checkpoint every N epochs
     }
     for key, value in default_config.items():
         if not hasattr(wandb.config, key):
@@ -47,7 +51,7 @@ def validate_model(model, val_loader, device, config):
             
             with torch.amp.autocast(device_type='cuda' if device.type == 'cuda' else 'cpu'):
                 # Training mode: predict noise
-                predicted_noise, noise = model(lr_batch, t, training=True)
+                predicted_noise, noise = model(lr_batch, t, training=True, hr_target=hr_batch)
                 # Loss is between predicted and actual noise (use MSE like training)
                 loss = F.mse_loss(predicted_noise, noise)
             
@@ -72,6 +76,14 @@ def validate_model(model, val_loader, device, config):
     avg_shape_error_e2 = sum(val_shape_errors_e2) / len(val_shape_errors_e2) if val_shape_errors_e2 else 0.0
     
     return avg_val_loss, (avg_shape_error_e1, avg_shape_error_e2)
+
+def get_lr_with_warmup(optimizer, epoch, warmup_epochs, base_lr):
+    """Learning rate with warmup."""
+    if epoch < warmup_epochs:
+        lr = base_lr * (epoch + 1) / warmup_epochs
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+    return optimizer.param_groups[0]['lr']
 
 def main():
     # Initialize Weights & Biases
@@ -100,7 +112,8 @@ def main():
         unet, 
         upsampler, 
         timesteps=config.timesteps,
-        output_size=config.output_size if hasattr(config, 'output_size') else None
+        output_size=config.output_size if hasattr(config, 'output_size') else None,
+        inference_timesteps=config.inference_timesteps if hasattr(config, 'inference_timesteps') else None
     ).to(device)
 
     optimizer = optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
@@ -133,6 +146,10 @@ def main():
         epoch_loss = 0
         start_time = time.time()
 
+        # Learning rate warmup
+        if epoch < config.warmup_epochs:
+            get_lr_with_warmup(optimizer, epoch, config.warmup_epochs, config.learning_rate)
+
         for lr_batch, hr_batch in train_loader:
             lr_batch, hr_batch = lr_batch.to(device), hr_batch.to(device)
             t = torch.randint(0, config.timesteps, (lr_batch.shape[0],), device=device)
@@ -140,11 +157,14 @@ def main():
             
             with torch.amp.autocast(device_type='cuda' if device.type == 'cuda' else 'cpu'):
                 # Training mode: predict noise
-                predicted_noise, noise = model(lr_batch, t, training=True)
+                predicted_noise, noise = model(lr_batch, t, training=True, hr_target=hr_batch)
                 # Loss is between predicted and actual noise (standard diffusion loss)
                 loss = F.mse_loss(predicted_noise, noise)
             
             scaler.scale(loss).backward()
+            # Gradient clipping
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip if hasattr(config, 'grad_clip') else 1.0)
             scaler.step(optimizer)
             scaler.update()
             epoch_loss += loss.item()
@@ -199,6 +219,18 @@ def main():
             best_model_path = os.path.join(wandb.run.dir, "best_model.pth")
             torch.save(model.state_dict(), best_model_path)
             print(f"Best model updated (Val Loss: {best_loss:.6f})")
+
+        # Periodic checkpoint saving
+        if hasattr(config, 'checkpoint_interval') and (epoch + 1) % config.checkpoint_interval == 0:
+            checkpoint_path = os.path.join(wandb.run.dir, f"checkpoint_epoch_{epoch+1}.pth")
+            torch.save({
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'val_loss': val_loss,
+            }, checkpoint_path)
+            print(f"Checkpoint saved at epoch {epoch+1}")
 
     final_model_path = os.path.join(wandb.run.dir, "final_model.pth")
     torch.save(model.state_dict(), final_model_path)
