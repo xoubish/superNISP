@@ -60,11 +60,16 @@ def validate_model(model, val_loader, device, config):
                     sr_output = model(lr_batch, t_zero, training=False)
                     e_pred = compute_ellipticity_from_moments(sr_output)
                     e_true = compute_ellipticity_from_moments(hr_batch)
-                    shape_error = torch.abs(e_pred - e_true).mean(dim=0)
+                    # Compute mean error across batch, then take mean of e1 and e2 separately
+                    shape_error = torch.abs(e_pred - e_true).mean(dim=0)  # Shape: [2]
                     val_shape_errors.append(shape_error)
     
     avg_val_loss = val_loss / len(val_loader)
-    avg_shape_error = torch.stack(val_shape_errors).mean(dim=0) if val_shape_errors else torch.tensor([0.0, 0.0])
+    # Stack all shape errors and compute mean - should result in [2] shape
+    if val_shape_errors:
+        avg_shape_error = torch.stack(val_shape_errors).mean(dim=0)  # Shape: [2]
+    else:
+        avg_shape_error = torch.tensor([0.0, 0.0], device=device)
     
     return avg_val_loss, avg_shape_error
 
@@ -147,15 +152,15 @@ def main():
         avg_loss = epoch_loss / len(train_loader)
         
         # Validation
-        val_loss, val_shape_error = validate_model(model, val_loader, device, config)
+        val_loss, avg_shape_error = validate_model(model, val_loader, device, config)
         scheduler.step(val_loss)
 
         wandb.log({
             "epoch": epoch + 1,
             "train_loss": avg_loss,
             "val_loss": val_loss,
-            "val_shape_error_e1": val_shape_error[0].item(),
-            "val_shape_error_e2": val_shape_error[1].item(),
+            "val_shape_error_e1": avg_shape_error[0].item() if avg_shape_error.numel() > 0 else 0.0,
+            "val_shape_error_e2": avg_shape_error[1].item() if avg_shape_error.numel() > 1 else 0.0,
             "learning_rate": optimizer.param_groups[0]["lr"],
             "elapsed_time": time.time() - start_time
         })
