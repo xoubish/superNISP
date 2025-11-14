@@ -61,10 +61,30 @@ def validate_model(model, val_loader, device, config):
                     sr_output = model(lr_batch, t_zero, training=False)
                     e_pred = compute_ellipticity_from_moments(sr_output)
                     e_true = compute_ellipticity_from_moments(hr_batch)
+                    
+                    # DEBUG: Print shapes
+                    print(f"DEBUG: sr_output shape: {sr_output.shape}")
+                    print(f"DEBUG: hr_batch shape: {hr_batch.shape}")
+                    print(f"DEBUG: e_pred shape: {e_pred.shape}")
+                    print(f"DEBUG: e_true shape: {e_true.shape}")
+                    print(f"DEBUG: (e_pred - e_true) shape: {(e_pred - e_true).shape}")
+                    
                     # Compute mean error across batch for each component
                     shape_error = torch.abs(e_pred - e_true).mean(dim=0)  # Shape: [2]
-                    val_shape_errors_e1.append(shape_error[0].item())  # Store scalar
-                    val_shape_errors_e2.append(shape_error[1].item())  # Store scalar
+                    print(f"DEBUG: shape_error shape: {shape_error.shape}")
+                    print(f"DEBUG: shape_error[0] shape: {shape_error[0].shape}")
+                    print(f"DEBUG: shape_error[0] numel: {shape_error[0].numel()}")
+                    
+                    # Try to get scalars - if shape_error[0] is still a tensor, mean it again
+                    if shape_error[0].numel() > 1:
+                        e1_val = shape_error[0].mean().item()
+                        e2_val = shape_error[1].mean().item()
+                    else:
+                        e1_val = shape_error[0].item()
+                        e2_val = shape_error[1].item()
+                    
+                    val_shape_errors_e1.append(e1_val)
+                    val_shape_errors_e2.append(e2_val)
     
     avg_val_loss = val_loss / len(val_loader)
     # Compute mean of scalar values
