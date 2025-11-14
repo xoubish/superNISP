@@ -5,11 +5,12 @@ import torch.optim as optim
 import wandb
 from torch.utils.data import DataLoader
 from dataset import SuperResolutionDataset
-from model import SuperResolutionDiffusion, SuperResDiffusionUNet, Upsampler
-from losses import HybridLoss, compute_ellipticity_from_moments
+from model import SuperResolutionDiffusion, SuperResDiffusionUNet, Upsampler, cosine_schedule
+from losses import HybridLoss, compute_ellipticity_from_moments, gaussian_weight_map
 import random
 import time
 import torch.nn.functional as F
+import copy
 
 def setup_config_defaults():
     default_config = {
@@ -21,26 +22,32 @@ def setup_config_defaults():
         "out_channels": 1,
         "hidden_dim": 64,
         "timesteps": 500,
-        "inference_timesteps": 50,  # Faster inference with fewer steps
+        "inference_timesteps": 50,
         "upscale_factor": 3,
         "mse_weight": 1.0,
         "l1_weight": 0.1,
         "perceptual_weight": 0.01,
         "shape_weight": 0.1,
+        "hybrid_loss_weight": 0.1,  # Weight for hybrid loss component
         "weight_decay": 0.01,
         "output_size": [66, 66],
-        "grad_clip": 1.0,  # Gradient clipping
-        "warmup_epochs": 5,  # Learning rate warmup
-        "checkpoint_interval": 20  # Save checkpoint every N epochs
+        "grad_clip": 1.0,
+        "warmup_epochs": 5,
+        "checkpoint_interval": 20,
+        "ema_decay": 0.9999,  # EMA decay rate
+        "early_stop_patience": 15,  # Early stopping patience
+        "early_stop_min_delta": 0.0001  # Minimum change to qualify as improvement
     }
     for key, value in default_config.items():
         if not hasattr(wandb.config, key):
             setattr(wandb.config, key, value)
 
-def validate_model(model, val_loader, device, config):
-    """Validation loop."""
+def validate_model(model, val_loader, device, config, criterion):
+    """Validation loop with hybrid loss."""
     model.eval()
-    val_loss = 0.0
+    val_noise_loss = 0.0
+    val_hybrid_loss = 0.0
+    val_total_loss = 0.0
     val_shape_errors_e1 = []
     val_shape_errors_e2 = []
     
@@ -52,30 +59,54 @@ def validate_model(model, val_loader, device, config):
             with torch.amp.autocast(device_type='cuda' if device.type == 'cuda' else 'cpu'):
                 # Training mode: predict noise
                 predicted_noise, noise = model(lr_batch, t, training=True, hr_target=hr_batch)
-                # Loss is between predicted and actual noise (use MSE like training)
-                loss = F.mse_loss(predicted_noise, noise)
+                
+                # Noise loss
+                noise_loss = F.mse_loss(predicted_noise, noise)
+                
+                # Hybrid loss (same as training)
+                alpha_t = cosine_schedule(t, config.timesteps)
+                if alpha_t.dim() == 1:
+                    alpha_t = alpha_t.view(-1, 1, 1, 1)
+                
+                upscaled = model.upsampler(lr_batch)
+                if hr_batch.shape[2:] != upscaled.shape[2:]:
+                    hr_batch_resized = F.interpolate(hr_batch, size=upscaled.shape[2:], mode="bilinear", align_corners=True)
+                else:
+                    hr_batch_resized = hr_batch
+                
+                noisy_hr = alpha_t * hr_batch_resized + (1 - alpha_t) * noise
+                pred_clean = (noisy_hr - (1 - alpha_t) * predicted_noise) / (alpha_t + 1e-8)
+                
+                weights = gaussian_weight_map(pred_clean.shape, sigma=0.3, device=pred_clean.device)
+                pred_weighted = pred_clean * weights
+                target_weighted = hr_batch_resized * weights
+                
+                hybrid_loss = criterion(pred_weighted, target_weighted)
+                
+                total_loss = noise_loss + config.hybrid_loss_weight * hybrid_loss
             
-            val_loss += loss.item()
+            val_noise_loss += noise_loss.item()
+            val_hybrid_loss += hybrid_loss.item()
+            val_total_loss += total_loss.item()
             
             # Compute shape errors on a sample
-            if len(val_shape_errors_e1) < 10:  # Sample a few for shape error
+            if len(val_shape_errors_e1) < 10:
                 with torch.amp.autocast(device_type='cuda' if device.type == 'cuda' else 'cpu'):
-                    # Inference mode: get denoised output
                     t_zero = torch.zeros((lr_batch.shape[0],), dtype=torch.long, device=device)
                     sr_output = model(lr_batch, t_zero, training=False)
                     e_pred = compute_ellipticity_from_moments(sr_output)
                     e_true = compute_ellipticity_from_moments(hr_batch)
-                    # Compute mean error across batch for each component
-                    shape_error = torch.abs(e_pred - e_true).mean(dim=0)  # Shape: [2]
+                    shape_error = torch.abs(e_pred - e_true).mean(dim=0)
                     val_shape_errors_e1.append(shape_error[0].item())
                     val_shape_errors_e2.append(shape_error[1].item())
     
-    avg_val_loss = val_loss / len(val_loader)
-    # Compute mean of scalar values
+    avg_noise_loss = val_noise_loss / len(val_loader)
+    avg_hybrid_loss = val_hybrid_loss / len(val_loader)
+    avg_total_loss = val_total_loss / len(val_loader)
     avg_shape_error_e1 = sum(val_shape_errors_e1) / len(val_shape_errors_e1) if val_shape_errors_e1 else 0.0
     avg_shape_error_e2 = sum(val_shape_errors_e2) / len(val_shape_errors_e2) if val_shape_errors_e2 else 0.0
     
-    return avg_val_loss, (avg_shape_error_e1, avg_shape_error_e2)
+    return avg_total_loss, avg_noise_loss, avg_hybrid_loss, (avg_shape_error_e1, avg_shape_error_e2)
 
 def get_lr_with_warmup(optimizer, epoch, warmup_epochs, base_lr):
     """Learning rate with warmup."""
@@ -84,6 +115,12 @@ def get_lr_with_warmup(optimizer, epoch, warmup_epochs, base_lr):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
     return optimizer.param_groups[0]['lr']
+
+def update_ema(ema_model, model, decay):
+    """Update EMA model weights."""
+    with torch.no_grad():
+        for ema_param, param in zip(ema_model.parameters(), model.parameters()):
+            ema_param.data.mul_(decay).add_(param.data, alpha=1 - decay)
 
 def main():
     # Initialize Weights & Biases
@@ -116,6 +153,11 @@ def main():
         inference_timesteps=config.inference_timesteps if hasattr(config, 'inference_timesteps') else None
     ).to(device)
 
+    # Create EMA model
+    ema_model = copy.deepcopy(model)
+    for param in ema_model.parameters():
+        param.requires_grad_(False)
+
     optimizer = optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
@@ -137,13 +179,25 @@ def main():
         persistent_workers=True
     )
 
+    criterion = HybridLoss(
+        mse_weight=config.mse_weight,
+        l1_weight=config.l1_weight,
+        perceptual_weight=config.perceptual_weight,
+        shape_weight=config.shape_weight
+    ).to(device)
+
     scaler = torch.amp.GradScaler()
     best_loss = float("inf")
+    patience_counter = 0
+    epoch_noise_loss = 0.0
+    epoch_hybrid_loss = 0.0
 
     # Training loop
     for epoch in range(config.epochs):
         model.train()
         epoch_loss = 0
+        epoch_noise_loss = 0.0
+        epoch_hybrid_loss = 0.0
         start_time = time.time()
 
         # Learning rate warmup
@@ -158,8 +212,33 @@ def main():
             with torch.amp.autocast(device_type='cuda' if device.type == 'cuda' else 'cpu'):
                 # Training mode: predict noise
                 predicted_noise, noise = model(lr_batch, t, training=True, hr_target=hr_batch)
-                # Loss is between predicted and actual noise (standard diffusion loss)
-                loss = F.mse_loss(predicted_noise, noise)
+                
+                # Standard diffusion loss: MSE on noise prediction
+                noise_loss = F.mse_loss(predicted_noise, noise)
+                
+                # Additional loss: Predict clean image and use HybridLoss
+                alpha_t = cosine_schedule(t, config.timesteps)
+                if alpha_t.dim() == 1:
+                    alpha_t = alpha_t.view(-1, 1, 1, 1)
+                
+                upscaled = model.upsampler(lr_batch)
+                if hr_batch.shape[2:] != upscaled.shape[2:]:
+                    hr_batch_resized = F.interpolate(hr_batch, size=upscaled.shape[2:], mode="bilinear", align_corners=True)
+                else:
+                    hr_batch_resized = hr_batch
+                
+                noisy_hr = alpha_t * hr_batch_resized + (1 - alpha_t) * noise
+                pred_clean = (noisy_hr - (1 - alpha_t) * predicted_noise) / (alpha_t + 1e-8)
+                
+                # Apply Gaussian weight map to focus on center (galaxy)
+                weights = gaussian_weight_map(pred_clean.shape, sigma=0.3, device=pred_clean.device)
+                pred_weighted = pred_clean * weights
+                target_weighted = hr_batch_resized * weights
+                
+                hybrid_loss = criterion(pred_weighted, target_weighted)
+                
+                # Combined loss: noise prediction + weighted image loss
+                loss = noise_loss + config.hybrid_loss_weight * hybrid_loss
             
             scaler.scale(loss).backward()
             # Gradient clipping
@@ -167,27 +246,42 @@ def main():
             torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip if hasattr(config, 'grad_clip') else 1.0)
             scaler.step(optimizer)
             scaler.update()
+            
+            # Update EMA model
+            update_ema(ema_model, model, config.ema_decay)
+            
             epoch_loss += loss.item()
+            epoch_noise_loss += noise_loss.item()
+            epoch_hybrid_loss += hybrid_loss.item()
 
         avg_loss = epoch_loss / len(train_loader)
+        avg_noise_loss = epoch_noise_loss / len(train_loader)
+        avg_hybrid_loss = epoch_hybrid_loss / len(train_loader)
         
         # Validation
-        val_loss, (avg_shape_error_e1, avg_shape_error_e2) = validate_model(model, val_loader, device, config)
+        val_loss, val_noise_loss, val_hybrid_loss, (avg_shape_error_e1, avg_shape_error_e2) = validate_model(
+            model, val_loader, device, config, criterion
+        )
         scheduler.step(val_loss)
 
+        # Log all loss components
         wandb.log({
             "epoch": epoch + 1,
             "train_loss": avg_loss,
+            "train_noise_loss": avg_noise_loss,
+            "train_hybrid_loss": avg_hybrid_loss,
             "val_loss": val_loss,
+            "val_noise_loss": val_noise_loss,
+            "val_hybrid_loss": val_hybrid_loss,
             "val_shape_error_e1": avg_shape_error_e1,
             "val_shape_error_e2": avg_shape_error_e2,
             "learning_rate": optimizer.param_groups[0]["lr"],
             "elapsed_time": time.time() - start_time
         })
 
-        # Log images every 10 epochs
+        # Log images every 10 epochs (using EMA model for better quality)
         if (epoch + 1) % 10 == 0:
-            model.eval()
+            ema_model.eval()
             with torch.no_grad():
                 random_idx = random.randint(0, len(val_loader.dataset) - 1)
                 lr_img, hr_img = val_loader.dataset[random_idx]
@@ -195,7 +289,7 @@ def main():
                 t_test = torch.zeros((1,), dtype=torch.long, device=device)
                 
                 with torch.amp.autocast(device_type='cuda' if device.type == 'cuda' else 'cpu'):
-                    sr_img = model(lr_img, t_test, training=False).cpu().squeeze(0)
+                    sr_img = ema_model(lr_img, t_test, training=False).cpu().squeeze(0)
 
                 sr_img_tensor = sr_img.unsqueeze(0)
                 hr_img_tensor = hr_img.unsqueeze(0)
@@ -213,12 +307,19 @@ def main():
 
             model.train()
 
-        # Save best model based on validation loss
-        if val_loss < best_loss - 0.001:
+        # Early stopping
+        if val_loss < best_loss - config.early_stop_min_delta:
             best_loss = val_loss
+            patience_counter = 0
+            # Save best model (using EMA model)
             best_model_path = os.path.join(wandb.run.dir, "best_model.pth")
-            torch.save(model.state_dict(), best_model_path)
+            torch.save(ema_model.state_dict(), best_model_path)
             print(f"Best model updated (Val Loss: {best_loss:.6f})")
+        else:
+            patience_counter += 1
+            if patience_counter >= config.early_stop_patience:
+                print(f"Early stopping at epoch {epoch + 1}")
+                break
 
         # Periodic checkpoint saving
         if hasattr(config, 'checkpoint_interval') and (epoch + 1) % config.checkpoint_interval == 0:
@@ -226,14 +327,16 @@ def main():
             torch.save({
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
+                'ema_model_state_dict': ema_model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'scheduler_state_dict': scheduler.state_dict(),
                 'val_loss': val_loss,
             }, checkpoint_path)
             print(f"Checkpoint saved at epoch {epoch+1}")
 
+    # Save final model (EMA)
     final_model_path = os.path.join(wandb.run.dir, "final_model.pth")
-    torch.save(model.state_dict(), final_model_path)
+    torch.save(ema_model.state_dict(), final_model_path)
     print("Final model saved.")
     wandb.finish()
 
