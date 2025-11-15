@@ -4,19 +4,80 @@ import torch.nn.functional as F
 import math
 from torchvision.models import vgg16, VGG16_Weights
 
-def gaussian_weight_map(shape, sigma=0.3, device=None):
-    """Generates a Gaussian weight map centered in the middle of the image."""
+def compute_centroid(img):
+    """
+    Computes the centroid (center of mass) for a batch of images.
+    img: Tensor of shape (B, C, H, W)
+    Returns: (x_bar, y_bar) each of shape (B, C)
+    """
+    B, C, H, W = img.shape
+    device = img.device
+    
+    # Create coordinate grids
+    y, x = torch.meshgrid(
+        torch.arange(H, dtype=torch.float32, device=device),
+        torch.arange(W, dtype=torch.float32, device=device),
+        indexing='ij'
+    )
+    x = x[None, :, :].expand(B, C, H, W)
+    y = y[None, :, :].expand(B, C, H, W)
+    
+    # Total flux
+    flux = img.sum(dim=[2, 3], keepdim=True)  # Shape: (B, C, 1, 1)
+    
+    # Centroid
+    x_bar = (img * x).sum(dim=[2, 3], keepdim=True) / (flux + 1e-8)  # Shape: (B, C, 1, 1)
+    y_bar = (img * y).sum(dim=[2, 3], keepdim=True) / (flux + 1e-8)  # Shape: (B, C, 1, 1)
+    
+    return x_bar, y_bar
+
+def gaussian_weight_map(shape, sigma=0.3, device=None, center_img=None):
+    """
+    Generates a Gaussian weight map.
+    If center_img is provided, centers the weight on the galaxy centroid.
+    Otherwise centers at image center.
+    """
     B, C, H, W = shape
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    
+    # Create coordinate grids in pixel space
     y, x = torch.meshgrid(
-        torch.linspace(-1, 1, H, device=device),
-        torch.linspace(-1, 1, W, device=device),
+        torch.arange(H, dtype=torch.float32, device=device),
+        torch.arange(W, dtype=torch.float32, device=device),
         indexing='ij'
     )
-    d = torch.sqrt(x**2 + y**2)
-    weights = torch.exp(- (d**2) / (2 * sigma**2))
-    return weights.expand(B, C, H, W)
+    x = x[None, None, :, :].expand(B, C, H, W)  # Shape: (B, C, H, W)
+    y = y[None, None, :, :].expand(B, C, H, W)  # Shape: (B, C, H, W)
+    
+    # Determine center: use galaxy centroid if provided, otherwise image center
+    if center_img is not None:
+        x_bar, y_bar = compute_centroid(center_img)
+        # Expand to match spatial dimensions
+        x_bar = x_bar.expand(B, C, H, W)
+        y_bar = y_bar.expand(B, C, H, W)
+    else:
+        # Default to image center
+        x_bar = torch.full((B, C, H, W), W / 2.0, device=device)
+        y_bar = torch.full((B, C, H, W), H / 2.0, device=device)
+    
+    # Distance from center
+    dx = x - x_bar
+    dy = y - y_bar
+    d = torch.sqrt(dx**2 + dy**2)
+    
+    # Normalize by image size to make sigma scale-invariant
+    max_dist = torch.sqrt(torch.tensor(H**2 + W**2, dtype=torch.float32, device=device))
+    d_normalized = d / max_dist
+    
+    # Gaussian weight
+    weights = torch.exp(- (d_normalized**2) / (2 * sigma**2))
+    
+    # Add a minimum weight to background (so it's not completely ignored)
+    min_weight = 0.1
+    weights = weights * (1 - min_weight) + min_weight
+    
+    return weights
 
 def compute_ellipticity_from_moments(img):
     """

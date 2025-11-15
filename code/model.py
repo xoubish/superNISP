@@ -49,14 +49,28 @@ class SuperResDiffusionUNet(nn.Module):
             self.activation_fn()
         )
 
-        # Condition Projection
-        self.condition_proj = nn.Conv2d(1, self.hidden_dim * 4, kernel_size=3, padding=1)
+        # Multi-scale condition projections (inject at multiple levels for stronger conditioning)
+        self.condition_proj1 = nn.Conv2d(1, self.hidden_dim, kernel_size=3, padding=1)
+        self.condition_proj2 = nn.Conv2d(1, self.hidden_dim * 2, kernel_size=3, padding=1)
+        self.condition_proj3 = nn.Conv2d(1, self.hidden_dim * 4, kernel_size=3, padding=1)
+        self.condition_proj_dec1 = nn.Conv2d(1, self.hidden_dim * 2, kernel_size=3, padding=1)
+        self.condition_proj_dec2 = nn.Conv2d(1, self.hidden_dim, kernel_size=3, padding=1)
 
-        # Cross-Attention (improved: concatenate and project)
+        # Cross-Attention at bottleneck (improved: concatenate and project)
         self.cross_attention = nn.Sequential(
             nn.Conv2d(self.hidden_dim * 4 * 2, self.hidden_dim * 4, kernel_size=1),
             self.activation_fn(),
             nn.Conv2d(self.hidden_dim * 4, self.hidden_dim * 4, kernel_size=3, padding=1)
+        )
+        
+        # Feature fusion modules for multi-scale conditioning
+        self.fusion_dec1 = nn.Sequential(
+            nn.Conv2d(self.hidden_dim * 2, self.hidden_dim * 2, kernel_size=1),
+            self.activation_fn()
+        )
+        self.fusion_dec2 = nn.Sequential(
+            nn.Conv2d(self.hidden_dim, self.hidden_dim, kernel_size=1),
+            self.activation_fn()
         )
 
         # Decoder
@@ -71,14 +85,23 @@ class SuperResDiffusionUNet(nn.Module):
         self.decoder3 = nn.Conv2d(self.hidden_dim, self.out_channels, kernel_size=3, padding=1)
 
     def forward(self, x, condition, t_emb=None):
-        # Encode
+        # Encode with multi-scale conditioning
         x1 = self.encoder1(x)
+        # Inject condition at encoder1 level
+        cond1 = self.condition_proj1(condition)
+        cond1 = F.interpolate(cond1, size=x1.shape[2:], mode="bilinear", align_corners=True)
+        x1 = x1 + cond1  # Add condition features
+        
         x2 = self.encoder2(x1)
+        # Inject condition at encoder2 level
+        cond2 = self.condition_proj2(condition)
+        cond2 = F.interpolate(cond2, size=x2.shape[2:], mode="bilinear", align_corners=True)
+        x2 = x2 + cond2  # Add condition features
+        
         x3 = self.encoder3(x2)
-
-        # Process condition
-        condition = self.condition_proj(condition)
-        condition = F.interpolate(condition, size=(x3.shape[2], x3.shape[3]), mode="bilinear", align_corners=True)
+        # Inject condition at encoder3 (bottleneck) level
+        cond3 = self.condition_proj3(condition)
+        cond3 = F.interpolate(cond3, size=(x3.shape[2], x3.shape[3]), mode="bilinear", align_corners=True)
 
         # Apply timestep embedding if provided
         if t_emb is not None:
@@ -90,18 +113,24 @@ class SuperResDiffusionUNet(nn.Module):
             # Add timestep information to the bottleneck
             x3 = x3 + t_emb[:, :self.hidden_dim * 4, :, :]
 
-        # Cross-attention (concatenation + projection)
-        x3 = torch.cat([x3, condition], dim=1)
+        # Cross-attention at bottleneck (concatenation + projection)
+        x3 = torch.cat([x3, cond3], dim=1)
         x3 = self.cross_attention(x3)
 
-        # Decode with skip connections
+        # Decode with skip connections and multi-scale conditioning
         x = self.decoder1(x3)
         x = self.align_dims(x, x2)
-        x = x + x2
+        # Inject condition at decoder1 level
+        cond_dec1 = self.condition_proj_dec1(condition)
+        cond_dec1 = F.interpolate(cond_dec1, size=x.shape[2:], mode="bilinear", align_corners=True)
+        x = x + x2 + self.fusion_dec1(cond_dec1)  # Combine skip connection and condition
 
         x = self.decoder2(x)
         x = self.align_dims(x, x1)
-        x = x + x1
+        # Inject condition at decoder2 level
+        cond_dec2 = self.condition_proj_dec2(condition)
+        cond_dec2 = F.interpolate(cond_dec2, size=x.shape[2:], mode="bilinear", align_corners=True)
+        x = x + x1 + self.fusion_dec2(cond_dec2)  # Combine skip connection and condition
 
         x = self.decoder3(x)
         return x
@@ -120,14 +149,26 @@ class Upsampler(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
 
-        self.conv1 = nn.Conv2d(self.in_channels, self.in_channels * (self.upscale_factor ** 2), kernel_size=3, padding=1)
-        self.pixel_shuffle = nn.PixelShuffle(self.upscale_factor)
-        self.relu = nn.ReLU()
-        self.conv2 = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=3, padding=1)
+        # Use bilinear upsampling followed by convolutional refinement
+        # This is more interpretable and preserves spatial relationships
+        self.conv1 = nn.Conv2d(self.in_channels, 64, kernel_size=3, padding=1)
+        self.relu1 = nn.ReLU()
+        self.conv2 = nn.Conv2d(64, 32, kernel_size=3, padding=1)
+        self.relu2 = nn.ReLU()
+        self.conv3 = nn.Conv2d(32, self.out_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
-        x = self.relu(self.pixel_shuffle(self.conv1(x)))
-        x = self.conv2(x)
+        # Bilinear upsampling: preserves spatial relationships deterministically
+        x = F.interpolate(
+            x, 
+            scale_factor=self.upscale_factor, 
+            mode='bilinear', 
+            align_corners=True
+        )
+        # Refine with convolutions
+        x = self.relu1(self.conv1(x))
+        x = self.relu2(self.conv2(x))
+        x = self.conv3(x)
         return x
 
 class DiffusionModel(nn.Module):

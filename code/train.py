@@ -27,8 +27,10 @@ def setup_config_defaults():
         "mse_weight": 1.0,
         "l1_weight": 0.1,
         "perceptual_weight": 0.01,
-        "shape_weight": 0.1,
-        "hybrid_loss_weight": 0.1,  # Weight for hybrid loss component
+        "shape_weight": 0.15,  # Always use shape loss to preserve galaxy structure
+        "hybrid_loss_weight": 0.5,  # Increased weight for hybrid loss component
+        "direct_recon_weight": 0.2,  # Direct reconstruction loss weight (LR→HR supervision)
+        "weight_sigma": 0.3,  # Gaussian weight map sigma (adaptive to galaxy size)
         "weight_decay": 0.01,
         "output_size": [66, 66],
         "grad_clip": 1.0,
@@ -60,9 +62,6 @@ def validate_model(model, val_loader, device, config, criterion):
                 # Training mode: predict noise
                 predicted_noise, noise = model(lr_batch, t, training=True, hr_target=hr_batch)
                 
-                # Noise loss
-                noise_loss = F.mse_loss(predicted_noise, noise)
-                
                 # Hybrid loss (same as training)
                 alpha_t = cosine_schedule(t, config.timesteps)
                 if alpha_t.dim() == 1:
@@ -77,7 +76,21 @@ def validate_model(model, val_loader, device, config, criterion):
                 noisy_hr = alpha_t * hr_batch_resized + (1 - alpha_t) * noise
                 pred_clean = (noisy_hr - (1 - alpha_t) * predicted_noise) / (alpha_t + 1e-8)
                 
-                weights = gaussian_weight_map(pred_clean.shape, sigma=0.3, device=pred_clean.device)
+                # Apply adaptive Gaussian weight map centered on galaxy
+                weight_sigma = getattr(config, 'weight_sigma', 0.3)
+                weights = gaussian_weight_map(
+                    pred_clean.shape, 
+                    sigma=weight_sigma, 
+                    device=pred_clean.device,
+                    center_img=hr_batch_resized
+                )
+                
+                # Weight the noise loss
+                noise_weights = weights.squeeze(1) if weights.shape[1] == 1 else weights.mean(dim=1, keepdim=True).squeeze(1)
+                weighted_noise_diff = (predicted_noise - noise) ** 2
+                noise_loss = (weighted_noise_diff * noise_weights).mean()
+                
+                # Weight the hybrid loss
                 pred_weighted = pred_clean * weights
                 target_weighted = hr_batch_resized * weights
                 
@@ -191,6 +204,7 @@ def main():
     patience_counter = 0
     epoch_noise_loss = 0.0
     epoch_hybrid_loss = 0.0
+    epoch_direct_recon_loss = 0.0
 
     # Training loop
     for epoch in range(config.epochs):
@@ -213,9 +227,6 @@ def main():
                 # Training mode: predict noise
                 predicted_noise, noise = model(lr_batch, t, training=True, hr_target=hr_batch)
                 
-                # Standard diffusion loss: MSE on noise prediction
-                noise_loss = F.mse_loss(predicted_noise, noise)
-                
                 # Additional loss: Predict clean image and use HybridLoss
                 alpha_t = cosine_schedule(t, config.timesteps)
                 if alpha_t.dim() == 1:
@@ -230,15 +241,51 @@ def main():
                 noisy_hr = alpha_t * hr_batch_resized + (1 - alpha_t) * noise
                 pred_clean = (noisy_hr - (1 - alpha_t) * predicted_noise) / (alpha_t + 1e-8)
                 
-                # Apply Gaussian weight map to focus on center (galaxy)
-                weights = gaussian_weight_map(pred_clean.shape, sigma=0.3, device=pred_clean.device)
+                # Apply adaptive Gaussian weight map centered on galaxy (use HR target to find centroid)
+                weight_sigma = getattr(config, 'weight_sigma', 0.3)
+                weights = gaussian_weight_map(
+                    pred_clean.shape, 
+                    sigma=weight_sigma, 
+                    device=pred_clean.device,
+                    center_img=hr_batch_resized  # Center weight on actual galaxy location
+                )
+                
+                # Weight the noise loss to focus on galaxy region
+                noise_weights = weights.squeeze(1) if weights.shape[1] == 1 else weights.mean(dim=1, keepdim=True).squeeze(1)
+                weighted_noise_diff = (predicted_noise - noise) ** 2
+                noise_loss = (weighted_noise_diff * noise_weights).mean()
+                
+                # Weight the hybrid loss
                 pred_weighted = pred_clean * weights
                 target_weighted = hr_batch_resized * weights
                 
                 hybrid_loss = criterion(pred_weighted, target_weighted)
                 
-                # Combined loss: noise prediction + weighted image loss
-                loss = noise_loss + config.hybrid_loss_weight * hybrid_loss
+                # Direct reconstruction loss: predict clean image at t=0 for stronger supervision
+                # This gives the model a direct signal about the final output
+                # At t=0, add tiny noise and predict it, then reconstruct clean image
+                t_zero = torch.zeros_like(t)
+                tiny_noise = torch.randn_like(upscaled, device=upscaled.device) * 0.01  # Very small noise
+                noisy_upscaled = upscaled + tiny_noise
+                
+                with torch.amp.autocast(device_type='cuda' if device.type == 'cuda' else 'cpu'):
+                    # Predict the tiny noise
+                    predicted_tiny_noise = model.diffusion(noisy_upscaled, t_zero, upscaled)
+                    if predicted_tiny_noise.shape != noisy_upscaled.shape:
+                        predicted_tiny_noise = F.interpolate(predicted_tiny_noise, size=noisy_upscaled.shape[2:], mode="bilinear", align_corners=True)
+                    
+                    # Reconstruct clean image: remove predicted noise
+                    direct_pred = noisy_upscaled - predicted_tiny_noise
+                    if direct_pred.shape != hr_batch_resized.shape:
+                        direct_pred = F.interpolate(direct_pred, size=hr_batch_resized.shape[2:], mode="bilinear", align_corners=True)
+                    
+                    # Weight the direct reconstruction loss
+                    direct_pred_weighted = direct_pred * weights
+                    direct_recon_loss = criterion(direct_pred_weighted, target_weighted)
+                
+                # Combined loss: weighted noise prediction + weighted image loss + direct reconstruction
+                direct_recon_weight = getattr(config, 'direct_recon_weight', 0.1)
+                loss = noise_loss + config.hybrid_loss_weight * hybrid_loss + direct_recon_weight * direct_recon_loss
             
             scaler.scale(loss).backward()
             # Gradient clipping
@@ -253,10 +300,12 @@ def main():
             epoch_loss += loss.item()
             epoch_noise_loss += noise_loss.item()
             epoch_hybrid_loss += hybrid_loss.item()
+            epoch_direct_recon_loss += direct_recon_loss.item()
 
         avg_loss = epoch_loss / len(train_loader)
         avg_noise_loss = epoch_noise_loss / len(train_loader)
         avg_hybrid_loss = epoch_hybrid_loss / len(train_loader)
+        avg_direct_recon_loss = epoch_direct_recon_loss / len(train_loader)
         
         # Validation
         val_loss, val_noise_loss, val_hybrid_loss, (avg_shape_error_e1, avg_shape_error_e2) = validate_model(
@@ -270,6 +319,7 @@ def main():
             "train_loss": avg_loss,
             "train_noise_loss": avg_noise_loss,
             "train_hybrid_loss": avg_hybrid_loss,
+            "train_direct_recon_loss": avg_direct_recon_loss,
             "val_loss": val_loss,
             "val_noise_loss": val_noise_loss,
             "val_hybrid_loss": val_hybrid_loss,
