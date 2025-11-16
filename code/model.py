@@ -1,3 +1,4 @@
+# model.py
 import math
 import torch
 import torch.nn as nn
@@ -25,7 +26,7 @@ class SinusoidalPositionalEmbedding(nn.Module):
 
 
 # ------------------------------------------------------------
-# UNet backbone (same architecture as you had)
+# UNet backbone
 # ------------------------------------------------------------
 
 class SuperResDiffusionUNet(nn.Module):
@@ -203,11 +204,11 @@ class DiffusionModel(nn.Module):
 
 
 # ------------------------------------------------------------
-# Noise schedule (same as your original cosine_schedule)
+# Noise schedule
 # ------------------------------------------------------------
 
 def cosine_schedule(t, total_timesteps=500):
-    """Cosine noise schedule."""
+    """Cosine schedule over [0, T] interpreted as alpha_bar(t)."""
     return torch.cos((t.float() / total_timesteps) * (0.5 * torch.pi))
 
 
@@ -216,15 +217,6 @@ def cosine_schedule(t, total_timesteps=500):
 # ------------------------------------------------------------
 
 class SuperResolutionDiffusion(nn.Module):
-    """
-    Training:
-      - model(lr, t, training=True, hr_target=hr) → predicted_noise, true_noise
-
-    Inference:
-      - model(lr, t, training=False) → super-res image
-      - or model.sample(lr, num_steps)
-    """
-
     def __init__(
         self,
         unet_model,
@@ -238,17 +230,16 @@ class SuperResolutionDiffusion(nn.Module):
         self.diffusion = DiffusionModel(unet_model)
         self.timesteps = timesteps
         self.output_size = output_size
-        self.inference_timesteps = inference_timesteps if inference_timesteps is not None else timesteps
-    
-        # We treat cosine_schedule over all timesteps as alphā_t (cumulative product of alphas)
+        self.inference_timesteps = (
+            inference_timesteps if inference_timesteps is not None else timesteps
+        )
+
+        # alpha_bar over all timesteps
         t_all = torch.arange(self.timesteps, dtype=torch.long)
         alpha_bar = cosine_schedule(t_all, self.timesteps)  # (T,)
-
-        # avoid zeros to keep things numerically safe
         alpha_bar = torch.clamp(alpha_bar, min=1e-5, max=0.99999)
 
-        # derive per-step alphas and betas from alphā_t
-        # alpha_t = alphā_t / alphā_{t-1}
+        # derive per-step alphas and betas
         alpha_prev = torch.ones_like(alpha_bar)
         alpha_prev[1:] = alpha_bar[:-1]
         alphas = alpha_bar / alpha_prev
@@ -263,31 +254,27 @@ class SuperResolutionDiffusion(nn.Module):
             torch.sqrt(1.0 - alpha_bar),
         )
 
-
     def q_sample(self, x0, t, noise=None):
         """
-        Diffusion forward process: sample x_t given clean x0 and timestep t.
-        Uses DDPM formula: x_t = sqrt(alpha_bar_t) * x0 + sqrt(1-alpha_bar_t) * noise
+        Forward diffusion: sample x_t given clean x0 and timestep t.
 
-        x0:   (B, C, H, W) clean target (HR)
-        t:    (B,) integer timesteps
-        noise: optional; if None, Gaussian noise is sampled
-        returns: (x_t, noise)
+        x_t = sqrt(alpha_bar_t) * x0 + sqrt(1 - alpha_bar_t) * noise
         """
         if noise is None:
             noise = torch.randn_like(x0, device=x0.device)
 
-        # Use pre-computed sqrt(alpha_bar_t) for consistency with train.py
         sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
         sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
 
         x_t = sqrt_alpha_bar_t * x0 + sqrt_one_minus_alpha_bar_t * noise
         return x_t, noise
+
     # -------- TRAINING FORWARD --------
     def forward(self, x, t, training=True, hr_target=None):
         """
         x: low-res input (B,1,25,25)
         t: (B,) timesteps
+
         training=True: returns (predicted_noise, true_noise)
         training=False: runs sampling and returns SR image
         """
@@ -297,7 +284,6 @@ class SuperResolutionDiffusion(nn.Module):
             if hr_target is None:
                 raise ValueError("hr_target required for training")
 
-            # resize HR to match upscaled
             if hr_target.shape[2:] != upscaled.shape[2:]:
                 hr_target = F.interpolate(
                     hr_target,
@@ -306,17 +292,14 @@ class SuperResolutionDiffusion(nn.Module):
                     align_corners=True,
                 )
 
-            # add noise to HR target using DDPM formula
             noise = torch.randn_like(hr_target, device=hr_target.device)
             sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
             sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
-            
+
             noisy_image = sqrt_alpha_bar_t * hr_target + sqrt_one_minus_alpha_bar_t * noise
 
-            # predict noise conditioned on upscaled LR
             predicted_noise = self.diffusion(noisy_image, t, upscaled)
 
-            # align shapes if UNet output is smaller
             if predicted_noise.shape[2:] != noise.shape[2:]:
                 predicted_noise = F.interpolate(
                     predicted_noise,
@@ -328,10 +311,9 @@ class SuperResolutionDiffusion(nn.Module):
             return predicted_noise, noise
 
         else:
-            # use proper iterative sampler
             return self.sample(x, num_steps=self.inference_timesteps)
 
-    # -------- SAMPLING LOOP --------
+    # -------- DDIM-like SAMPLING LOOP (deterministic) --------
     @torch.no_grad()
     def sample(self, lr, num_steps=None):
         """
@@ -345,9 +327,8 @@ class SuperResolutionDiffusion(nn.Module):
 
         device = lr.device
         upscaled = self.upsampler(lr)       # conditioning image (B,1,HR,HR)
-        sample = torch.randn_like(upscaled) # start from noise
+        x = torch.randn_like(upscaled)      # start from noise
 
-        # map inference steps to training timesteps
         step_size = max(self.timesteps // num_steps, 1)
 
         for step_idx in range(num_steps - 1, -1, -1):
@@ -359,27 +340,24 @@ class SuperResolutionDiffusion(nn.Module):
                 dtype=torch.long,
             )
 
-            # predict noise
-            predicted_noise = self.diffusion(sample, t_batch, upscaled)
-
-            # make sure predicted_noise has same spatial size
-            if predicted_noise.shape[2:] != sample.shape[2:]:
-                predicted_noise = F.interpolate(
-                    predicted_noise,
-                    size=sample.shape[2:],
+            # predict noise at current x_t
+            eps = self.diffusion(x, t_batch, upscaled)
+            if eps.shape[2:] != x.shape[2:]:
+                eps = F.interpolate(
+                    eps,
+                    size=x.shape[2:],
                     mode="bilinear",
                     align_corners=True,
                 )
 
-            # Get sqrt(alpha_bar_t) and sqrt(alpha_bar_{t-1}) for DDPM reverse process
-            sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t_batch].view(-1, 1, 1, 1)
-            sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t_batch].view(-1, 1, 1, 1)
+            alpha_bar_t = self.alphas_cumprod[t_batch].view(-1, 1, 1, 1)
+            sqrt_ab_t = torch.sqrt(alpha_bar_t)
+            sqrt_one_minus_ab_t = torch.sqrt(1.0 - alpha_bar_t)
 
-            # Predict x0: x0 = (x_t - sqrt(1-alpha_bar_t)*eps) / sqrt(alpha_bar_t)
-            pred_x0 = (sample - sqrt_one_minus_alpha_bar_t * predicted_noise) / (sqrt_alpha_bar_t + 1e-8)
+            # x0 prediction
+            x0_pred = (x - sqrt_one_minus_ab_t * eps) / (sqrt_ab_t + 1e-8)
 
             if step_idx > 0:
-                # Get previous timestep values
                 t_prev_val = (step_idx - 1) * step_size
                 t_prev_batch = torch.full(
                     (lr.shape[0],),
@@ -387,32 +365,16 @@ class SuperResolutionDiffusion(nn.Module):
                     device=device,
                     dtype=torch.long,
                 )
-                sqrt_alpha_bar_t_prev = self.sqrt_alphas_cumprod[t_prev_batch].view(-1, 1, 1, 1)
-                sqrt_one_minus_alpha_bar_t_prev = self.sqrt_one_minus_alphas_cumprod[t_prev_batch].view(-1, 1, 1, 1)
-                
-                # Get beta_t and alpha_t for DDPM reverse process
-                beta_t = self.betas[t_batch].view(-1, 1, 1, 1)
-                alpha_t = self.alphas[t_batch].view(-1, 1, 1, 1)  # alpha_t = 1 - beta_t
-                alpha_bar_t = sqrt_alpha_bar_t ** 2
-                alpha_bar_t_prev = sqrt_alpha_bar_t_prev ** 2
-                
-                # Compute posterior variance: beta_tilde = beta_t * (1 - alpha_bar_{t-1}) / (1 - alpha_bar_t)
-                posterior_variance = beta_t * (1 - alpha_bar_t_prev) / (1 - alpha_bar_t + 1e-8)
-                posterior_variance = torch.clamp(posterior_variance, min=1e-20)
-                
-                # Compute posterior mean: mu_tilde = (1/sqrt(alpha_t)) * (x_t - (beta_t/sqrt(1-alpha_bar_t)) * eps)
-                sqrt_alpha_t = torch.sqrt(alpha_t)
-                posterior_mean = (1.0 / (sqrt_alpha_t + 1e-8)) * (sample - (beta_t / (sqrt_one_minus_alpha_bar_t + 1e-8)) * predicted_noise)
-                
-                # Sample x_{t-1}
-                noise_term = torch.randn_like(sample)
-                sample = posterior_mean + torch.sqrt(posterior_variance) * noise_term
+                alpha_bar_prev = self.alphas_cumprod[t_prev_batch].view(-1, 1, 1, 1)
+
+                # DDIM-like deterministic update:
+                # x_{t-1} = sqrt(alpha_bar_{t-1}) * x0_hat + sqrt(1-alpha_bar_{t-1}) * eps
+                x = torch.sqrt(alpha_bar_prev) * x0_pred + torch.sqrt(1.0 - alpha_bar_prev) * eps
             else:
-                # Final step: just use predicted x0
-                sample = pred_x0
+                # last step: just use x0_pred
+                x = x0_pred
 
-        # final resize if requested
-        if self.output_size is not None:
-            sample = F.interpolate(sample, size=self.output_size, mode="bilinear", align_corners=True)
+        if self.output_size is not None and x.shape[2:] != tuple(self.output_size):
+            x = F.interpolate(x, size=self.output_size, mode="bilinear", align_corners=True)
 
-        return sample
+        return x
