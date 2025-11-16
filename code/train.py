@@ -21,13 +21,13 @@ def main():
 
     # --- hyperparams ---
     batch_size = 32
-    epochs = 50
-    learning_rate = 1e-4
-    timesteps = 500
+    epochs = 500
+    learning_rate = 3e-4
+    timesteps = 1000
     t_recon_max = 150           # only use x0 recon loss for t < this
     inference_steps = 50
     upscale_factor = 5
-    recon_weight = 0.8          # weight on x0 reconstruction loss
+    recon_weight = 0.5          # weight on x0 reconstruction loss
     grad_clip = 1.0
 
     # --- wandb init ---
