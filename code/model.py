@@ -263,11 +263,12 @@ class SuperResolutionDiffusion(nn.Module):
         x_t = sqrt_alpha_bar_t * x0 + sqrt_one_minus_alpha_bar_t * noise
         return x_t, noise
 
-        # -------- SAMPLING LOOP (DDIM-like) --------
+        # -------- SAMPLING LOOP (DDPM stochastic) --------
     @torch.no_grad()
     def sample(self, lr, num_steps=None):
         """
-        Generate high-res sample given low-res input.
+        Generate high-res sample given low-res input using DDPM stochastic sampling.
+        Starts from upscaled LR with noise (not pure noise) for super-resolution.
 
         lr: (B, 1, 25, 25)
         returns: (B, 1, HR, HR)  (HR ~ 125x125)
@@ -280,13 +281,23 @@ class SuperResolutionDiffusion(nn.Module):
 
         # conditioning image (upsampled LR)
         cond = self.upsampler(lr)           # (B, 1, Hc, Wc)
-        x = torch.randn_like(cond)          # start from pure noise
 
         # map num_steps onto training timesteps [0 .. self.timesteps-1]
-        step_size = max(self.timesteps // num_steps, 1)
+        # Create evenly spaced timesteps from 0 to timesteps-1
+        if num_steps == self.timesteps:
+            timestep_list = list(range(self.timesteps))
+        else:
+            timestep_list = torch.linspace(0, self.timesteps - 1, num_steps, dtype=torch.long).tolist()
+        
+        # Start from upscaled LR with noise at the maximum timestep (for super-resolution)
+        t_start = timestep_list[-1]  # Last timestep (most noisy)
+        t_start_tensor = torch.full((B,), t_start, device=device, dtype=torch.long)
+        noise = torch.randn_like(cond)
+        sqrt_alpha_bar_start = self.sqrt_alphas_cumprod[t_start_tensor].view(B, 1, 1, 1)
+        sqrt_one_minus_alpha_bar_start = self.sqrt_one_minus_alphas_cumprod[t_start_tensor].view(B, 1, 1, 1)
+        x = sqrt_alpha_bar_start * cond + sqrt_one_minus_alpha_bar_start * noise
 
-        for i in reversed(range(num_steps)):
-            t_val = i * step_size
+        for i, t_val in enumerate(reversed(timestep_list)):
             t = torch.full((B,), t_val, device=device, dtype=torch.long)
 
             # predict noise ε_t = ε_θ(x_t, t, cond)
@@ -301,27 +312,29 @@ class SuperResolutionDiffusion(nn.Module):
                     align_corners=True,
                 )
 
-            # current alphā_t and its complement
-            sqrt_ab_t = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
-            sqrt_one_minus_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
+            # DDPM reverse process
+            # Get alpha_t, alpha_bar_t, beta_t for current timestep
+            alpha_t = self.alphas[t].view(B, 1, 1, 1)
+            alpha_bar_t = self.alphas_cumprod[t].view(B, 1, 1, 1)
+            beta_t = self.betas[t].view(B, 1, 1, 1)
+            sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
 
-            # estimate x0 from x_t and ε̂
-            x0_hat = (x - sqrt_one_minus_t * eps) / (sqrt_ab_t + 1e-8)
-
-            if i > 0:
-                # go to "previous" timestep t_prev (DDIM-style deterministic step)
-                t_prev_val = (i - 1) * step_size
-                t_prev = torch.full((B,), t_prev_val, device=device, dtype=torch.long)
-
-                sqrt_ab_prev = self.sqrt_alphas_cumprod[t_prev].view(B, 1, 1, 1)
-                sqrt_one_minus_prev = self.sqrt_one_minus_alphas_cumprod[t_prev].view(B, 1, 1, 1)
-
-                # deterministic DDIM-like update:
-                # x_{t_prev} = sqrt(alphā_{t_prev}) * x0_hat + sqrt(1 - alphā_{t_prev}) * ε̂
-                x = sqrt_ab_prev * x0_hat + sqrt_one_minus_prev * eps
+            if i < len(timestep_list) - 1:  # Not the last step
+                # Compute mean: 1/sqrt(alpha_t) * (x_t - beta_t/sqrt(1-alpha_bar_t) * eps)
+                mean = (x - beta_t * eps / sqrt_one_minus_alpha_bar_t) / torch.sqrt(alpha_t)
+                
+                # Variance: use posterior_variance (better than just beta_t)
+                variance = self.posterior_variance[t].view(B, 1, 1, 1)
+                # Clamp variance to avoid numerical issues
+                variance = torch.clamp(variance, min=1e-20)
+                
+                # Sample from q(x_{t-1} | x_t, x_0) - DDPM stochastic step
+                noise = torch.randn_like(x)
+                x = mean + torch.sqrt(variance) * noise
             else:
-                # final step: return x0_hat
-                x = x0_hat
+                # Final step (t=0): return predicted x0
+                sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
+                x = (x - sqrt_one_minus_alpha_bar_t * eps) / (sqrt_alpha_bar_t + 1e-8)
 
         # final resize if a specific output_size is requested
         if self.output_size is not None and x.shape[2:] != tuple(self.output_size):
