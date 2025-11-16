@@ -11,6 +11,8 @@ import wandb
 from dataset import SuperResolutionDataset
 from model import SuperResDiffusionUNet, Upsampler, SuperResolutionDiffusion
 from losses import HybridLoss
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def main():
@@ -265,6 +267,52 @@ def main():
                 "lr": optimizer.param_groups[0]["lr"],
             }
         )
+        # --- Visualization every 5 epochs ---
+        if (epoch + 1) % 5 == 0:
+            model.eval()
+            with torch.no_grad():
+                # pick a random validation sample
+                idx = torch.randint(0, len(val_ds), (1,)).item()
+                lr_img, hr_img = val_ds[idx]
+
+                lr_batch = lr_img.unsqueeze(0).to(device)
+
+                # bilinear
+                bilinear = F.interpolate(
+                    lr_batch,
+                    scale_factor=upscale_factor,
+                    mode="bilinear",
+                    align_corners=True
+                )[0].cpu()
+
+                # model sample (DDPM)
+                sr_sample = model.sample(lr_batch, num_steps=inference_steps)[0].cpu()
+
+                # convert to numpy
+                lr_np  = lr_img.squeeze().cpu().numpy()
+                hr_np  = hr_img.squeeze().cpu().numpy()
+                bilin_np = bilinear.squeeze().numpy()
+                sr_np = sr_sample.squeeze().numpy()
+
+                # shared vmin/vmax
+                vmin = min(lr_np.min(), hr_np.min(), bilin_np.min())
+                vmax = max(lr_np.max(), hr_np.max(), bilin_np.max())
+
+                # build the 1x4 panel
+                fig, axes = plt.subplots(1, 4, figsize=(16, 4))
+                images = [lr_np, bilin_np, sr_np, hr_np]
+                titles = ["Low-Res Input", "Bilinear", "DDPM Super-Res", "High-Res Target"]
+
+                for ax, img, title in zip(axes, images, titles):
+                    im = ax.imshow(img, cmap="gray", vmin=vmin, vmax=vmax)
+                    ax.set_title(title)
+                    ax.axis("off")
+
+                plt.tight_layout()
+
+                wandb.log({"viz_epoch": wandb.Image(fig, caption=f"Epoch {epoch+1}")})
+                plt.close(fig)
+
 
         # checkpoint
         ckpt_path = f"checkpoints/model_epoch_{epoch+1}.pth"
