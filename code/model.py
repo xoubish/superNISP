@@ -266,8 +266,8 @@ class SuperResolutionDiffusion(nn.Module):
 
     def q_sample(self, x0, t, noise=None):
         """
-        Diffusion forward process: sample x_t given clean x0 and timestep t,
-        using the same cosine schedule as the rest of the model.
+        Diffusion forward process: sample x_t given clean x0 and timestep t.
+        Uses DDPM formula: x_t = sqrt(alpha_bar_t) * x0 + sqrt(1-alpha_bar_t) * noise
 
         x0:   (B, C, H, W) clean target (HR)
         t:    (B,) integer timesteps
@@ -277,11 +277,11 @@ class SuperResolutionDiffusion(nn.Module):
         if noise is None:
             noise = torch.randn_like(x0, device=x0.device)
 
-        alpha_t = cosine_schedule(t, self.timesteps)  # (B,)
-        if alpha_t.dim() == 1:
-            alpha_t = alpha_t.view(-1, 1, 1, 1)
+        # Use pre-computed sqrt(alpha_bar_t) for consistency with train.py
+        sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+        sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
 
-        x_t = alpha_t * x0 + (1.0 - alpha_t) * noise
+        x_t = sqrt_alpha_bar_t * x0 + sqrt_one_minus_alpha_bar_t * noise
         return x_t, noise
     # -------- TRAINING FORWARD --------
     def forward(self, x, t, training=True, hr_target=None):
@@ -306,13 +306,12 @@ class SuperResolutionDiffusion(nn.Module):
                     align_corners=True,
                 )
 
-            # add noise to HR target
+            # add noise to HR target using DDPM formula
             noise = torch.randn_like(hr_target, device=hr_target.device)
-            alpha_t = cosine_schedule(t, self.timesteps)
-            if alpha_t.dim() == 1:
-                alpha_t = alpha_t.view(-1, 1, 1, 1)
-
-            noisy_image = alpha_t * hr_target + (1.0 - alpha_t) * noise
+            sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+            sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
+            
+            noisy_image = sqrt_alpha_bar_t * hr_target + sqrt_one_minus_alpha_bar_t * noise
 
             # predict noise conditioned on upscaled LR
             predicted_noise = self.diffusion(noisy_image, t, upscaled)
@@ -372,12 +371,15 @@ class SuperResolutionDiffusion(nn.Module):
                     align_corners=True,
                 )
 
-            # alpha_t and (optionally) alpha_{t-1}
-            alpha_t = cosine_schedule(t_batch, self.timesteps)
-            if alpha_t.dim() == 1:
-                alpha_t = alpha_t.view(-1, 1, 1, 1)
+            # Get sqrt(alpha_bar_t) and sqrt(alpha_bar_{t-1}) for DDPM reverse process
+            sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t_batch].view(-1, 1, 1, 1)
+            sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t_batch].view(-1, 1, 1, 1)
+
+            # Predict x0: x0 = (x_t - sqrt(1-alpha_bar_t)*eps) / sqrt(alpha_bar_t)
+            pred_x0 = (sample - sqrt_one_minus_alpha_bar_t * predicted_noise) / (sqrt_alpha_bar_t + 1e-8)
 
             if step_idx > 0:
+                # Get previous timestep values
                 t_prev_val = (step_idx - 1) * step_size
                 t_prev_batch = torch.full(
                     (lr.shape[0],),
@@ -385,20 +387,28 @@ class SuperResolutionDiffusion(nn.Module):
                     device=device,
                     dtype=torch.long,
                 )
-                alpha_t_prev = cosine_schedule(t_prev_batch, self.timesteps)
-                if alpha_t_prev.dim() == 1:
-                    alpha_t_prev = alpha_t_prev.view(-1, 1, 1, 1)
+                sqrt_alpha_bar_t_prev = self.sqrt_alphas_cumprod[t_prev_batch].view(-1, 1, 1, 1)
+                sqrt_one_minus_alpha_bar_t_prev = self.sqrt_one_minus_alphas_cumprod[t_prev_batch].view(-1, 1, 1, 1)
+                
+                # Get beta_t and alpha_t for DDPM reverse process
+                beta_t = self.betas[t_batch].view(-1, 1, 1, 1)
+                alpha_t = self.alphas[t_batch].view(-1, 1, 1, 1)  # alpha_t = 1 - beta_t
+                alpha_bar_t = sqrt_alpha_bar_t ** 2
+                alpha_bar_t_prev = sqrt_alpha_bar_t_prev ** 2
+                
+                # Compute posterior variance: beta_tilde = beta_t * (1 - alpha_bar_{t-1}) / (1 - alpha_bar_t)
+                posterior_variance = beta_t * (1 - alpha_bar_t_prev) / (1 - alpha_bar_t + 1e-8)
+                posterior_variance = torch.clamp(posterior_variance, min=1e-20)
+                
+                # Compute posterior mean: mu_tilde = (1/sqrt(alpha_t)) * (x_t - (beta_t/sqrt(1-alpha_bar_t)) * eps)
+                sqrt_alpha_t = torch.sqrt(alpha_t)
+                posterior_mean = (1.0 / (sqrt_alpha_t + 1e-8)) * (sample - (beta_t / (sqrt_one_minus_alpha_bar_t + 1e-8)) * predicted_noise)
+                
+                # Sample x_{t-1}
+                noise_term = torch.randn_like(sample)
+                sample = posterior_mean + torch.sqrt(posterior_variance) * noise_term
             else:
-                alpha_t_prev = torch.ones_like(alpha_t)
-
-            # predict x0 under your alpha/noise parameterization
-            pred_x0 = (sample - (1.0 - alpha_t) * predicted_noise) / (alpha_t + 1e-8)
-
-            # DDPM-style update
-            if step_idx > 0:
-                noise_term = torch.randn_like(sample) if step_idx > 1 else torch.zeros_like(sample)
-                sample = alpha_t_prev * pred_x0 + (1.0 - alpha_t_prev) * noise_term
-            else:
+                # Final step: just use predicted x0
                 sample = pred_x0
 
         # final resize if requested
