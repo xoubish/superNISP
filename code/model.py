@@ -263,16 +263,14 @@ class SuperResolutionDiffusion(nn.Module):
         x_t = sqrt_alpha_bar_t * x0 + sqrt_one_minus_alpha_bar_t * noise
         return x_t, noise
 
-    # we don't use __call__/forward() in training; train.py uses q_sample + diffusion directly
-
-    # -------- SAMPLING LOOP (DDIM, η = 0) --------
+    # -------- SAMPLING LOOP (DDIM-style, deterministic) --------
     @torch.no_grad()
     def sample(self, lr, num_steps=None):
         """
-        DDIM-style sampling conditioned on LR input.
+        Generate high-res sample given low-res input using a DDIM-style sampler.
 
         lr: (B, 1, 25, 25)
-        returns: (B, 1, HR, HR)
+        returns: (B, 1, HR, HR)  (HR ~ 125x125)
         """
         if num_steps is None:
             num_steps = self.inference_timesteps
@@ -280,49 +278,58 @@ class SuperResolutionDiffusion(nn.Module):
         device = lr.device
         B = lr.shape[0]
 
-        upscaled = self.upsampler(lr)          # (B,1,H,H)
-        x = torch.randn_like(upscaled)         # start from pure noise
+        # conditioning: upsampled LR
+        cond = self.upsampler(lr)        # (B,1,H,H)
+        x = torch.randn_like(cond)       # start from pure noise at large t
 
-        # Choose timesteps we visit during sampling (from T-1 down to 0)
-        step_indices = torch.linspace(
+        # make a decreasing sequence of timesteps in [0, T-1]
+        # e.g. for T=500, num_steps=50 -> something like [499, 489, ..., 9, 0]
+        t_seq = torch.linspace(
             self.timesteps - 1,
             0,
             steps=num_steps,
-            dtype=torch.long,
-            device=device,
-        )
+            device=device
+        ).long()
 
-        for i in range(num_steps):
-            t_int = step_indices[i]
-            t_batch = torch.full((B,), t_int, dtype=torch.long, device=device)
+        for i in range(len(t_seq) - 1):
+            t     = t_seq[i]      # current timestep
+            t_next = t_seq[i+1]   # next (smaller) timestep
 
-            # predict noise ε_θ(x_t, t, cond)
-            eps = self.diffusion(x, t_batch, upscaled)
+            t_batch     = t.expand(B)
+            t_next_batch = t_next.expand(B)
 
-            if eps.shape[2:] != x.shape[2:]:
-                eps = F.interpolate(eps, size=x.shape[2:], mode="bilinear", align_corners=True)
+            # predict epsilon = noise(x_t, t | cond)
+            eps = self.diffusion(x, t_batch, cond)
 
-            sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t_batch].view(-1, 1, 1, 1)
-            sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t_batch].view(-1, 1, 1, 1)
+            # --- DDIM formulas ---
 
-            # x0 estimate from current x_t and predicted noise
-            x0_hat = (x - sqrt_one_minus_alpha_bar_t * eps) / (sqrt_alpha_bar_t + 1e-8)
+            alpha_bar_t      = self.alphas_cumprod[t]        # scalar
+            alpha_bar_t_next = self.alphas_cumprod[t_next]   # scalar
 
-            if i == num_steps - 1:
-                # final step: go all the way to x0
-                x = x0_hat
-            else:
-                t_next_int = step_indices[i + 1]
-                t_next_batch = torch.full((B,), t_next_int, dtype=torch.long, device=device)
+            sqrt_ab_t        = torch.sqrt(alpha_bar_t)
+            sqrt_one_minus_t = torch.sqrt(1.0 - alpha_bar_t)
 
-                sqrt_alpha_bar_next = self.sqrt_alphas_cumprod[t_next_batch].view(-1, 1, 1, 1)
-                sqrt_one_minus_alpha_bar_next = self.sqrt_one_minus_alphas_cumprod[t_next_batch].view(-1, 1, 1, 1)
+            sqrt_ab_next     = torch.sqrt(alpha_bar_t_next)
+            sqrt_one_minus_next = torch.sqrt(1.0 - alpha_bar_t_next)
 
-                # DDIM (η=0): deterministic step toward the next time with same ε
-                x = sqrt_alpha_bar_next * x0_hat + sqrt_one_minus_alpha_bar_next * eps
+            # predict x0 from current x_t and eps
+            # x0_hat = (x_t - sqrt(1 - ᾱ_t) * eps) / sqrt(ᾱ_t)
+            x0_hat = (x - sqrt_one_minus_t * eps) / (sqrt_ab_t + 1e-8)
 
-        # final resize if requested
+            # deterministic DDIM step with η = 0:
+            # x_{t_next} = sqrt(ᾱ_{t_next}) * x0_hat + sqrt(1 - ᾱ_{t_next}) * eps
+            x = sqrt_ab_next * x0_hat + sqrt_one_minus_next * eps
+
+        # final step: t_seq[-1] should be 0; x is already close to x0_hat at t=0.
+        sample = x
+
+        # optional final resize to exact output_size
         if self.output_size is not None:
-            x = F.interpolate(x, size=self.output_size, mode="bilinear", align_corners=True)
+            sample = F.interpolate(
+                sample,
+                size=self.output_size,
+                mode="bilinear",
+                align_corners=True,
+            )
 
-        return x
+        return sample
