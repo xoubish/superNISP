@@ -1,325 +1,380 @@
-# train.py
-
-import os
+# model.py
+import math
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
 import torch.nn.functional as F
-import wandb
 
-from dataset import SuperResolutionDataset
-from model import SuperResDiffusionUNet, Upsampler, SuperResolutionDiffusion
-from losses import HybridLoss
-import matplotlib.pyplot as plt
-import numpy as np
+# ------------------------------------------------------------
+# Positional embedding
+# ------------------------------------------------------------
+
+class SinusoidalPositionalEmbedding(nn.Module):
+    """Sinusoidal positional embedding for timesteps."""
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, time):
+        # time: (B,)
+        device = time.device
+        half_dim = self.dim // 2
+        emb = math.log(10000) / (half_dim - 1)
+        emb = torch.exp(torch.arange(half_dim, device=device) * -emb)
+        emb = time[:, None] * emb[None, :]
+        emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=-1)  # (B, dim)
+        return emb
 
 
-def main():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("Device:", device)
+# ------------------------------------------------------------
+# UNet backbone
+# ------------------------------------------------------------
 
-    # --- hyperparams ---
-    batch_size = 32
-    epochs = 50
-    learning_rate = 1e-4
-    timesteps = 500
-    t_recon_max = 400           # only use x0 recon loss for t < this
-    inference_steps = 50
-    upscale_factor = 5
-    recon_weight = 0.05         # weight on x0 reconstruction loss
-    grad_clip = 1.0
-
-    # --- wandb init ---
-    wandb.init(
-        project="superNISP_diffusion",
-        config={
-            "batch_size": batch_size,
-            "epochs": epochs,
-            "learning_rate": learning_rate,
-            "timesteps": timesteps,
-            "t_recon_max": t_recon_max,
-            "inference_steps": inference_steps,
-            "upscale_factor": upscale_factor,
-            "recon_weight": recon_weight,
-        },
-    )
-
-    # --- data ---
-    train_ds = SuperResolutionDataset(
-        "../data/Nisp_train_cosmos.hdf5",
-        "../data/Nircam_train_cosmos.hdf5",
-        split="train",
-        sample_fraction=0.2,
-    )
-    val_ds = SuperResolutionDataset(
-        "../data/Nisp_train_cosmos.hdf5",
-        "../data/Nircam_train_cosmos.hdf5",
-        split="test",
-        sample_fraction=0.1,
-    )
-
-    train_loader = DataLoader(
-        train_ds,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=4,
-    )
-    val_loader = DataLoader(
-        val_ds,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=2,
-    )
-
-    # --- model ---
-    unet = SuperResDiffusionUNet(
+class SuperResDiffusionUNet(nn.Module):
+    def __init__(
+        self,
         in_channels=1,
         out_channels=1,
         hidden_dim=64,
         activation_fn=nn.ReLU,
-    ).to(device)
+        timestep_embed_dim=128,
+    ):
+        super().__init__()
+        self.activation_fn = activation_fn
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.hidden_dim = hidden_dim
 
-    upsampler = Upsampler(
-        in_channels=1,
-        out_channels=1,
-        upscale_factor=upscale_factor,
-    ).to(device)
+        # Timestep embedding
+        self.timestep_embed_dim = timestep_embed_dim
+        self.time_embed = SinusoidalPositionalEmbedding(timestep_embed_dim)
+        self.time_mlp = nn.Sequential(
+            nn.Linear(timestep_embed_dim, hidden_dim * 4),
+            self.activation_fn(),
+            nn.Linear(hidden_dim * 4, hidden_dim * 4),
+        )
 
-    model = SuperResolutionDiffusion(
-        unet_model=unet,
-        upsampler=upsampler,
-        timesteps=timesteps,
-        output_size=[125, 125],
-        inference_timesteps=inference_steps,
-    ).to(device)
+        # Encoder
+        self.encoder1 = nn.Sequential(
+            nn.Conv2d(self.in_channels, self.hidden_dim, kernel_size=4, stride=2, padding=1),
+            self.activation_fn(),
+        )
+        self.encoder2 = nn.Sequential(
+            nn.Conv2d(self.hidden_dim, self.hidden_dim * 2, kernel_size=4, stride=2, padding=1),
+            self.activation_fn(),
+        )
+        self.encoder3 = nn.Sequential(
+            nn.Conv2d(self.hidden_dim * 2, self.hidden_dim * 4, kernel_size=4, stride=2, padding=1),
+            self.activation_fn(),
+        )
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=5
-    )
+        # Multi-scale conditioning
+        self.condition_proj1 = nn.Conv2d(1, self.hidden_dim, kernel_size=3, padding=1)
+        self.condition_proj2 = nn.Conv2d(1, self.hidden_dim * 2, kernel_size=3, padding=1)
+        self.condition_proj3 = nn.Conv2d(1, self.hidden_dim * 4, kernel_size=3, padding=1)
+        self.condition_proj_dec1 = nn.Conv2d(1, self.hidden_dim * 2, kernel_size=3, padding=1)
+        self.condition_proj_dec2 = nn.Conv2d(1, self.hidden_dim, kernel_size=3, padding=1)
 
-    # only MSE for now in HybridLoss (L1_weight=0)
-    recon_loss_fn = HybridLoss(mse_weight=1.0, l1_weight=0.0)
+        # Bottleneck fusion
+        self.cross_attention = nn.Sequential(
+            nn.Conv2d(self.hidden_dim * 4 * 2, self.hidden_dim * 4, kernel_size=1),
+            self.activation_fn(),
+            nn.Conv2d(self.hidden_dim * 4, self.hidden_dim * 4, kernel_size=3, padding=1),
+            self.activation_fn(),
+        )
 
-    os.makedirs("checkpoints", exist_ok=True)
+        # Decoder fusion modules
+        self.fusion_dec1 = nn.Sequential(
+            nn.Conv2d(self.hidden_dim * 2, self.hidden_dim * 2, kernel_size=1),
+            self.activation_fn(),
+        )
+        self.fusion_dec2 = nn.Sequential(
+            nn.Conv2d(self.hidden_dim, self.hidden_dim, kernel_size=1),
+            self.activation_fn(),
+        )
 
-    # --- training loop ---
-    for epoch in range(epochs):
-        model.train()
-        train_noise_loss = 0.0
-        train_recon_loss = 0.0
+        # Decoder
+        self.decoder1 = nn.Sequential(
+            nn.ConvTranspose2d(
+                self.hidden_dim * 4,
+                self.hidden_dim * 2,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+            ),
+            self.activation_fn(),
+        )
+        self.decoder2 = nn.Sequential(
+            nn.ConvTranspose2d(
+                self.hidden_dim * 2,
+                self.hidden_dim,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+            ),
+            self.activation_fn(),
+        )
+        self.decoder3 = nn.Conv2d(self.hidden_dim, self.out_channels, kernel_size=3, padding=1)
 
-        for lr_batch, hr_batch in train_loader:
-            lr_batch = lr_batch.to(device)
-            hr_batch = hr_batch.to(device)
+    def forward(self, x, condition, t_emb):
+        # Encode
+        x1 = self.encoder1(x)
+        cond1 = self.condition_proj1(condition)
+        cond1 = F.interpolate(cond1, size=x1.shape[2:], mode="bilinear", align_corners=True)
+        x1 = x1 + cond1
 
-            B = lr_batch.size(0)
-            t = torch.randint(0, timesteps, (B,), device=device)
+        x2 = self.encoder2(x1)
+        cond2 = self.condition_proj2(condition)
+        cond2 = F.interpolate(cond2, size=x2.shape[2:], mode="bilinear", align_corners=True)
+        x2 = x2 + cond2
 
-            # mask for which samples we apply x0 recon loss
-            recon_mask = (t < t_recon_max)
+        x3 = self.encoder3(x2)
+        cond3 = self.condition_proj3(condition)
+        cond3 = F.interpolate(cond3, size=x3.shape[2:], mode="bilinear", align_corners=True)
 
-            optimizer.zero_grad()
+        # Timestep embedding at bottleneck
+        if t_emb is not None:
+            t_emb = self.time_mlp(t_emb)
+            B, C = t_emb.shape
+            H, W = x3.shape[2], x3.shape[3]
+            t_emb = t_emb.view(B, C, 1, 1).expand(B, C, H, W)
+            x3 = x3 + t_emb[:, : self.hidden_dim * 4, :, :]
 
-            # condition on upsampled LR
-            upscaled = model.upsampler(lr_batch)
-            if hr_batch.shape[2:] != upscaled.shape[2:]:
-                hr_resized = F.interpolate(
-                    hr_batch,
+        # Bottleneck fusion
+        x3 = torch.cat([x3, cond3], dim=1)
+        x3 = self.cross_attention(x3)
+
+        # Decode
+        x = self.decoder1(x3)
+        x = self.align_dims(x, x2)
+        cond_dec1 = self.condition_proj_dec1(condition)
+        cond_dec1 = F.interpolate(cond_dec1, size=x.shape[2:], mode="bilinear", align_corners=True)
+        x = x + x2 + self.fusion_dec1(cond_dec1)
+
+        x = self.decoder2(x)
+        x = self.align_dims(x, x1)
+        cond_dec2 = self.condition_proj_dec2(condition)
+        cond_dec2 = F.interpolate(cond_dec2, size=x.shape[2:], mode="bilinear", align_corners=True)
+        x = x + x1 + self.fusion_dec2(cond_dec2)
+
+        x = self.decoder3(x)
+        return x
+
+    @staticmethod
+    def align_dims(x, target):
+        if x.size() != target.size():
+            diffY = target.size(2) - x.size(2)
+            diffX = target.size(3) - x.size(3)
+            x = F.pad(x, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
+        return x
+
+
+# ------------------------------------------------------------
+# Upsampler: pure bilinear 5×
+# ------------------------------------------------------------
+
+class Upsampler(nn.Module):
+    def __init__(self, in_channels=1, out_channels=1, upscale_factor=5):
+        super().__init__()
+        self.upscale_factor = upscale_factor
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+    def forward(self, x):
+        return F.interpolate(
+            x,
+            scale_factor=self.upscale_factor,
+            mode="bilinear",
+            align_corners=True,
+        )
+
+
+# ------------------------------------------------------------
+# Diffusion wrapper around UNet
+# ------------------------------------------------------------
+
+class DiffusionModel(nn.Module):
+    def __init__(self, unet_model):
+        super().__init__()
+        self.unet = unet_model
+
+    def forward(self, x, t, condition):
+        # x: noisy image, condition: upscaled LR
+        t_emb = self.unet.time_embed(t.float())
+        return self.unet(x, condition, t_emb)
+
+
+# ------------------------------------------------------------
+# Noise schedule
+# ------------------------------------------------------------
+
+def cosine_schedule(t, total_timesteps=500):
+    """Cosine schedule over [0, T] interpreted as alpha_bar(t)."""
+    return torch.cos((t.float() / total_timesteps) * (0.5 * torch.pi))
+
+
+# ------------------------------------------------------------
+# Super-resolution diffusion model
+# ------------------------------------------------------------
+
+class SuperResolutionDiffusion(nn.Module):
+    def __init__(
+        self,
+        unet_model,
+        upsampler,
+        timesteps=500,
+        output_size=None,
+        inference_timesteps=None,
+    ):
+        super().__init__()
+        self.upsampler = upsampler
+        self.diffusion = DiffusionModel(unet_model)
+        self.timesteps = timesteps
+        self.output_size = output_size
+        self.inference_timesteps = (
+            inference_timesteps if inference_timesteps is not None else timesteps
+        )
+
+        # alpha_bar over all timesteps
+        t_all = torch.arange(self.timesteps, dtype=torch.long)
+        alpha_bar = cosine_schedule(t_all, self.timesteps)  # (T,)
+        alpha_bar = torch.clamp(alpha_bar, min=1e-5, max=0.99999)
+
+        # derive per-step alphas and betas
+        alpha_prev = torch.ones_like(alpha_bar)
+        alpha_prev[1:] = alpha_bar[:-1]
+        alphas = alpha_bar / alpha_prev
+        betas = 1.0 - alphas
+
+        self.register_buffer("alphas_cumprod", alpha_bar)
+        self.register_buffer("alphas", alphas)
+        self.register_buffer("betas", betas)
+        self.register_buffer("sqrt_alphas_cumprod", torch.sqrt(alpha_bar))
+        self.register_buffer(
+            "sqrt_one_minus_alphas_cumprod",
+            torch.sqrt(1.0 - alpha_bar),
+        )
+
+    def q_sample(self, x0, t, noise=None):
+        """
+        Forward diffusion: sample x_t given clean x0 and timestep t.
+
+        x_t = sqrt(alpha_bar_t) * x0 + sqrt(1 - alpha_bar_t) * noise
+        """
+        if noise is None:
+            noise = torch.randn_like(x0, device=x0.device)
+
+        sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+        sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
+
+        x_t = sqrt_alpha_bar_t * x0 + sqrt_one_minus_alpha_bar_t * noise
+        return x_t, noise
+
+    # -------- TRAINING FORWARD --------
+    def forward(self, x, t, training=True, hr_target=None):
+        """
+        x: low-res input (B,1,25,25)
+        t: (B,) timesteps
+
+        training=True: returns (predicted_noise, true_noise)
+        training=False: runs sampling and returns SR image
+        """
+        upscaled = self.upsampler(x)  # (B,1,HR,HR)
+
+        if training:
+            if hr_target is None:
+                raise ValueError("hr_target required for training")
+
+            if hr_target.shape[2:] != upscaled.shape[2:]:
+                hr_target = F.interpolate(
+                    hr_target,
                     size=upscaled.shape[2:],
                     mode="bilinear",
                     align_corners=True,
                 )
-            else:
-                hr_resized = hr_batch
 
-            # forward diffusion: sample x_t and noise
-            x_t, noise = model.q_sample(hr_resized, t)
+            noise = torch.randn_like(hr_target, device=hr_target.device)
+            sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+            sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
 
-            # predict noise
-            pred_noise = model.diffusion(x_t, t, upscaled)
-            if pred_noise.shape != noise.shape:
-                pred_noise = F.interpolate(
-                    pred_noise,
+            noisy_image = sqrt_alpha_bar_t * hr_target + sqrt_one_minus_alpha_bar_t * noise
+
+            predicted_noise = self.diffusion(noisy_image, t, upscaled)
+
+            if predicted_noise.shape[2:] != noise.shape[2:]:
+                predicted_noise = F.interpolate(
+                    predicted_noise,
                     size=noise.shape[2:],
                     mode="bilinear",
                     align_corners=True,
                 )
 
-            # noise prediction loss
-            noise_loss = F.mse_loss(pred_noise, noise)
+            return predicted_noise, noise
 
-            # reconstruct x0 from predicted noise
-            alpha_bar_t = model.alphas_cumprod[t].view(-1, 1, 1, 1)
-            sqrt_ab = torch.sqrt(alpha_bar_t)
-            sqrt_one_minus = torch.sqrt(1.0 - alpha_bar_t)
+        else:
+            return self.sample(x, num_steps=self.inference_timesteps)
 
-            x0_pred = (x_t - sqrt_one_minus * pred_noise) / (sqrt_ab + 1e-8)
+    # -------- DDIM-like SAMPLING LOOP (deterministic) --------
+    @torch.no_grad()
+    def sample(self, lr, num_steps=None):
+        """
+        Generate high-res sample given low-res input.
 
-            # x0 recon loss only for t < t_recon_max
-            if recon_mask.any():
-                x0_pred_sub = x0_pred[recon_mask]
-                hr_sub = hr_resized[recon_mask]
+        lr: (B, 1, 25, 25)
+        returns: (B, 1, HR, HR) (HR ~ 125x125)
+        """
+        if num_steps is None:
+            num_steps = self.inference_timesteps
 
-                # clamp x0_pred into sane range
-                with torch.no_grad():
-                    lo = hr_sub.min()
-                    hi = hr_sub.max()
-                x0_pred_sub = torch.clamp(x0_pred_sub, lo, hi)
+        device = lr.device
+        upscaled = self.upsampler(lr)       # conditioning image (B,1,HR,HR)
+        x = torch.randn_like(upscaled)      # start from noise
 
-                recon_loss = recon_loss_fn(x0_pred_sub, hr_sub)
-            else:
-                recon_loss = torch.tensor(0.0, device=device)
+        step_size = max(self.timesteps // num_steps, 1)
 
-            loss = noise_loss + recon_weight * recon_loss
+        for step_idx in range(num_steps - 1, -1, -1):
+            t_val = step_idx * step_size
+            t_batch = torch.full(
+                (lr.shape[0],),
+                t_val,
+                device=device,
+                dtype=torch.long,
+            )
 
-            loss.backward()
-            # gradient clipping
-            nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip)
-            optimizer.step()
-
-            train_noise_loss += noise_loss.item()
-            train_recon_loss += recon_loss.item()
-
-        train_noise_loss /= len(train_loader)
-        train_recon_loss /= len(train_loader)
-
-        # --- validation ---
-        model.eval()
-        val_noise_loss = 0.0
-        val_recon_loss = 0.0
-
-        with torch.no_grad():
-            for lr_batch, hr_batch in val_loader:
-                lr_batch = lr_batch.to(device)
-                hr_batch = hr_batch.to(device)
-
-                B = lr_batch.size(0)
-                t = torch.randint(0, timesteps, (B,), device=device)
-                recon_mask = (t < t_recon_max)
-
-                upscaled = model.upsampler(lr_batch)
-                if hr_batch.shape[2:] != upscaled.shape[2:]:
-                    hr_resized = F.interpolate(
-                        hr_batch,
-                        size=upscaled.shape[2:],
-                        mode="bilinear",
-                        align_corners=True,
-                    )
-                else:
-                    hr_resized = hr_batch
-
-                x_t, noise = model.q_sample(hr_resized, t)
-                pred_noise = model.diffusion(x_t, t, upscaled)
-                if pred_noise.shape != noise.shape:
-                    pred_noise = F.interpolate(
-                        pred_noise,
-                        size=noise.shape[2:],
-                        mode="bilinear",
-                        align_corners=True,
-                    )
-
-                noise_loss = F.mse_loss(pred_noise, noise)
-
-                alpha_bar_t = model.alphas_cumprod[t].view(-1, 1, 1, 1)
-                sqrt_ab = torch.sqrt(alpha_bar_t)
-                sqrt_one_minus = torch.sqrt(1.0 - alpha_bar_t)
-                x0_pred = (x_t - sqrt_one_minus * pred_noise) / (sqrt_ab + 1e-8)
-
-                if recon_mask.any():
-                    x0_pred_sub = x0_pred[recon_mask]
-                    hr_sub = hr_resized[recon_mask]
-
-                    with torch.no_grad():
-                        lo = hr_sub.min()
-                        hi = hr_sub.max()
-                    x0_pred_sub = torch.clamp(x0_pred_sub, lo, hi)
-
-                    recon_loss = recon_loss_fn(x0_pred_sub, hr_sub)
-                else:
-                    recon_loss = torch.tensor(0.0, device=device)
-
-                val_noise_loss += noise_loss.item()
-                val_recon_loss += recon_loss.item()
-
-        val_noise_loss /= len(val_loader)
-        val_recon_loss /= len(val_loader)
-
-        # LR scheduler driven by total val loss
-        total_val_loss = val_noise_loss + recon_weight * val_recon_loss
-        scheduler.step(total_val_loss)
-
-        print(
-            f"Epoch {epoch+1}/{epochs} "
-            f"| train_noise={train_noise_loss:.4f}, train_recon={train_recon_loss:.4f} "
-            f"| val_noise={val_noise_loss:.4f}, val_recon={val_recon_loss:.4f}"
-        )
-
-        wandb.log(
-            {
-                "epoch": epoch + 1,
-                "train_noise": train_noise_loss,
-                "train_recon": train_recon_loss,
-                "val_noise": val_noise_loss,
-                "val_recon": val_recon_loss,
-                "val_total": total_val_loss,
-                "lr": optimizer.param_groups[0]["lr"],
-            }
-        )
-        # --- Visualization every 5 epochs ---
-        if (epoch + 1) % 5 == 0:
-            model.eval()
-            with torch.no_grad():
-                # pick a random validation sample
-                idx = torch.randint(0, len(val_ds), (1,)).item()
-                lr_img, hr_img = val_ds[idx]
-
-                lr_batch = lr_img.unsqueeze(0).to(device)
-
-                # bilinear
-                bilinear = F.interpolate(
-                    lr_batch,
-                    scale_factor=upscale_factor,
+            # predict noise at current x_t
+            eps = self.diffusion(x, t_batch, upscaled)
+            if eps.shape[2:] != x.shape[2:]:
+                eps = F.interpolate(
+                    eps,
+                    size=x.shape[2:],
                     mode="bilinear",
-                    align_corners=True
-                )[0].cpu()
+                    align_corners=True,
+                )
 
-                # model sample (DDPM)
-                sr_sample = model.sample(lr_batch, num_steps=inference_steps)[0].cpu()
+            alpha_bar_t = self.alphas_cumprod[t_batch].view(-1, 1, 1, 1)
+            sqrt_ab_t = torch.sqrt(alpha_bar_t)
+            sqrt_one_minus_ab_t = torch.sqrt(1.0 - alpha_bar_t)
 
-                # convert to numpy
-                lr_np  = lr_img.squeeze().cpu().numpy()
-                hr_np  = hr_img.squeeze().cpu().numpy()
-                bilin_np = bilinear.squeeze().numpy()
-                sr_np = sr_sample.squeeze().numpy()
+            # x0 prediction
+            x0_pred = (x - sqrt_one_minus_ab_t * eps) / (sqrt_ab_t + 1e-8)
 
-                # shared vmin/vmax
-                vmin = min(lr_np.min(), hr_np.min(), bilin_np.min())
-                vmax = max(lr_np.max(), hr_np.max(), bilin_np.max())
+            if step_idx > 0:
+                t_prev_val = (step_idx - 1) * step_size
+                t_prev_batch = torch.full(
+                    (lr.shape[0],),
+                    t_prev_val,
+                    device=device,
+                    dtype=torch.long,
+                )
+                alpha_bar_prev = self.alphas_cumprod[t_prev_batch].view(-1, 1, 1, 1)
 
-                # build the 1x4 panel
-                fig, axes = plt.subplots(1, 4, figsize=(16, 4))
-                images = [lr_np, bilin_np, sr_np, hr_np]
-                titles = ["Low-Res Input", "Bilinear", "DDPM Super-Res", "High-Res Target"]
+                # DDIM-like deterministic update:
+                # x_{t-1} = sqrt(alpha_bar_{t-1}) * x0_hat + sqrt(1-alpha_bar_{t-1}) * eps
+                x = torch.sqrt(alpha_bar_prev) * x0_pred + torch.sqrt(1.0 - alpha_bar_prev) * eps
+            else:
+                # last step: just use x0_pred
+                x = x0_pred
 
-                for ax, img, title in zip(axes, images, titles):
-                    im = ax.imshow(img, cmap="gray", vmin=vmin, vmax=vmax)
-                    ax.set_title(title)
-                    ax.axis("off")
+        if self.output_size is not None and x.shape[2:] != tuple(self.output_size):
+            x = F.interpolate(x, size=self.output_size, mode="bilinear", align_corners=True)
 
-                plt.tight_layout()
-
-                wandb.log({"viz_epoch": wandb.Image(fig, caption=f"Epoch {epoch+1}")})
-                plt.close(fig)
-
-
-        # checkpoint
-        ckpt_path = f"checkpoints/model_epoch_{epoch+1}.pth"
-        torch.save(model.state_dict(), ckpt_path)
-
-    wandb.finish()
-
-
-if __name__ == "__main__":
-    main()
+        return x
