@@ -24,12 +24,11 @@ def main():
     epochs = 50
     learning_rate = 1e-4
     timesteps = 500
-    t_recon_max = 150          # only use x0 recon loss for t < this
+    t_recon_max = 150           # only use x0 recon loss for t < this
     inference_steps = 50
     upscale_factor = 5
-    recon_weight = 0.8         # weight on x0 reconstruction loss
+    recon_weight = 0.8          # weight on x0 reconstruction loss
     grad_clip = 1.0
-    low_t_bias_prob = 0.5      # probability to sample t from [0, t_recon_max]
 
     # --- wandb init ---
     wandb.init(
@@ -43,8 +42,6 @@ def main():
             "inference_steps": inference_steps,
             "upscale_factor": upscale_factor,
             "recon_weight": recon_weight,
-            "grad_clip": grad_clip,
-            "low_t_bias_prob": low_t_bias_prob,
         },
     )
 
@@ -118,12 +115,7 @@ def main():
             hr_batch = hr_batch.to(device)
 
             B = lr_batch.size(0)
-
-            # bias toward smaller t so x0 loss matters more often
-            if torch.rand(1, device=device).item() < low_t_bias_prob:
-                t = torch.randint(0, t_recon_max, (B,), device=device)
-            else:
-                t = torch.randint(0, timesteps, (B,), device=device)
+            t = torch.randint(0, timesteps, (B,), device=device)
 
             # mask for which samples we apply x0 recon loss
             recon_mask = (t < t_recon_max)
@@ -204,12 +196,7 @@ def main():
                 hr_batch = hr_batch.to(device)
 
                 B = lr_batch.size(0)
-
-                if torch.rand(1, device=device).item() < low_t_bias_prob:
-                    t = torch.randint(0, t_recon_max, (B,), device=device)
-                else:
-                    t = torch.randint(0, timesteps, (B,), device=device)
-
+                t = torch.randint(0, timesteps, (B,), device=device)
                 recon_mask = (t < t_recon_max)
 
                 upscaled = model.upsampler(lr_batch)
@@ -299,7 +286,7 @@ def main():
                     align_corners=True
                 )[0].cpu()
 
-                # model sample (DDIM-style sampler in model.sample)
+                # model sample (DDIM)
                 sr_sample = model.sample(lr_batch, num_steps=inference_steps)[0].cpu()
 
                 # convert to numpy
@@ -308,14 +295,13 @@ def main():
                 bilin_np = bilinear.squeeze().numpy()
                 sr_np = sr_sample.squeeze().numpy()
 
-                # shared vmin/vmax
+                # shared vmin/vmax (ignore SR for scaling)
                 vmin = min(lr_np.min(), hr_np.min(), bilin_np.min())
                 vmax = max(lr_np.max(), hr_np.max(), bilin_np.max())
 
-                # build the 1x4 panel
                 fig, axes = plt.subplots(1, 4, figsize=(16, 4))
                 images = [lr_np, bilin_np, sr_np, hr_np]
-                titles = ["Low-Res Input", "Bilinear", "DDPM/DDIM Super-Res", "High-Res Target"]
+                titles = ["Low-Res Input", "Bilinear", "DDPM Super-Res", "High-Res Target"]
 
                 for ax, img, title in zip(axes, images, titles):
                     im = ax.imshow(img, cmap="gray", vmin=vmin, vmax=vmax)
@@ -323,7 +309,6 @@ def main():
                     ax.axis("off")
 
                 plt.tight_layout()
-
                 wandb.log({"viz_epoch": wandb.Image(fig, caption=f"Epoch {epoch+1}")})
                 plt.close(fig)
 

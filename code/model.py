@@ -1,4 +1,5 @@
 # model.py
+
 import math
 import torch
 import torch.nn as nn
@@ -18,10 +19,10 @@ class SinusoidalPositionalEmbedding(nn.Module):
         # time: (B,)
         device = time.device
         half_dim = self.dim // 2
-        emb = math.log(10000) / (half_dim - 1)
-        emb = torch.exp(torch.arange(half_dim, device=device) * -emb)
-        emb = time[:, None] * emb[None, :]
-        emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=-1)  # (B, dim)
+        emb_scale = math.log(10000) / (half_dim - 1)
+        freq = torch.exp(torch.arange(half_dim, device=device) * -emb_scale)
+        arg = time[:, None].float() * freq[None, :]
+        emb = torch.cat([torch.sin(arg), torch.cos(arg)], dim=-1)  # (B, dim)
         return emb
 
 
@@ -199,7 +200,7 @@ class DiffusionModel(nn.Module):
 
     def forward(self, x, t, condition):
         # x: noisy image, condition: upscaled LR
-        t_emb = self.unet.time_embed(t.float())
+        t_emb = self.unet.time_embed(t)
         return self.unet(x, condition, t_emb)
 
 
@@ -208,7 +209,7 @@ class DiffusionModel(nn.Module):
 # ------------------------------------------------------------
 
 def cosine_schedule(t, total_timesteps=500):
-    """Cosine schedule over [0, T] interpreted as alpha_bar(t)."""
+    """Cosine schedule interpreted directly as alphā_t."""
     return torch.cos((t.float() / total_timesteps) * (0.5 * torch.pi))
 
 
@@ -230,16 +231,13 @@ class SuperResolutionDiffusion(nn.Module):
         self.diffusion = DiffusionModel(unet_model)
         self.timesteps = timesteps
         self.output_size = output_size
-        self.inference_timesteps = (
-            inference_timesteps if inference_timesteps is not None else timesteps
-        )
+        self.inference_timesteps = inference_timesteps if inference_timesteps is not None else timesteps
 
-        # alpha_bar over all timesteps
+        # alphā_t from cosine schedule
         t_all = torch.arange(self.timesteps, dtype=torch.long)
         alpha_bar = cosine_schedule(t_all, self.timesteps)  # (T,)
         alpha_bar = torch.clamp(alpha_bar, min=1e-5, max=0.99999)
 
-        # derive per-step alphas and betas
         alpha_prev = torch.ones_like(alpha_bar)
         alpha_prev[1:] = alpha_bar[:-1]
         alphas = alpha_bar / alpha_prev
@@ -254,12 +252,8 @@ class SuperResolutionDiffusion(nn.Module):
             torch.sqrt(1.0 - alpha_bar),
         )
 
+    # -------- forward diffusion q(x_t | x_0) --------
     def q_sample(self, x0, t, noise=None):
-        """
-        Forward diffusion: sample x_t given clean x0 and timestep t.
-
-        x_t = sqrt(alpha_bar_t) * x0 + sqrt(1 - alpha_bar_t) * noise
-        """
         if noise is None:
             noise = torch.randn_like(x0, device=x0.device)
 
@@ -269,112 +263,66 @@ class SuperResolutionDiffusion(nn.Module):
         x_t = sqrt_alpha_bar_t * x0 + sqrt_one_minus_alpha_bar_t * noise
         return x_t, noise
 
-    # -------- TRAINING FORWARD --------
-    def forward(self, x, t, training=True, hr_target=None):
-        """
-        x: low-res input (B,1,25,25)
-        t: (B,) timesteps
+    # we don't use __call__/forward() in training; train.py uses q_sample + diffusion directly
 
-        training=True: returns (predicted_noise, true_noise)
-        training=False: runs sampling and returns SR image
-        """
-        upscaled = self.upsampler(x)  # (B,1,HR,HR)
-
-        if training:
-            if hr_target is None:
-                raise ValueError("hr_target required for training")
-
-            if hr_target.shape[2:] != upscaled.shape[2:]:
-                hr_target = F.interpolate(
-                    hr_target,
-                    size=upscaled.shape[2:],
-                    mode="bilinear",
-                    align_corners=True,
-                )
-
-            noise = torch.randn_like(hr_target, device=hr_target.device)
-            sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
-            sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
-
-            noisy_image = sqrt_alpha_bar_t * hr_target + sqrt_one_minus_alpha_bar_t * noise
-
-            predicted_noise = self.diffusion(noisy_image, t, upscaled)
-
-            if predicted_noise.shape[2:] != noise.shape[2:]:
-                predicted_noise = F.interpolate(
-                    predicted_noise,
-                    size=noise.shape[2:],
-                    mode="bilinear",
-                    align_corners=True,
-                )
-
-            return predicted_noise, noise
-
-        else:
-            return self.sample(x, num_steps=self.inference_timesteps)
-
-    # -------- DDIM-like SAMPLING LOOP (deterministic) --------
+    # -------- SAMPLING LOOP (DDIM, η = 0) --------
     @torch.no_grad()
     def sample(self, lr, num_steps=None):
         """
-        Generate high-res sample given low-res input.
+        DDIM-style sampling conditioned on LR input.
 
         lr: (B, 1, 25, 25)
-        returns: (B, 1, HR, HR) (HR ~ 125x125)
+        returns: (B, 1, HR, HR)
         """
         if num_steps is None:
             num_steps = self.inference_timesteps
 
         device = lr.device
-        upscaled = self.upsampler(lr)       # conditioning image (B,1,HR,HR)
-        x = torch.randn_like(upscaled)      # start from noise
+        B = lr.shape[0]
 
-        step_size = max(self.timesteps // num_steps, 1)
+        upscaled = self.upsampler(lr)          # (B,1,H,H)
+        x = torch.randn_like(upscaled)         # start from pure noise
 
-        for step_idx in range(num_steps - 1, -1, -1):
-            t_val = step_idx * step_size
-            t_batch = torch.full(
-                (lr.shape[0],),
-                t_val,
-                device=device,
-                dtype=torch.long,
-            )
+        # Choose timesteps we visit during sampling (from T-1 down to 0)
+        step_indices = torch.linspace(
+            self.timesteps - 1,
+            0,
+            steps=num_steps,
+            dtype=torch.long,
+            device=device,
+        )
 
-            # predict noise at current x_t
+        for i in range(num_steps):
+            t_int = step_indices[i]
+            t_batch = torch.full((B,), t_int, dtype=torch.long, device=device)
+
+            # predict noise ε_θ(x_t, t, cond)
             eps = self.diffusion(x, t_batch, upscaled)
+
             if eps.shape[2:] != x.shape[2:]:
-                eps = F.interpolate(
-                    eps,
-                    size=x.shape[2:],
-                    mode="bilinear",
-                    align_corners=True,
-                )
+                eps = F.interpolate(eps, size=x.shape[2:], mode="bilinear", align_corners=True)
 
-            alpha_bar_t = self.alphas_cumprod[t_batch].view(-1, 1, 1, 1)
-            sqrt_ab_t = torch.sqrt(alpha_bar_t)
-            sqrt_one_minus_ab_t = torch.sqrt(1.0 - alpha_bar_t)
+            sqrt_alpha_bar_t = self.sqrt_alphas_cumprod[t_batch].view(-1, 1, 1, 1)
+            sqrt_one_minus_alpha_bar_t = self.sqrt_one_minus_alphas_cumprod[t_batch].view(-1, 1, 1, 1)
 
-            # x0 prediction
-            x0_pred = (x - sqrt_one_minus_ab_t * eps) / (sqrt_ab_t + 1e-8)
+            # x0 estimate from current x_t and predicted noise
+            x0_hat = (x - sqrt_one_minus_alpha_bar_t * eps) / (sqrt_alpha_bar_t + 1e-8)
 
-            if step_idx > 0:
-                t_prev_val = (step_idx - 1) * step_size
-                t_prev_batch = torch.full(
-                    (lr.shape[0],),
-                    t_prev_val,
-                    device=device,
-                    dtype=torch.long,
-                )
-                alpha_bar_prev = self.alphas_cumprod[t_prev_batch].view(-1, 1, 1, 1)
-
-                # DDIM-like deterministic update:
-                # x_{t-1} = sqrt(alpha_bar_{t-1}) * x0_hat + sqrt(1-alpha_bar_{t-1}) * eps
-                x = torch.sqrt(alpha_bar_prev) * x0_pred + torch.sqrt(1.0 - alpha_bar_prev) * eps
+            if i == num_steps - 1:
+                # final step: go all the way to x0
+                x = x0_hat
             else:
-                # last step: just use x0_pred
-                x = x0_pred
+                t_next_int = step_indices[i + 1]
+                t_next_batch = torch.full((B,), t_next_int, dtype=torch.long, device=device)
 
-        if self.output_size is not None and x.shape[2:] != tuple(self.output_size):
+                sqrt_alpha_bar_next = self.sqrt_alphas_cumprod[t_next_batch].view(-1, 1, 1, 1)
+                sqrt_one_minus_alpha_bar_next = self.sqrt_one_minus_alphas_cumprod[t_next_batch].view(-1, 1, 1, 1)
+
+                # DDIM (η=0): deterministic step toward the next time with same ε
+                x = sqrt_alpha_bar_next * x0_hat + sqrt_one_minus_alpha_bar_next * eps
+
+        # final resize if requested
+        if self.output_size is not None:
             x = F.interpolate(x, size=self.output_size, mode="bilinear", align_corners=True)
 
         return x
