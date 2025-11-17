@@ -174,8 +174,9 @@ class SR3UNet(nn.Module):
                     ]
                 )
             )
+            # Fix: cond_ups should take in_ch (current) -> out_ch (target), matching the main up path
             self.cond_ups.append(
-                nn.ConvTranspose2d(out_ch, out_ch, 4, stride=2, padding=1)
+                nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1)
             )
             in_ch = out_ch
 
