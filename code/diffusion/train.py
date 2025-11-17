@@ -137,6 +137,8 @@ def compute_average_metrics(model, dataloader, device, timesteps):
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device_type = "cuda" if device.type == "cuda" else "cpu"
+
     print("Device:", device)
 
     # --- W&B init ---
@@ -208,7 +210,7 @@ def main():
         optimizer, mode='min', factor=0.5, patience=5
     )
 
-    scaler = GradScaler(device)
+    scaler = GradScaler(device_type)
 
     best_loss = float("inf")
 
@@ -229,7 +231,7 @@ def main():
 
             optimizer.zero_grad()
 
-            with autocast(device):
+            with autocast(device_type):
                 # noise-conditioned super-resolution
                 output = model(lr_batch, t, add_noise=True)
                 loss = criterion(output, hr_batch)
