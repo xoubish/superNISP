@@ -413,7 +413,8 @@ class SR3SuperResolution(nn.Module):
         """
         B = x.shape[0]
         device = x.device
-
+    
+        # conditioning: upsample LR → HR grid
         cond = F.interpolate(
             lr,
             scale_factor=self.upscale_factor,
@@ -422,7 +423,8 @@ class SR3SuperResolution(nn.Module):
         )
         if cond.shape[2:] != x.shape[2:]:
             cond = F.interpolate(cond, size=x.shape[2:], mode="bilinear", align_corners=False)
-
+    
+        # predict noise ε_θ(x_t, t, cond)
         eps_theta = self.unet(x, t, cond)
         if eps_theta.shape[2:] != x.shape[2:]:
             eps_theta = F.interpolate(
@@ -431,28 +433,29 @@ class SR3SuperResolution(nn.Module):
                 mode="bilinear",
                 align_corners=False,
             )
-
+    
         betas_t = self.betas[t].view(B, 1, 1, 1)
         sqrt_one_minus_ā_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
-        sqrt_recip_alpha_t = self.sqrt_recip_alphas[t].view(B, 1, 1, 1)
-
-        # predict x0
-        x0_pred = (x - sqrt_one_minus_ā_t * eps_theta) / sqrt_recip_alpha_t
-
-        # compute mean of q(x_{t-1} | x_t, x0)
+        sqrt_ā_t = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
+    
+        # *** correct DDPM x0 formula ***
+        # x0 = (x_t - sqrt(1 - ā_t) * eps) / sqrt(ā_t)
+        x0_pred = (x - sqrt_one_minus_ā_t * eps_theta) / (sqrt_ā_t + 1e-8)
+    
+        # posterior mean q(x_{t-1} | x_t, x0)
         posterior_mean = (
             self.posterior_mean_coef1[t].view(B, 1, 1, 1) * x0_pred
             + self.posterior_mean_coef2[t].view(B, 1, 1, 1) * x
         )
-
+    
         posterior_log_variance = self.posterior_log_variance_clipped[t].view(B, 1, 1, 1)
-
+    
         # sample x_{t-1}
         noise = torch.randn_like(x)
         nonzero_mask = (t > 0).float().view(B, 1, 1, 1)  # no noise when t = 0
         x_prev = posterior_mean + nonzero_mask * torch.exp(0.5 * posterior_log_variance) * noise
         return x_prev
-
+    
     @torch.no_grad()
     def sample(self, lr, num_steps=None):
         """
