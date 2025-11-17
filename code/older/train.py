@@ -1,129 +1,323 @@
+# train.py
+
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import time
-import wandb
 from torch.utils.data import DataLoader
-from dataset import SuperResolutionDataset  
-from model import SuperResolutionDiffusion, SuperResDiffusionUNet, Upsampler  
-import random
+import torch.nn.functional as F
+import wandb
 
-def normalize_image(img):
-    img = img.squeeze().cpu().numpy()
-    img_min, img_max = img.min(), img.max()
-    if img_max > img_min:
-        img = (img - img_min) / (img_max - img_min)
-    return (img * 255).astype("uint8")
-    
-# Initialize Weights & Biases
-wandb.init(
-    project="super-resolution-diffusion",
-    config={
-        "epochs": 100,
-        "learning_rate": 1e-4,
-        "batch_size": 64,  # Increased for better GPU utilization
-        "optimizer": "AdamW",
-        "loss_function": "MSELoss"
-    }
-)
+from dataset import SuperResolutionDataset
+from model import SuperResDiffusionUNet, Upsampler, SuperResolutionDiffusion
+from losses import HybridLoss
+import matplotlib.pyplot as plt
+import numpy as np
 
-# Enable CuDNN Optimization
-torch.backends.cudnn.benchmark = True  
 
-# Define loss function & optimizer
-criterion = nn.MSELoss()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Device:", device)
 
-# Instantiate & Move Model to GPU
-unet = SuperResDiffusionUNet(in_channels=1, out_channels=1).to(device)
-upsampler = Upsampler().to(device)
-model = SuperResolutionDiffusion(unet, upsampler).to(device)
+    # --- hyperparams ---
+    batch_size = 32
+    epochs = 500
+    learning_rate = 3e-4
+    timesteps = 1000
+    t_recon_max = 150           # only use x0 recon loss for t < this
+    inference_steps = 50
+    upscale_factor = 5
+    recon_weight = 0.5          # weight on x0 reconstruction loss
+    grad_clip = 1.0
 
-# Define optimizer
-optimizer = optim.AdamW(model.parameters(), lr=wandb.config["learning_rate"], weight_decay=1e-5)
+    # --- wandb init ---
+    wandb.init(
+        project="superNISP_diffusion",
+        config={
+            "batch_size": batch_size,
+            "epochs": epochs,
+            "learning_rate": learning_rate,
+            "timesteps": timesteps,
+            "t_recon_max": t_recon_max,
+            "inference_steps": inference_steps,
+            "upscale_factor": upscale_factor,
+            "recon_weight": recon_weight,
+        },
+    )
 
-# Optimized Training DataLoader (Restored `num_workers=8`)
-train_loader = DataLoader(
-    SuperResolutionDataset("../data/Nisp_train.hdf5", "../data/Nircam_train.hdf5", split="train", sample_fraction=0.1),
-    batch_size=wandb.config["batch_size"],
-    shuffle=True,
-    num_workers=8,  # ✅ Restored 8 workers for fast training
-    pin_memory=True, 
-    persistent_workers=True  # ✅ Keeps workers alive for speed
-)
+    # --- data ---
+    train_ds = SuperResolutionDataset(
+        "../data/Nisp_train_cosmos.hdf5",
+        "../data/Nircam_train_cosmos.hdf5",
+        split="train",
+        sample_fraction=0.2,
+    )
+    val_ds = SuperResolutionDataset(
+        "../data/Nisp_train_cosmos.hdf5",
+        "../data/Nircam_train_cosmos.hdf5",
+        split="test",
+        sample_fraction=0.1,
+    )
 
-# Optimized Test DataLoader (Restored `persistent_workers=True`)
-test_loader = DataLoader(
-    SuperResolutionDataset("../data/Nisp_train.hdf5", "../data/Nircam_train.hdf5", split="test", sample_fraction=0.1),
-    batch_size=wandb.config["batch_size"],
-    shuffle=False,
-    num_workers=2,  # ✅ Test set is smaller, 2 workers is enough
-    pin_memory=True, 
-    persistent_workers=True  # ✅ Restored to prevent slow reloading
-)
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=4,
+    )
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=2,
+    )
 
-# Enable Mixed Precision Training
-scaler = torch.amp.GradScaler(device='cuda')  
+    # --- model ---
+    unet = SuperResDiffusionUNet(
+        in_channels=1,
+        out_channels=1,
+        hidden_dim=64,
+        activation_fn=nn.ReLU,
+    ).to(device)
 
-# Training loop
-num_epochs = wandb.config["epochs"]
-for epoch in range(num_epochs):
-    model.train()
-    epoch_loss = 0
-    start_time = time.time()
+    upsampler = Upsampler(
+        in_channels=1,
+        out_channels=1,
+        upscale_factor=upscale_factor,
+    ).to(device)
 
-    for batch_idx, (lr_batch, hr_batch) in enumerate(train_loader):
-        lr_batch, hr_batch = lr_batch.to(device, non_blocking=True), hr_batch.to(device, non_blocking=True)
-        t = torch.randint(0, model.diffusion.timesteps, (lr_batch.shape[0],), device=device)
+    model = SuperResolutionDiffusion(
+        unet_model=unet,
+        upsampler=upsampler,
+        timesteps=timesteps,
+        output_size=[125, 125],
+        inference_timesteps=inference_steps,
+    ).to(device)
 
-        optimizer.zero_grad()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.5, patience=5
+    )
 
-        with torch.amp.autocast(device_type='cuda'):
-            output = model(lr_batch, t)
-            loss = criterion(output, hr_batch)
+    # only MSE for now in HybridLoss (L1_weight=0)
+    recon_loss_fn = HybridLoss(mse_weight=1.0, l1_weight=0.0)
 
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+    os.makedirs("checkpoints", exist_ok=True)
 
-        torch.cuda.synchronize()
-        epoch_loss += loss.item()
-
-    avg_loss = epoch_loss / len(train_loader)
-    elapsed_time = time.time() - start_time
-
-    print(f"✅ Epoch {epoch + 1}/{num_epochs} completed in {elapsed_time:.2f} seconds. Loss: {avg_loss:.6f}")
-
-    wandb.log({
-        "epoch": epoch + 1,
-        "train_loss": avg_loss,
-        "time_per_epoch": elapsed_time,
-        "gpu_usage": torch.cuda.memory_allocated(device) / 1e9,
-        "gpu_max_allocated": torch.cuda.max_memory_allocated(device) / 1e9,
-        "learning_rate": optimizer.param_groups[0]["lr"],
-    })
-
-    if (epoch + 1) % 5 == 0:
-        model.eval()
-        with torch.no_grad():
-            # Select a random index from the dataset directly
-            random_idx = random.randint(0, len(test_loader.dataset) - 1)    
-            lr_img, hr_img = test_loader.dataset[random_idx]
-            lr_img = lr_img.unsqueeze(0).to(device)  # Add batch dimension
-
-            #Generate super-resolution image
-            t_test = torch.zeros((1,), dtype=torch.long, device=device)
-            sr_img = model(lr_img, t_test).cpu().squeeze(0)
-
-            # Normalize images
-            lr_img = normalize_image(lr_img)
-            sr_img = normalize_image(sr_img)
-            hr_img = normalize_image(hr_img)
-
-            # Log to WandB
-            wandb.log({
-                "low_res": wandb.Image(lr_img, caption=f"Low-Res {random_idx}"),
-                "super_res": wandb.Image(sr_img, caption=f"Super-Res {random_idx}"),
-                "high_res": wandb.Image(hr_img, caption=f"High-Res {random_idx}"),
-            })
+    # --- training loop ---
+    for epoch in range(epochs):
         model.train()
+        train_noise_loss = 0.0
+        train_recon_loss = 0.0
+
+        for lr_batch, hr_batch in train_loader:
+            lr_batch = lr_batch.to(device)
+            hr_batch = hr_batch.to(device)
+
+            B = lr_batch.size(0)
+            t = torch.randint(0, timesteps, (B,), device=device)
+
+            # mask for which samples we apply x0 recon loss
+            recon_mask = (t < t_recon_max)
+
+            optimizer.zero_grad()
+
+            # condition on upsampled LR
+            upscaled = model.upsampler(lr_batch)
+            if hr_batch.shape[2:] != upscaled.shape[2:]:
+                hr_resized = F.interpolate(
+                    hr_batch,
+                    size=upscaled.shape[2:],
+                    mode="bilinear",
+                    align_corners=True,
+                )
+            else:
+                hr_resized = hr_batch
+
+            # forward diffusion: sample x_t and noise
+            x_t, noise = model.q_sample(hr_resized, t)
+
+            # predict noise
+            pred_noise = model.diffusion(x_t, t, upscaled)
+            if pred_noise.shape != noise.shape:
+                pred_noise = F.interpolate(
+                    pred_noise,
+                    size=noise.shape[2:],
+                    mode="bilinear",
+                    align_corners=True,
+                )
+
+            # noise prediction loss
+            noise_loss = F.mse_loss(pred_noise, noise)
+
+            # reconstruct x0 from predicted noise
+            alpha_bar_t = model.alphas_cumprod[t].view(-1, 1, 1, 1)
+            sqrt_ab = torch.sqrt(alpha_bar_t)
+            sqrt_one_minus = torch.sqrt(1.0 - alpha_bar_t)
+
+            x0_pred = (x_t - sqrt_one_minus * pred_noise) / (sqrt_ab + 1e-8)
+
+            # x0 recon loss only for t < t_recon_max
+            if recon_mask.any():
+                x0_pred_sub = x0_pred[recon_mask]
+                hr_sub = hr_resized[recon_mask]
+
+                # clamp x0_pred into sane range
+                with torch.no_grad():
+                    lo = hr_sub.min()
+                    hi = hr_sub.max()
+                x0_pred_sub = torch.clamp(x0_pred_sub, lo, hi)
+
+                recon_loss = recon_loss_fn(x0_pred_sub, hr_sub)
+            else:
+                recon_loss = torch.tensor(0.0, device=device)
+
+            loss = noise_loss + recon_weight * recon_loss
+
+            loss.backward()
+            # gradient clipping
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip)
+            optimizer.step()
+
+            train_noise_loss += noise_loss.item()
+            train_recon_loss += recon_loss.item()
+
+        train_noise_loss /= len(train_loader)
+        train_recon_loss /= len(train_loader)
+
+        # --- validation ---
+        model.eval()
+        val_noise_loss = 0.0
+        val_recon_loss = 0.0
+
+        with torch.no_grad():
+            for lr_batch, hr_batch in val_loader:
+                lr_batch = lr_batch.to(device)
+                hr_batch = hr_batch.to(device)
+
+                B = lr_batch.size(0)
+                t = torch.randint(0, timesteps, (B,), device=device)
+                recon_mask = (t < t_recon_max)
+
+                upscaled = model.upsampler(lr_batch)
+                if hr_batch.shape[2:] != upscaled.shape[2:]:
+                    hr_resized = F.interpolate(
+                        hr_batch,
+                        size=upscaled.shape[2:],
+                        mode="bilinear",
+                        align_corners=True,
+                    )
+                else:
+                    hr_resized = hr_batch
+
+                x_t, noise = model.q_sample(hr_resized, t)
+                pred_noise = model.diffusion(x_t, t, upscaled)
+                if pred_noise.shape != noise.shape:
+                    pred_noise = F.interpolate(
+                        pred_noise,
+                        size=noise.shape[2:],
+                        mode="bilinear",
+                        align_corners=True,
+                    )
+
+                noise_loss = F.mse_loss(pred_noise, noise)
+
+                alpha_bar_t = model.alphas_cumprod[t].view(-1, 1, 1, 1)
+                sqrt_ab = torch.sqrt(alpha_bar_t)
+                sqrt_one_minus = torch.sqrt(1.0 - alpha_bar_t)
+                x0_pred = (x_t - sqrt_one_minus * pred_noise) / (sqrt_ab + 1e-8)
+
+                if recon_mask.any():
+                    x0_pred_sub = x0_pred[recon_mask]
+                    hr_sub = hr_resized[recon_mask]
+
+                    with torch.no_grad():
+                        lo = hr_sub.min()
+                        hi = hr_sub.max()
+                    x0_pred_sub = torch.clamp(x0_pred_sub, lo, hi)
+
+                    recon_loss = recon_loss_fn(x0_pred_sub, hr_sub)
+                else:
+                    recon_loss = torch.tensor(0.0, device=device)
+
+                val_noise_loss += noise_loss.item()
+                val_recon_loss += recon_loss.item()
+
+        val_noise_loss /= len(val_loader)
+        val_recon_loss /= len(val_loader)
+
+        # LR scheduler driven by total val loss
+        total_val_loss = val_noise_loss + recon_weight * val_recon_loss
+        scheduler.step(total_val_loss)
+
+        print(
+            f"Epoch {epoch+1}/{epochs} "
+            f"| train_noise={train_noise_loss:.4f}, train_recon={train_recon_loss:.4f} "
+            f"| val_noise={val_noise_loss:.4f}, val_recon={val_recon_loss:.4f}"
+        )
+
+        wandb.log(
+            {
+                "epoch": epoch + 1,
+                "train_noise": train_noise_loss,
+                "train_recon": train_recon_loss,
+                "val_noise": val_noise_loss,
+                "val_recon": val_recon_loss,
+                "val_total": total_val_loss,
+                "lr": optimizer.param_groups[0]["lr"],
+            }
+        )
+
+        # --- Visualization every 5 epochs ---
+        if (epoch + 1) % 5 == 0:
+            model.eval()
+            with torch.no_grad():
+                # pick a random validation sample
+                idx = torch.randint(0, len(val_ds), (1,)).item()
+                lr_img, hr_img = val_ds[idx]
+
+                lr_batch = lr_img.unsqueeze(0).to(device)
+
+                # bilinear
+                bilinear = F.interpolate(
+                    lr_batch,
+                    scale_factor=upscale_factor,
+                    mode="bilinear",
+                    align_corners=True
+                )[0].cpu()
+
+                # model sample (DDIM)
+                sr_sample = model.sample(lr_batch, num_steps=inference_steps)[0].cpu()
+
+                # convert to numpy
+                lr_np  = lr_img.squeeze().cpu().numpy()
+                hr_np  = hr_img.squeeze().cpu().numpy()
+                bilin_np = bilinear.squeeze().numpy()
+                sr_np = sr_sample.squeeze().numpy()
+
+                # shared vmin/vmax (ignore SR for scaling)
+                vmin = min(lr_np.min(), hr_np.min(), bilin_np.min())
+                vmax = max(lr_np.max(), hr_np.max(), bilin_np.max())
+
+                fig, axes = plt.subplots(1, 4, figsize=(16, 4))
+                images = [lr_np, bilin_np, sr_np, hr_np]
+                titles = ["Low-Res Input", "Bilinear", "DDPM Super-Res", "High-Res Target"]
+
+                for ax, img, title in zip(axes, images, titles):
+                    im = ax.imshow(img, cmap="gray", vmin=vmin, vmax=vmax)
+                    ax.set_title(title)
+                    ax.axis("off")
+
+                plt.tight_layout()
+                wandb.log({"viz_epoch": wandb.Image(fig, caption=f"Epoch {epoch+1}")})
+                plt.close(fig)
+
+        # checkpoint
+        ckpt_path = f"checkpoints/model_epoch_{epoch+1}.pth"
+        torch.save(model.state_dict(), ckpt_path)
+
+    wandb.finish()
+
+
+if __name__ == "__main__":
+    main()
