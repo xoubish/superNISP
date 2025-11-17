@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 import wandb
 from torch.utils.data import DataLoader
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import autocast, GradScaler
 
 from dataset import SuperResolutionDataset
 from model import SuperResolutionDiffusion, SuperResDiffusionUNet, Upsampler
@@ -19,7 +19,6 @@ from losses import HybridLoss
 
 import torchmetrics
 from skimage.metrics import structural_similarity as ssim
-
 
 # === W&B Config Defaults ===================================================
 
@@ -209,7 +208,8 @@ def main():
         optimizer, mode='min', factor=0.5, patience=5
     )
 
-    scaler = GradScaler()
+    scaler = GradScaler(device)
+
     best_loss = float("inf")
 
     os.makedirs("checkpoints", exist_ok=True)
@@ -229,7 +229,7 @@ def main():
 
             optimizer.zero_grad()
 
-            with autocast(device_type="cuda" if device.type == "cuda" else "cpu"):
+            with autocast(device):
                 # noise-conditioned super-resolution
                 output = model(lr_batch, t, add_noise=True)
                 loss = criterion(output, hr_batch)
