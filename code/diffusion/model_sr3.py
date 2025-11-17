@@ -134,6 +134,7 @@ class SR3UNet(nn.Module):
         in_ch = base_channels
         self.downs = nn.ModuleList()
         self.cond_downs = nn.ModuleList()
+        self.cond_projs = nn.ModuleList()  # Channel projection layers
 
         # --- Down path ---
         for mult in channel_mults:
@@ -147,6 +148,8 @@ class SR3UNet(nn.Module):
                     ]
                 )
             )
+            # Project condition channels to match out_ch
+            self.cond_projs.append(nn.Conv2d(in_ch, out_ch, 1))  # 1x1 conv for channel projection
             self.cond_downs.append(
                 nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1)
             )
@@ -189,6 +192,12 @@ class SR3UNet(nn.Module):
         t: (B,) timesteps
         cond: (B, 1, H, W) upsampled LR (fixed, noise-free)
         """
+        # Pad to 128x128 if input is 125x125 (for cleaner downsampling)
+        original_size = x.shape[2:]
+        if x.shape[2] == 125 and x.shape[3] == 125:
+            x = F.pad(x, (1, 2, 1, 2), mode='reflect')  # Pad to 128x128
+            cond = F.pad(cond, (1, 2, 1, 2), mode='reflect')
+        
         # unify spatial size (if slightly off)
         if cond.shape[2:] != x.shape[2:]:
             cond = F.interpolate(cond, size=x.shape[2:], mode="bilinear", align_corners=False)
@@ -204,7 +213,9 @@ class SR3UNet(nn.Module):
 
         # down path
         cond_feats = [c]
-        for (res1, res2, down), c_down in zip(self.downs, self.cond_downs):
+        for (res1, res2, down), c_proj, c_down in zip(self.downs, self.cond_projs, self.cond_downs):
+            # Project condition channels to match h's channels BEFORE ResBlock
+            c = c_proj(c)  # Project channels: in_ch -> out_ch
             # keep cond features aligned spatially with h
             c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
             h = res1(h, t_emb, c)
@@ -239,7 +250,13 @@ class SR3UNet(nn.Module):
             h = res1(h, t_emb, c)
             h = res2(h, t_emb, c)
 
-        return self.out_conv(h)
+        output = self.out_conv(h)
+        
+        # Crop back to original size if we padded
+        if original_size == (125, 125) and output.shape[2:] == (128, 128):
+            output = output[:, :, 1:126, 1:126]  # Crop back to 125x125
+        
+        return output
 
 
 # ------------------------------------------------------------------
