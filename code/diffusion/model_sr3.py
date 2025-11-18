@@ -77,6 +77,7 @@ class ResBlock(nn.Module):
         self.time_proj = nn.Linear(time_emb_dim, out_ch * 2)
 
         # project cond feature (same spatial size) to scale/shift
+        # cond_ch must match the channel size of 'c' after c_proj in the forward pass
         self.cond_proj = nn.Conv2d(cond_ch, out_ch * 2, 1)
 
         if in_ch != out_ch:
@@ -103,7 +104,8 @@ class ResBlock(nn.Module):
         t_scale_shift = self.time_proj(t_emb).view(B, 2 * self.out_ch, 1, 1)
         t_scale, t_shift = torch.chunk(t_scale_shift, 2, dim=1)
 
-        c_scale_shift = self.cond_proj(cond_feat)
+        # ERROR was here: self.cond_proj must have the correct input channel size (cond_ch)
+        c_scale_shift = self.cond_proj(cond_feat) 
         c_scale, c_shift = torch.chunk(c_scale_shift, 2, dim=1)
 
         h = self.norm2(h)
@@ -144,7 +146,9 @@ class SR3UNet(nn.Module):
         self.cond_conv_in = nn.Conv2d(cond_channels, base_channels, 3, padding=1)
 
         chs = [base_channels]
-        in_ch = base_channels
+        in_ch = base_channels # H's channel entering the level (64, 128, 256)
+        cond_in_ch = base_channels # C's channel entering the C_PROJ (64, 128, 256)
+        
         self.downs = nn.ModuleList()
         self.cond_downs = nn.ModuleList()
         self.cond_projs = nn.ModuleList()
@@ -152,21 +156,32 @@ class SR3UNet(nn.Module):
         # --- Down path ---
         for mult in channel_mults:
             out_ch = base_channels * mult
+            
             self.downs.append(
                 nn.ModuleList(
                     [
-                        ResBlock(in_ch, out_ch, time_emb_dim, cond_ch=out_ch),
+                        # Note: cond_ch is out_ch for the ResBlock to work
+                        ResBlock(in_ch, out_ch, time_emb_dim, cond_ch=out_ch), 
                         ResBlock(out_ch, out_ch, time_emb_dim, cond_ch=out_ch),
                         nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1),
                     ]
                 )
             )
-            self.cond_projs.append(nn.Conv2d(in_ch, out_ch, 1))
+            
+            # Input to c_proj is the current size of c (cond_in_ch)
+            # Output must match h's output size (out_ch)
+            self.cond_projs.append(nn.Conv2d(cond_in_ch, out_ch, 1)) 
+            
+            # Downsampler for C must take out_ch as input
             self.cond_downs.append(
                 nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1)
             )
+            
             chs.append(out_ch)
-            in_ch = out_ch
+            
+            # Update channels for the next iteration (after downsampling)
+            in_ch = out_ch 
+            cond_in_ch = out_ch # C's channel after c_down in the forward pass
 
         # bottleneck
         self.bottleneck1 = ResBlock(in_ch, in_ch, time_emb_dim, cond_ch=in_ch)
@@ -174,7 +189,6 @@ class SR3UNet(nn.Module):
 
         # --- Up path ---
         self.ups = nn.ModuleList()
-        # self.cond_ups is removed for cleaner interpolation
         for mult in reversed(channel_mults):
             out_ch = base_channels * mult
             self.ups.append(
@@ -201,11 +215,10 @@ class SR3UNet(nn.Module):
         t: (B,) timesteps
         cond: (B, 1, H, W) upsampled LR (fixed, noise-free)
         """
-        # Pad to 208x208 if input is 205x205 (for cleaner downsampling)
+        # *** PADDING UPDATE: Pad 205x205 to 208x208 ***
         original_size = x.shape[2:]
         if original_size == (205, 205):
-            # Pad by 1, 2 on H and W to reach 208x208 (divisible by 8)
-            x = F.pad(x, (1, 2, 1, 2), mode='reflect')
+            x = F.pad(x, (1, 2, 1, 2), mode='reflect') # Pad to 208x208
             cond = F.pad(cond, (1, 2, 1, 2), mode='reflect')
         
         # unify spatial size (if slightly off)
@@ -223,6 +236,7 @@ class SR3UNet(nn.Module):
 
         # down path
         for (res1, res2, down), c_proj, c_down in zip(self.downs, self.cond_projs, self.cond_downs):
+            # c_proj changes c's channel depth to match h's output channel depth (out_ch)
             c = c_proj(c)
             c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
             h = res1(h, t_emb, c)
@@ -258,7 +272,7 @@ class SR3UNet(nn.Module):
 
         output = self.out_conv(h)
         
-        # Crop back to original size if we padded
+        # *** CROPPING UPDATE: Crop back 208x208 to 205x205 ***
         if original_size == (205, 205) and output.shape[2:] == (208, 208):
             # Crop back to 205x205 (remove 1 from top/left, 2 from bottom/right)
             output = output[:, :, 1:206, 1:206]
@@ -271,9 +285,6 @@ class SR3UNet(nn.Module):
 # ------------------------------------------------------------------
 
 class SR3SuperResolution(nn.Module):
-    """
-    SR3-style conditional diffusion model for 5x super-resolution.
-    """
 
     def __init__(
         self,
