@@ -189,6 +189,8 @@ class SR3UNet(nn.Module):
 
         # --- Up path ---
         self.ups = nn.ModuleList()
+        self.cond_ups = nn.ModuleList()
+        self.cond_up_projs = nn.ModuleList()  # Channel projection for up path
         for mult in reversed(channel_mults):
             out_ch = base_channels * mult
             self.ups.append(
@@ -199,6 +201,11 @@ class SR3UNet(nn.Module):
                         ResBlock(out_ch, out_ch, time_emb_dim, cond_ch=out_ch),
                     ]
                 )
+            )
+            # Project condition channels: in_ch (current) -> out_ch (target)
+            self.cond_up_projs.append(nn.Conv2d(in_ch, out_ch, 1))  # 1x1 conv for channel projection
+            self.cond_ups.append(
+                nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1)
             )
             in_ch = out_ch
 
@@ -255,7 +262,7 @@ class SR3UNet(nn.Module):
         h = self.bottleneck2(h, t_emb, c)
 
         # up path
-        for up, res1, res2 in self.ups:
+        for (up, res1, res2), c_up_proj, c_up in zip(self.ups, self.cond_up_projs, self.cond_ups):
             h = up(h)
             
             # pop skip connection and match size
@@ -264,8 +271,13 @@ class SR3UNet(nn.Module):
                 h = F.interpolate(h, size=skip.shape[2:], mode="bilinear", align_corners=False)
             h = torch.cat([h, skip], dim=1)
 
-            # Upsample condition feature `c` via interpolation to match h's size
-            c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
+            # Project condition channels to match this level BEFORE upsampling
+            c = c_up_proj(c)  # Project: in_ch -> out_ch
+            # Upsample condition feature `c` via transpose conv to match h's size
+            c = c_up(c)
+            # Ensure spatial size matches (in case of rounding)
+            if c.shape[2:] != h.shape[2:]:
+                c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
 
             h = res1(h, t_emb, c)
             h = res2(h, t_emb, c)
