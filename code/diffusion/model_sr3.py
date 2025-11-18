@@ -1,5 +1,3 @@
-# model_sr3.py
-#
 # SR3-style conditional diffusion for 5x super-resolution:
 #   LR: (B, 1, 25, 25)
 #   HR: (B, 1, 125, 125)
@@ -12,6 +10,38 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# ------------------------------------------------------------------
+# SR3 / Improved-DDPM cosine beta schedule
+# ------------------------------------------------------------------
+
+def make_sr3_cosine_betas(num_timesteps: int, s: float = 0.008, max_beta: float = 0.999) -> torch.Tensor:
+    """
+    SR3-style cosine schedule from Nichol & Dhariwal (Improved DDPM):
+      alpha_bar(t) = cos^2( (t/T + s)/(1+s) * pi/2 )
+
+    We derive betas such that:
+      alpha_bar_{t+1} = alpha_bar_t * (1 - beta_t)
+
+    Returns:
+      betas: (T,) tensor of diffusion betas in [0, max_beta].
+    """
+    # t goes from 0 to T
+    steps = torch.linspace(0, num_timesteps, num_timesteps + 1, dtype=torch.float64)  # T+1 points
+    # Normalized time in [0,1]
+    t = steps / num_timesteps
+
+    # alphā(t) continuous function
+    alpha_bar = torch.cos((t + s) / (1.0 + s) * math.pi / 2.0) ** 2
+    # Normalize to start exactly at 1
+    alpha_bar = alpha_bar / alpha_bar[0]
+
+    # alphā_t and alphā_{t+1}
+    alpha_bar_t = alpha_bar[:-1]      # length T
+    alpha_bar_next = alpha_bar[1:]    # length T
+
+    betas = 1.0 - (alpha_bar_next / alpha_bar_t)
+    betas = torch.clamp(betas, min=1e-8, max=max_beta)
+    return betas.float()
 
 # ------------------------------------------------------------------
 # Sinusoidal timestep embedding
@@ -174,7 +204,6 @@ class SR3UNet(nn.Module):
                     ]
                 )
             )
-            # Fix: cond_ups should take in_ch (current) -> out_ch (target), matching the main up path
             self.cond_ups.append(
                 nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1)
             )
@@ -264,19 +293,6 @@ class SR3UNet(nn.Module):
 # Diffusion wrapper (DDPM) for SR3-style conditioning
 # ------------------------------------------------------------------
 
-def cosine_beta_schedule(timesteps, s=0.008):
-    """
-    Cosine schedule from Nichol & Dhariwal 2021.
-    Returns betas of length T.
-    """
-    steps = timesteps + 1
-    x = torch.linspace(0, timesteps, steps)
-    alphas_cumprod = torch.cos(((x / timesteps) + s) / (1 + s) * math.pi * 0.5) ** 2
-    alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
-    betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
-    return torch.clamp(betas, 1e-8, 0.999)
-
-
 class SR3SuperResolution(nn.Module):
     """
     SR3-style conditional diffusion model for 5x super-resolution.
@@ -304,11 +320,13 @@ class SR3SuperResolution(nn.Module):
         self.timesteps = timesteps
         self.upscale_factor = upscale_factor
 
-        betas = cosine_beta_schedule(timesteps)
+        # --- SR3 cosine schedule ---
+        betas = make_sr3_cosine_betas(timesteps, s=0.008, max_beta=0.999)
         alphas = 1.0 - betas
         alphas_cumprod = torch.cumprod(alphas, dim=0)
         alphas_cumprod_prev = torch.cat(
-            [torch.tensor([1.0], dtype=alphas.dtype), alphas_cumprod[:-1]], dim=0
+            [torch.ones(1, dtype=alphas.dtype, device=alphas.device), alphas_cumprod[:-1]],
+            dim=0,
         )
 
         self.register_buffer("betas", betas)
@@ -353,9 +371,9 @@ class SR3SuperResolution(nn.Module):
         if noise is None:
             noise = torch.randn_like(x0)
 
-        sqrt_ā_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+        sqrt_a_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
         sqrt_one_minus = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
-        return sqrt_ā_t * x0 + sqrt_one_minus * noise, noise
+        return sqrt_a_bar_t * x0 + sqrt_one_minus * noise, noise
 
     # ------------------------------------------------------------------
     # Training interface
@@ -434,13 +452,11 @@ class SR3SuperResolution(nn.Module):
                 align_corners=False,
             )
     
-        betas_t = self.betas[t].view(B, 1, 1, 1)
-        sqrt_one_minus_ā_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
-        sqrt_ā_t = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
+        sqrt_one_minus_a_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
+        sqrt_a_bar_t = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
     
-        # *** correct DDPM x0 formula ***
         # x0 = (x_t - sqrt(1 - ā_t) * eps) / sqrt(ā_t)
-        x0_pred = (x - sqrt_one_minus_ā_t * eps_theta) / (sqrt_ā_t + 1e-8)
+        x0_pred = (x - sqrt_one_minus_a_bar_t * eps_theta) / (sqrt_a_bar_t + 1e-8)
     
         # posterior mean q(x_{t-1} | x_t, x0)
         posterior_mean = (
