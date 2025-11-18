@@ -127,14 +127,14 @@ def main():
     # --- Data ---
     # (Assuming SuperResolutionDataset is available and correctly loads data)
     train_ds = SuperResolutionDataset(
-        "../../data/Nisp_train_cosmos.hdf5",
-        "../../data/Nircam_train_cosmos.hdf5",
+        "../../data/euclid_NIR_cosmos_41px_Y.npy",
+        "../../data/jwst_cosmos_205px_F115W.npy",
         split="train",
         sample_fraction=0.2,
     )
     val_ds = SuperResolutionDataset(
-        "../../data/Nisp_train_cosmos.hdf5",
-        "../../data/Nircam_train_cosmos.hdf5",
+        "../../data/euclid_NIR_cosmos_41px_Y.npy",
+        "../../data/jwst_cosmos_205px_F115W.npy",
         split="test",
         sample_fraction=0.1,
     )
