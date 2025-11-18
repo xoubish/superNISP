@@ -190,7 +190,6 @@ class SR3UNet(nn.Module):
         # --- Up path ---
         self.ups = nn.ModuleList()
         self.cond_ups = nn.ModuleList()
-        self.cond_up_projs = nn.ModuleList()  # Channel projection for up path
         for mult in reversed(channel_mults):
             out_ch = base_channels * mult
             self.ups.append(
@@ -202,8 +201,6 @@ class SR3UNet(nn.Module):
                     ]
                 )
             )
-            # Project condition channels: in_ch (current) -> out_ch (target)
-            self.cond_up_projs.append(nn.Conv2d(in_ch, out_ch, 1))  # 1x1 conv for channel projection
             self.cond_ups.append(
                 nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1)
             )
@@ -262,7 +259,7 @@ class SR3UNet(nn.Module):
         h = self.bottleneck2(h, t_emb, c)
 
         # up path
-        for (up, res1, res2), c_up_proj, c_up in zip(self.ups, self.cond_up_projs, self.cond_ups):
+        for (up, res1, res2), c_up in zip(self.ups, self.cond_ups):
             h = up(h)
             
             # pop skip connection and match size
@@ -271,9 +268,7 @@ class SR3UNet(nn.Module):
                 h = F.interpolate(h, size=skip.shape[2:], mode="bilinear", align_corners=False)
             h = torch.cat([h, skip], dim=1)
 
-            # Project condition channels to match this level BEFORE upsampling
-            c = c_up_proj(c)  # Project: in_ch -> out_ch
-            # Upsample condition feature `c` via transpose conv to match h's size
+            # Upsample condition feature `c` via transpose conv (handles both upsampling and channel change: in_ch -> out_ch)
             c = c_up(c)
             # Ensure spatial size matches (in case of rounding)
             if c.shape[2:] != h.shape[2:]:
