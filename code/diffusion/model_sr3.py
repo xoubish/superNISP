@@ -1,9 +1,4 @@
-# SR3-style conditional diffusion for 5x super-resolution:
-#   LR: (B, 1, 25, 25)
-#   HR: (B, 1, 125, 125)
-#
-# The model predicts noise ε_θ(x_t, t, cond), where cond is the
-# upsampled low-res image. Training loss is MSE(ε, ε_θ).
+# model_sr3.py
 
 import math
 import torch
@@ -30,18 +25,22 @@ def make_sr3_cosine_betas(num_timesteps: int, s: float = 0.008, max_beta: float 
     # Normalized time in [0,1]
     t = steps / num_timesteps
 
-    # alphā(t) continuous function
+    # alphā(t) continuous function
     alpha_bar = torch.cos((t + s) / (1.0 + s) * math.pi / 2.0) ** 2
     # Normalize to start exactly at 1
     alpha_bar = alpha_bar / alpha_bar[0]
 
-    # alphā_t and alphā_{t+1}
+    # alphā_t and alphā_{t+1}
     alpha_bar_t = alpha_bar[:-1]      # length T
     alpha_bar_next = alpha_bar[1:]    # length T
 
     betas = 1.0 - (alpha_bar_next / alpha_bar_t)
     betas = torch.clamp(betas, min=1e-8, max=max_beta)
     return betas.float()
+
+# Aliasing the function name for the SR3SuperResolution class
+cosine_beta_schedule = make_sr3_cosine_betas
+
 
 # ------------------------------------------------------------------
 # Sinusoidal timestep embedding
@@ -179,7 +178,8 @@ class SR3UNet(nn.Module):
                 )
             )
             # Project condition channels to match out_ch
-            self.cond_projs.append(nn.Conv2d(in_ch, out_ch, 1))  # 1x1 conv for channel projection
+            # Note: This projection is necessary because in_ch != out_ch across blocks
+            self.cond_projs.append(nn.Conv2d(in_ch, out_ch, 1))
             self.cond_downs.append(
                 nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1)
             )
@@ -192,7 +192,7 @@ class SR3UNet(nn.Module):
 
         # --- Up path ---
         self.ups = nn.ModuleList()
-        self.cond_ups = nn.ModuleList()
+        # *** REMOVED self.cond_ups as it was redundant/unnecessary ***
         for mult in reversed(channel_mults):
             out_ch = base_channels * mult
             self.ups.append(
@@ -203,9 +203,6 @@ class SR3UNet(nn.Module):
                         ResBlock(out_ch, out_ch, time_emb_dim, cond_ch=out_ch),
                     ]
                 )
-            )
-            self.cond_ups.append(
-                nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1)
             )
             in_ch = out_ch
 
@@ -234,18 +231,18 @@ class SR3UNet(nn.Module):
 
         t_emb = self.time_embedding(t)  # (B, time_emb_dim)
 
-        # condition features
+        # initial condition features
         c = self.cond_conv_in(cond)
 
         hs = []
         h = self.input_conv(x)
+        # First skip connection is after input_conv
         hs.append(h)
 
         # down path
-        cond_feats = [c]
         for (res1, res2, down), c_proj, c_down in zip(self.downs, self.cond_projs, self.cond_downs):
-            # Project condition channels to match h's channels BEFORE ResBlock
-            c = c_proj(c)  # Project channels: in_ch -> out_ch
+            # c_proj matches c's channel depth to h's channel depth (in_ch -> out_ch)
+            c = c_proj(c)
             # keep cond features aligned spatially with h
             c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
             h = res1(h, t_emb, c)
@@ -253,10 +250,9 @@ class SR3UNet(nn.Module):
             h = res2(h, t_emb, c)
             hs.append(h)
 
-            # downsample both
+            # downsample both h and c
             h = down(h)
-            c = c_down(c)
-            cond_feats.append(c)
+            c = c_down(c) # c is now ready for the next level or bottleneck
 
         # bottleneck
         c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
@@ -265,16 +261,17 @@ class SR3UNet(nn.Module):
         h = self.bottleneck2(h, t_emb, c)
 
         # up path
-        for (up, res1, res2), c_up in zip(self.ups, self.cond_ups):
+        for up, res1, res2 in self.ups:
             h = up(h)
+            
             # pop skip connection and match size
             skip = hs.pop()
             if h.shape[2:] != skip.shape[2:]:
                 h = F.interpolate(h, size=skip.shape[2:], mode="bilinear", align_corners=False)
             h = torch.cat([h, skip], dim=1)
 
-            # upsample condition tower
-            c = c_up(c)
+            # *** UPDATED: Upsample condition feature `c` via interpolation ***
+            # c retains its channel depth, just gets upscaled spatially
             c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
 
             h = res1(h, t_emb, c)
@@ -300,9 +297,9 @@ class SR3SuperResolution(nn.Module):
     Training:
       - sample t ~ Uniform{0..T-1}
       - x0 = HR target
-      - x_t = sqrt(ā_t) * x0 + sqrt(1-ā_t) * ε
+      - x_t = sqrt(ā_t) * x0 + sqrt(1-ā_t) * ε
       - predict ε_θ(x_t, t, cond), cond = upsampled LR
-      - loss = ||ε - ε_θ||^2
+      - loss = MSE(ε, ε_θ).
 
     Sampling:
       - start from x_T ~ N(0, I)
@@ -320,13 +317,12 @@ class SR3SuperResolution(nn.Module):
         self.timesteps = timesteps
         self.upscale_factor = upscale_factor
 
-        # --- SR3 cosine schedule ---
-        betas = make_sr3_cosine_betas(timesteps, s=0.008, max_beta=0.999)
+        # --- SR3 / Improved-DDPM cosine schedule ---
+        betas = cosine_beta_schedule(timesteps)  # length T
         alphas = 1.0 - betas
         alphas_cumprod = torch.cumprod(alphas, dim=0)
         alphas_cumprod_prev = torch.cat(
-            [torch.ones(1, dtype=alphas.dtype, device=alphas.device), alphas_cumprod[:-1]],
-            dim=0,
+            [torch.tensor([1.0], dtype=alphas.dtype), alphas_cumprod[:-1]], dim=0
         )
 
         self.register_buffer("betas", betas)
@@ -345,20 +341,23 @@ class SR3SuperResolution(nn.Module):
             torch.sqrt(1.0 / alphas - 1.0),
         )
 
-        # for posterior q(x_{t-1} | x_t, x0)
+        # posterior q(x_{t-1} | x_t, x0)
         posterior_variance = betas * (1.0 - alphas_cumprod_prev) / (1.0 - alphas_cumprod)
-        # clamp for numerical stability
         posterior_variance = torch.clamp(posterior_variance, min=1e-20)
 
         self.register_buffer("posterior_variance", posterior_variance)
-        self.register_buffer("posterior_log_variance_clipped", torch.log(posterior_variance))
+        self.register_buffer(
+            "posterior_log_variance_clipped",
+            torch.log(posterior_variance),
+        )
         self.register_buffer(
             "posterior_mean_coef1",
             betas * torch.sqrt(alphas_cumprod_prev) / (1.0 - alphas_cumprod),
         )
         self.register_buffer(
             "posterior_mean_coef2",
-            (1.0 - alphas_cumprod_prev) * torch.sqrt(alphas) / (1.0 - alphas_cumprod),
+            (1.0 - alphas_cumprod_prev) * torch.sqrt(alphas)
+            / (1.0 - alphas_cumprod),
         )
 
     # ---------------- forward diffusion q(x_t | x_0) -----------------
@@ -366,7 +365,7 @@ class SR3SuperResolution(nn.Module):
     def q_sample(self, x0, t, noise=None):
         """
         x0: (B,1,H,W)
-        t: (B,)
+        t:  (B,)
         """
         if noise is None:
             noise = torch.randn_like(x0)
@@ -407,7 +406,8 @@ class SR3SuperResolution(nn.Module):
 
         x_t, noise = self.q_sample(hr, t)
         pred_noise = self.unet(x_t, t, cond)
-        # if shapes mismatch by 1 pixel due to rounding, fix
+
+        # small spatial mismatches → interpolate
         if pred_noise.shape[2:] != noise.shape[2:]:
             pred_noise = F.interpolate(
                 pred_noise,
@@ -415,23 +415,19 @@ class SR3SuperResolution(nn.Module):
                 mode="bilinear",
                 align_corners=False,
             )
-        return pred_noise, noise
+        return pred_noise, noise, x0_pred 
 
     # ------------------------------------------------------------------
-    # Sampling
+    # DDPM reverse mean / variance (SR3 style)
     # ------------------------------------------------------------------
 
-    @torch.no_grad()
-    def p_sample(self, lr, x, t):
+    def p_mean_variance(self, lr, x_t, t):
         """
-        One DDPM reverse step p(x_{t-1} | x_t, lr).
-        lr: (B,1,25,25)
-        x:  (B,1,H,W) at timestep t
-        t:  (B,) integer timesteps
+        Compute posterior mean & log variance for q(x_{t-1} | x_t, x0)
+        using SR3 / DDPM epsilon-prediction parametrization.
         """
-        B = x.shape[0]
-        device = x.device
-    
+        B = x_t.shape[0]
+
         # conditioning: upsample LR → HR grid
         cond = F.interpolate(
             lr,
@@ -439,68 +435,93 @@ class SR3SuperResolution(nn.Module):
             mode="bilinear",
             align_corners=False,
         )
-        if cond.shape[2:] != x.shape[2:]:
-            cond = F.interpolate(cond, size=x.shape[2:], mode="bilinear", align_corners=False)
-    
-        # predict noise ε_θ(x_t, t, cond)
-        eps_theta = self.unet(x, t, cond)
-        if eps_theta.shape[2:] != x.shape[2:]:
+        if cond.shape[2:] != x_t.shape[2:]:
+            cond = F.interpolate(cond, size=x_t.shape[2:], mode="bilinear", align_corners=False)
+
+        # predict ε_θ(x_t, t, cond)
+        eps_theta = self.unet(x_t, t, cond)
+        if eps_theta.shape[2:] != x_t.shape[2:]:
             eps_theta = F.interpolate(
                 eps_theta,
-                size=x.shape[2:],
+                size=x_t.shape[2:],
                 mode="bilinear",
                 align_corners=False,
             )
-    
-        sqrt_one_minus_a_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
+
         sqrt_a_bar_t = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
-    
-        # x0 = (x_t - sqrt(1 - ā_t) * eps) / sqrt(ā_t)
-        x0_pred = (x - sqrt_one_minus_a_bar_t * eps_theta) / (sqrt_a_bar_t + 1e-8)
-    
-        # posterior mean q(x_{t-1} | x_t, x0)
-        posterior_mean = (
-            self.posterior_mean_coef1[t].view(B, 1, 1, 1) * x0_pred
-            + self.posterior_mean_coef2[t].view(B, 1, 1, 1) * x
-        )
-    
+        sqrt_one_minus_a_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
+
+        # x0 = (x_t - sqrt(1 - ā_t) * eps) / sqrt(ā_t)
+        x0_pred = (x_t - sqrt_one_minus_a_bar_t * eps_theta) / (sqrt_a_bar_t + 1e-8)
+        # SR3 clips x0 to data range (assuming inputs normalized to [-1,1])
+        x0_pred = torch.clamp(x0_pred, -1.0, 1.0)
+
+        coef1 = self.posterior_mean_coef1[t].view(B, 1, 1, 1)
+        coef2 = self.posterior_mean_coef2[t].view(B, 1, 1, 1)
+        posterior_mean = coef1 * x0_pred + coef2 * x_t
+
         posterior_log_variance = self.posterior_log_variance_clipped[t].view(B, 1, 1, 1)
-    
-        # sample x_{t-1}
-        noise = torch.randn_like(x)
+
+        return posterior_mean, posterior_log_variance, x0_pred
+
+    # ------------------------------------------------------------------
+    # One reverse step p(x_{t-1} | x_t, lr)
+    # ------------------------------------------------------------------
+
+    @torch.no_grad()
+    def p_sample(self, lr, x_t, t):
+        """
+        lr: (B,1,25,25)
+        x_t: (B,1,H,W) at timestep t
+        t:  (B,) integer timesteps
+        """
+        B = x_t.shape[0]
+
+        mean, log_var, x0_pred = self.p_mean_variance(lr, x_t, t)
+        noise = torch.randn_like(x_t)
         nonzero_mask = (t > 0).float().view(B, 1, 1, 1)  # no noise when t = 0
-        x_prev = posterior_mean + nonzero_mask * torch.exp(0.5 * posterior_log_variance) * noise
-        return x_prev
-    
+
+        x_prev = mean + nonzero_mask * torch.exp(0.5 * log_var) * noise
+        return x_prev, x0_pred
+
+    # ------------------------------------------------------------------
+    # Full SR3 sampling loop
+    # ------------------------------------------------------------------
+
     @torch.no_grad()
     def sample(self, lr, num_steps=None):
         """
         lr: (B,1,25,25)
         returns: (B,1,HR,HR) sampled super-res images
+
+        NOTE: For SR3-style faithful sampling, it's best to use the
+        full chain (num_steps=None). We'll still allow subsampling,
+        but that's more like a DDIM shortcut.
         """
         B = lr.shape[0]
         device = lr.device
 
+        # full DDPM chain by default
         if num_steps is None or num_steps >= self.timesteps:
-            # use all DDPM steps
-            timesteps = list(range(self.timesteps - 1, -1, -1))
+            timesteps = torch.arange(self.timesteps - 1, -1, -1, device=device)
         else:
-            # subsample timesteps for faster sampling
+            # simple sub-sampling of timesteps (DDIM-style index set)
             timesteps = torch.linspace(
-                self.timesteps - 1, 0, num_steps, dtype=torch.long
-            ).tolist()
+                self.timesteps - 1, 0, num_steps, device=device
+            ).long()
 
-        # initial image: pure Gaussian noise
+        # initial image: pure Gaussian noise on HR grid
         cond_shape = (
             B,
             1,
             lr.shape[2] * self.upscale_factor,
             lr.shape[3] * self.upscale_factor,
         )
-        x = torch.randn(cond_shape, device=device)
+        x_t = torch.randn(cond_shape, device=device)
 
         for t_val in timesteps:
             t = torch.full((B,), t_val, device=device, dtype=torch.long)
-            x = self.p_sample(lr, x, t)
+            x_t, _ = self.p_sample(lr, x_t, t)
 
-        return x
+        # at t=0, x_t should already be x0
+        return x_t
