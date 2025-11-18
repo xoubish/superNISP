@@ -96,17 +96,19 @@ class PerceptualLoss(nn.Module):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--learning_rate", type=float, default=2e-4)
     parser.add_argument("--weight_decay", type=float, default=0.0)
     parser.add_argument("--timesteps", type=int, default=1000)
-    parser.add_argument("--hidden_dim", type=int, default=64)
+    parser.add_argument("--hidden_dim", type=int, default=32)
     # --- New Loss Arguments ---
     parser.add_argument("--gauss_sigma", type=float, default=0.4, 
                         help="Sigma for Gaussian weight map for epsilon loss.")
     parser.add_argument("--lambda_perceptual", type=float, default=1e-3, 
                         help="Weight for the VGG-based Perceptual Loss on x0_pred.")
+    parser.add_argument("--accumulation_steps", type=int, default=4, 
+                        help="Number of gradient accumulation steps")
     # --------------------------
     parser.add_argument("--project", type=str, default="superNISP_sr3")
     parser.add_argument("--entity", type=str, default=None)
@@ -114,6 +116,7 @@ def main():
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.cuda.empty_cache()  # Clear cache before training
     print("Device:", device)
 
     # --- W&B ---
@@ -193,7 +196,7 @@ def main():
         train_perceptual_loss_sum = 0.0
 
         start = time.time()
-        for lr_batch, hr_batch in train_loader:
+        for step, (lr_batch, hr_batch) in enumerate(train_loader):
             lr_batch = lr_batch.to(device)
             hr_batch = hr_batch.to(device)
 
@@ -224,8 +227,14 @@ def main():
             # --- 3. Total Loss ---
             loss = eps_loss + config.lambda_perceptual * perceptual_loss
             
+            # Scale loss by accumulation steps
+            loss = loss / config.accumulation_steps
             loss.backward()
-            optimizer.step()
+            
+            # Only step optimizer every N steps
+            if (step + 1) % config.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
 
             train_eps_loss_sum += eps_loss.item()
             train_perceptual_loss_sum += perceptual_loss.item()

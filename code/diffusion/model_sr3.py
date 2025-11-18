@@ -213,6 +213,8 @@ class SR3UNet(nn.Module):
             nn.Conv2d(in_ch, in_channels, 3, padding=1),
         )
 
+        self.use_checkpoint = False  # Can be set to True for memory savings
+
     def forward(self, x, t, cond):
         """
         x: (B, 1, H, W)  noisy HR at timestep t
