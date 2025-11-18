@@ -39,7 +39,7 @@ def psnr(pred, target):
 
 # -----------------------------------------------------------
 # Helper Functions: Gaussian Weight Map and Perceptual Loss
-# (Adopted from user's provided code for centering loss)
+# (Defined here for self-contained training script)
 # -----------------------------------------------------------
 
 def gaussian_weight_map(shape, sigma=0.3):
@@ -48,6 +48,7 @@ def gaussian_weight_map(shape, sigma=0.3):
     Used to weight the epsilon loss, prioritizing the center galaxy.
     """
     B, C, H, W = shape
+    # Use the device of the input tensor if available, otherwise default
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Create normalized coordinates
@@ -74,15 +75,14 @@ class PerceptualLoss(nn.Module):
     def __init__(self):
         super().__init__()
         # Use first few layers of VGG16 for low-level feature comparison
+        # We target the layer after the first pooling (e.g., relu2_2)
         vgg = vgg16(weights=VGG16_Weights.DEFAULT).features
-        self.feature_extractor = nn.Sequential(*list(vgg.children())[:5]).eval()
+        self.feature_extractor = nn.Sequential(*list(vgg.children())[:9]).eval() # Using features up to relu2_2
         for param in self.feature_extractor.parameters():
             param.requires_grad = False
         
-        # VGG expects 3 channels; we'll repeat the single-channel input
-
     def forward(self, pred, target):
-        # VGG requires 3 channels, so we repeat the single channel (1 -> 3)
+        # VGG expects 3 channels, so we repeat the single channel (1 -> 3)
         # Assuming pred/target are normalized to [-1, 1]
         pred_features = self.feature_extractor(pred.repeat(1, 3, 1, 1))
         target_features = self.feature_extractor(target.repeat(1, 3, 1, 1))
@@ -124,8 +124,7 @@ def main():
     )
     config = wandb.config
 
-    # --- Data ---
-    # (Assuming SuperResolutionDataset is available and correctly loads data)
+    # --- Data (using 41x41 -> 205x205 files) ---
     train_ds = SuperResolutionDataset(
         "../../data/euclid_NIR_cosmos_41px_Y.npy",
         "../../data/jwst_cosmos_205px_F115W.npy",
@@ -183,14 +182,9 @@ def main():
     os.makedirs("checkpoints_sr3", exist_ok=True)
     best_val_loss = float("inf")
 
-    # Pre-calculate Gaussian weights for the expected HR size (128x128 padded)
-    # The UNet pads to 128x128 internally, so we use that size for weights
-    # Note: These weights will be used to weight the epsilon loss.
-    H_padded, W_padded = 128, 128 
-    # The weights must be dynamically calculated inside the loop 
-    # or before each forward pass if the batch size changes,
-    # but for consistent size (128x128), we can define a template.
-    # We will still calculate it inside the loop to get the correct batch size (B).
+    # The UNet pads 205x205 data to 208x208 internally for clean downsampling.
+    # The Gaussian weight map will be generated at the 208x208 size.
+    H_padded, W_padded = 208, 208 
 
     # --- Training ---
     for epoch in range(config.epochs):
@@ -214,18 +208,17 @@ def main():
 
             optimizer.zero_grad()
 
-            # The model now returns pred_eps, true_eps, and the predicted x0
+            # The model returns pred_eps, true_eps, and the predicted x0
             pred_eps, true_eps, x0_pred = model(lr_batch, hr_batch, t)
             
             # --- 1. Weighted Epsilon Loss ---
-            # Get Gaussian weights matching the batch size and padded HR size (128x128)
+            # Get Gaussian weights matching the batch size and padded HR size
             weights = gaussian_weight_map(pred_eps.shape, sigma=config.gauss_sigma).to(device)
             
             # Weighted MSE loss: L_eps = mean(weights * (pred_eps - true_eps)^2)
             eps_loss = (F.mse_loss(pred_eps, true_eps, reduction='none') * weights).mean()
             
             # --- 2. Perceptual Loss on x0 prediction ---
-            # hr_batch is the true x0 (ground truth HR)
             perceptual_loss = perceptual_loss_fn(x0_pred, hr_batch)
             
             # --- 3. Total Loss ---
@@ -265,7 +258,7 @@ def main():
                 # Retrieve all outputs
                 pred_eps, true_eps, x0_pred = model(lr_batch, hr_batch, t)
                 
-                # 1. Weighted Epsilon Loss (using the same weights logic)
+                # 1. Weighted Epsilon Loss
                 weights = gaussian_weight_map(pred_eps.shape, sigma=config.gauss_sigma).to(device)
                 eps_loss = (F.mse_loss(pred_eps, true_eps, reduction='none') * weights).mean()
                 val_eps_loss_sum += eps_loss.item()
@@ -275,7 +268,6 @@ def main():
                 val_perceptual_loss_sum += perceptual_loss.item()
                 
                 # --- PSNR Calculation (x0_pred on validation batch) ---
-                # Note: We can reuse x0_pred calculated from the forward pass
                 val_psnr_sum += psnr(x0_pred, hr_batch).item()
                 
 
