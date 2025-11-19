@@ -97,7 +97,7 @@ class PerceptualLoss(nn.Module):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--epochs", type=int, default=500)
     parser.add_argument("--learning_rate", type=float, default=2e-4)
     parser.add_argument("--weight_decay", type=float, default=0.0)
     parser.add_argument("--timesteps", type=int, default=1000)
@@ -116,6 +116,10 @@ def main():
     parser.add_argument("--ema_decay", type=float, default=0.9999)
     parser.add_argument("--early_stop_patience", type=int, default=10)
     parser.add_argument("--early_stop_min_delta", type=float, default=1e-4)
+    parser.add_argument("--inference_steps", type=int, default=100,
+                        help="Number of sampling steps for visualization during training")
+    parser.add_argument("--full_inference_steps", type=int, default=1000,
+                        help="Number of sampling steps for full inference (if different from timesteps)")
     
     args = parser.parse_args()
 
@@ -337,7 +341,7 @@ def main():
                 lr_img = lr_img.unsqueeze(0).to(device)
 
                 # run a relatively small number of sampling steps for speed
-                sr_sample = model.sample(lr_img, num_steps=100)[0].cpu()
+                sr_sample = model.sample(lr_img, num_steps=config.inference_steps)[0].cpu()
 
                 # Interpolate LR to match HR size for visual comparison
                 hr_up_interp = F.interpolate(
