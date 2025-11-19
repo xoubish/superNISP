@@ -112,7 +112,11 @@ def main():
     # --------------------------
     parser.add_argument("--project", type=str, default="superNISP_sr3")
     parser.add_argument("--entity", type=str, default=None)
-
+    parser.add_argument("--grad_clip", type=float, default=1.0)
+    parser.add_argument("--ema_decay", type=float, default=0.9999)
+    parser.add_argument("--early_stop_patience", type=int, default=10)
+    parser.add_argument("--early_stop_min_delta", type=float, default=1e-4)
+    
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -182,8 +186,15 @@ def main():
         weight_decay=config.weight_decay,
     )
 
+    from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
+    
+    scheduler = ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=5, verbose=True
+    )
+
     os.makedirs("checkpoints_sr3", exist_ok=True)
     best_val_loss = float("inf")
+    patience_counter = 0
 
     # The UNet pads 205x205 data to 208x208 internally for clean downsampling.
     # The Gaussian weight map will be generated at the 208x208 size.
@@ -201,13 +212,18 @@ def main():
             hr_batch = hr_batch.to(device)
 
             B = lr_batch.size(0)
-            t = torch.randint(
-                low=0,
-                high=config.timesteps,
-                size=(B,),
-                device=device,
-                dtype=torch.long,
-            )
+            # Replace uniform timestep sampling with importance sampling
+            # Sample more from middle timesteps where prediction is harder
+            def sample_timesteps(B, timesteps, device):
+                # Uniform sampling (current)
+                # return torch.randint(0, timesteps, (B,), device=device)
+                
+                # Importance sampling: more weight to middle timesteps
+                probs = torch.linspace(1.0, 0.5, timesteps)  # Higher prob for early timesteps
+                probs = probs / probs.sum()
+                return torch.multinomial(probs, B, replacement=True).to(device)
+            
+            t = sample_timesteps(B, config.timesteps, device)
 
             optimizer.zero_grad()
 
@@ -233,6 +249,7 @@ def main():
             
             # Only step optimizer every N steps
             if (step + 1) % config.accumulation_steps == 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip)
                 optimizer.step()
                 optimizer.zero_grad()
 
@@ -300,6 +317,8 @@ def main():
                 "train/eps_loss": train_eps_loss_avg,
                 "train/perceptual_loss": train_perceptual_loss_avg,
                 "train/total_loss": train_total_loss_avg,
+                "train/eps_loss_weighted": train_eps_loss_avg,  # Already weighted
+                "train/perceptual_loss_scaled": config.lambda_perceptual * train_perceptual_loss_avg,
                 "val/eps_loss": val_eps_loss_avg,
                 "val/perceptual_loss": val_perceptual_loss_avg,
                 "val/total_loss": val_total_loss_avg,
@@ -307,6 +326,8 @@ def main():
                 "lr": optimizer.param_groups[0]["lr"],
             }
         )
+
+        scheduler.step(val_total_loss_avg)
 
         # visualize sample every 10 epochs
         if (epoch + 1) % 10 == 0:
@@ -335,11 +356,17 @@ def main():
                 )
 
         # save best model based on total validation loss
-        if val_total_loss_avg < best_val_loss:
+        if val_total_loss_avg < best_val_loss - config.early_stop_min_delta:
             best_val_loss = val_total_loss_avg
+            patience_counter = 0
             best_path = os.path.join("checkpoints_sr3", "best_sr3.pth")
             torch.save(model.state_dict(), best_path)
             print(f"  ↳ New best model saved: {best_path}")
+        else:
+            patience_counter += 1
+            if patience_counter >= config.early_stop_patience:
+                print(f"Early stopping at epoch {epoch+1}")
+                break
 
         # per-epoch checkpoint (optional)
         ckpt_path = os.path.join("checkpoints_sr3", f"sr3_epoch_{epoch+1}.pth")

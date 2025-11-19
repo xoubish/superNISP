@@ -119,4 +119,32 @@ class SuperResolutionDataset(Dataset):
         if hr_image.dim() == 2:
             hr_image = hr_image.unsqueeze(0)
             
+        # Normalize to [-1, 1] range (assuming data is in [0, 1] or arbitrary range)
+        # Option 1: If data is in [0, 1], use: lr_image = lr_image * 2.0 - 1.0
+        # Option 2: If data has arbitrary range, normalize by min/max:
+        # lr_max, lr_min = lr_image.max(), lr_image.min()
+        # if lr_max > lr_min:
+        #     lr_image = 2.0 * (lr_image - lr_min) / (lr_max - lr_min) - 1.0
+        
+        # For now, assuming data needs centering/scaling:
+        if lr_image.max() > 1.0 or lr_image.min() < -1.0:
+            # Normalize to [-1, 1] using percentile or min/max
+            lr_mean = lr_image.mean()
+            lr_std = lr_image.std() + 1e-8
+            lr_image = (lr_image - lr_mean) / lr_std
+            # Then scale to [-1, 1]
+            lr_max = lr_image.abs().max()
+            if lr_max > 0:
+                lr_image = lr_image / lr_max
+        
+        # Same for hr_image
+        if not self.inference_mode and self.has_hr:
+            if hr_image.max() > 1.0 or hr_image.min() < -1.0:
+                hr_mean = hr_image.mean()
+                hr_std = hr_image.std() + 1e-8
+                hr_image = (hr_image - hr_mean) / hr_std
+                hr_max = hr_image.abs().max()
+                if hr_max > 0:
+                    hr_image = hr_image / hr_max
+        
         return lr_image, hr_image
