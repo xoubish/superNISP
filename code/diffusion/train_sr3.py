@@ -342,7 +342,15 @@ def main():
 
                 # run a relatively small number of sampling steps for speed
                 sr_sample = model.sample(lr_img, num_steps=config.inference_steps)[0].cpu()
-
+                
+                # Denormalize from [-1, 1] to [0, 1] for visualization
+                sr_sample = (sr_sample + 1.0) / 2.0
+                sr_sample = torch.clamp(sr_sample, 0.0, 1.0)
+                
+                # Also denormalize HR for visualization
+                hr_img_viz = (hr_img + 1.0) / 2.0
+                hr_img_viz = torch.clamp(hr_img_viz, 0.0, 1.0)
+                
                 # Interpolate LR to match HR size for visual comparison
                 hr_up_interp = F.interpolate(
                     lr_img[0].cpu().unsqueeze(0), 
@@ -350,12 +358,15 @@ def main():
                     mode="bilinear", 
                     align_corners=False
                 )[0]
+                # Denormalize LR too
+                hr_up_interp = (hr_up_interp + 1.0) / 2.0
+                hr_up_interp = torch.clamp(hr_up_interp, 0.0, 1.0)
 
                 wandb.log(
                     {
                         "viz_super_res": wandb.Image(sr_sample, caption=f"SR epoch {epoch+1}"),
                         "viz_low_res_interp": wandb.Image(hr_up_interp, caption="LR (Interpolated)"),
-                        "viz_high_res": wandb.Image(hr_img, caption="HR (Ground Truth)"),
+                        "viz_high_res": wandb.Image(hr_img_viz, caption="HR (Ground Truth)"),
                     }
                 )
 

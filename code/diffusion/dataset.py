@@ -74,6 +74,18 @@ class SuperResolutionDataset(Dataset):
             
             self.length = len(self.indices)
 
+        # Compute global statistics for normalization (if not already computed)
+        self.normalize_stats = None
+        if not inference_mode and hasattr(self, 'lr_data'):
+            # Compute 2nd and 98th percentiles across entire dataset
+            lr_flat = self.lr_data.flatten()
+            self.lr_p2 = np.percentile(lr_flat, 2)
+            self.lr_p98 = np.percentile(lr_flat, 98)
+            if self.has_hr:
+                hr_flat = self.hr_data.flatten()
+                self.hr_p2 = np.percentile(hr_flat, 2)
+                self.hr_p98 = np.percentile(hr_flat, 98)
+
 
     def __len__(self):
         return self.length
@@ -113,38 +125,28 @@ class SuperResolutionDataset(Dataset):
             hr_image_np = self.hr_data[global_idx]
             hr_image = torch.from_numpy(hr_image_np).float()
             
-        # Ensure channel dimension is present for both formats: (C, H, W)
-        if lr_image.dim() == 2:
-            lr_image = lr_image.unsqueeze(0)
-        if hr_image.dim() == 2:
-            hr_image = hr_image.unsqueeze(0)
-            
-        # Normalize to [-1, 1] range (assuming data is in [0, 1] or arbitrary range)
-        # Option 1: If data is in [0, 1], use: lr_image = lr_image * 2.0 - 1.0
-        # Option 2: If data has arbitrary range, normalize by min/max:
-        # lr_max, lr_min = lr_image.max(), lr_image.min()
-        # if lr_max > lr_min:
-        #     lr_image = 2.0 * (lr_image - lr_min) / (lr_max - lr_min) - 1.0
+        # Normalize to [-1, 1] range
+        # Assuming data comes in arbitrary range, we'll use a fixed normalization
+        # Option 1: If you know your data range, hardcode it:
+        # lr_image = (lr_image - data_min) / (data_max - data_min) * 2.0 - 1.0
         
-        # For now, assuming data needs centering/scaling:
-        if lr_image.max() > 1.0 or lr_image.min() < -1.0:
-            # Normalize to [-1, 1] using percentile or min/max
-            lr_mean = lr_image.mean()
-            lr_std = lr_image.std() + 1e-8
-            lr_image = (lr_image - lr_mean) / lr_std
-            # Then scale to [-1, 1]
-            lr_max = lr_image.abs().max()
-            if lr_max > 0:
-                lr_image = lr_image / lr_max
+        # Option 2: Use percentile-based normalization (more robust):
+        lr_p2 = torch.quantile(lr_image, 0.02)
+        lr_p98 = torch.quantile(lr_image, 0.98)
+        if lr_p98 > lr_p2:
+            lr_image = (lr_image - lr_p2) / (lr_p98 - lr_p2) * 2.0 - 1.0
+            lr_image = torch.clamp(lr_image, -1.0, 1.0)
+        else:
+            lr_image = torch.zeros_like(lr_image)
         
         # Same for hr_image
         if not self.inference_mode and self.has_hr:
-            if hr_image.max() > 1.0 or hr_image.min() < -1.0:
-                hr_mean = hr_image.mean()
-                hr_std = hr_image.std() + 1e-8
-                hr_image = (hr_image - hr_mean) / hr_std
-                hr_max = hr_image.abs().max()
-                if hr_max > 0:
-                    hr_image = hr_image / hr_max
+            hr_p2 = torch.quantile(hr_image, 0.02)
+            hr_p98 = torch.quantile(hr_image, 0.98)
+            if hr_p98 > hr_p2:
+                hr_image = (hr_image - hr_p2) / (hr_p98 - hr_p2) * 2.0 - 1.0
+                hr_image = torch.clamp(hr_image, -1.0, 1.0)
+            else:
+                hr_image = torch.zeros_like(hr_image)
         
         return lr_image, hr_image
