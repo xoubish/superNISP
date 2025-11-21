@@ -368,6 +368,16 @@ class SR3SuperResolution(nn.Module):
           true_noise: ε used to generate x_t
           x0_pred: predicted x0 image from the noise prediction (for Perceptual Loss)
         """
+        # Safety check: ensure 4D tensors
+        if lr.dim() == 3:
+            lr = lr.unsqueeze(0)
+        if hr.dim() == 3:
+            hr = hr.unsqueeze(0)
+        if isinstance(t, (int, float)):
+            t = torch.tensor([t], device=lr.device, dtype=torch.long)
+        elif t.dim() == 0:
+            t = t.unsqueeze(0)
+        
         # upsample LR once, treat as fixed condition
         cond = F.interpolate(
             lr,

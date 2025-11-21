@@ -125,12 +125,15 @@ class SuperResolutionDataset(Dataset):
             hr_image_np = self.hr_data[global_idx]
             hr_image = torch.from_numpy(hr_image_np).float()
             
-        # Normalize to [-1, 1] range
-        # Assuming data comes in arbitrary range, we'll use a fixed normalization
-        # Option 1: If you know your data range, hardcode it:
-        # lr_image = (lr_image - data_min) / (data_max - data_min) * 2.0 - 1.0
-        
-        # Option 2: Use percentile-based normalization (more robust):
+        # Ensure channel dimension is present for both formats: (C, H, W)
+        if lr_image.dim() == 2:
+            lr_image = lr_image.unsqueeze(0)
+        if not self.inference_mode and self.has_hr:
+            if hr_image.dim() == 2:
+                hr_image = hr_image.unsqueeze(0)
+            
+        # Normalize to [-1, 1] range using percentile-based normalization
+        # Now lr_image and hr_image are guaranteed to be (C, H, W)
         lr_p2 = torch.quantile(lr_image, 0.02)
         lr_p98 = torch.quantile(lr_image, 0.98)
         if lr_p98 > lr_p2:
