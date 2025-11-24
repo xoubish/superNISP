@@ -7,6 +7,13 @@ import re
 import warnings
 from io import BytesIO
 from copy import deepcopy
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import dropbox
+from tqdm import tqdm  # Add this import
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +28,18 @@ from astropy.nddata import Cutout2D
 from astropy.table import Table
 from astropy.wcs import FITSFixedWarning
 from astropy import units as u
-from photutils.psf import resize_psf
+
+try:
+    from photutils.psf import resize_psf
+except ImportError:
+    try:
+        from photutils import resize_psf
+    except ImportError:
+        # Fallback: use scipy.ndimage.zoom instead
+        def resize_psf(psf, pixel_scale, target_pixel_scale):
+            """Fallback resize_psf using scipy.ndimage.zoom"""
+            zoom_factor = pixel_scale / target_pixel_scale
+            return ndimage.zoom(psf, zoom_factor, order=3)
 
 from scipy import ndimage
 from skimage import restoration
@@ -73,7 +91,7 @@ def cut_catalog(cat_file, cuts=None):
         cuts = (cat_data.lp_type==0) & \
                 (cat_data.ACS_F814W_MAG < 25) & \
                 (cat_data.ez_z_phot > 0.01) & (cat_data.ez_z_phot < 3.0) & \
-                (cat_data.FLUX_RADIUS < 104) # TODO: make this a function with J&H bands?
+                (cat_data.FLUX_RADIUS > 4)& (cat_data.FLUX_RADIUS < 500) # TODO: make this a function with J&H bands?
     
     cat_clipped = cat_data[cuts]
     
@@ -258,9 +276,13 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
                 jwst_psf_file=None, mirror_nisp=False, mask=False, **kwargs):
     ### The catalog must have matched ra, dec, jwst_image, and nisp_image columns
     image_pairs = catalog.groupby(['jwst_image', 'nisp_image'])
-    ping = True
     clips = []
     count = 0
+    total_galaxies = len(catalog)
+    
+    # Use tqdm for progress bar
+    pbar = tqdm(total=total_galaxies, desc="  Clipping galaxies", unit="gal")
+    
     for match, cat in image_pairs:
         jwst_file, nisp_file = match
 
@@ -292,7 +314,6 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
                     nisp_zoomed = resize_psf(nisp_psf, 1, 6)
                 
         else: # Open from dropbox
-            print('Fetching files from dropbox...')
             jwst_header, jwst_data = get_fits_file(url, jwst_file, dbx=dbx, hdu_idx=jwst_hdu)
             nisp_header, nisp_data = get_fits_file(url, nisp_file, dbx=dbx, hdu_idx=nisp_hdu)
             if mask:
@@ -304,11 +325,6 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
                 oversamp = hdr['OVERSAMP']
                 nisp_zoomed = resize_psf(nisp_psf, 1, float(oversamp))
                 nisp_zoomed /= np.sum(nisp_zoomed) # normalize
-        # if deconvolve:
-        #     with fits.open(jwst_psf_file) as hdul:
-        #         jwst_psf = hdul[1].data
-        #         cx, cy = np.array(jwst_psf.shape)//2
-        #         jwst_zoomed = Cutout2D(jwst_psf, (cx, cy), 20)
         
         wcs_jwst, wcs_nisp = WCS(jwst_header), WCS(nisp_header)
         
@@ -364,9 +380,15 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
             
             clips.append((gal_coords[i], clip_jwst, clip_nisp))
             count += 1
-            if limit is not None and count >= limit: break
-        if limit is not None and count >= limit: break
-
+            pbar.update(1)  # Update progress bar
+            if limit is not None and count >= limit: 
+                pbar.close()
+                return clips
+        if limit is not None and count >= limit: 
+            pbar.close()
+            break
+    
+    pbar.close()
     return clips
 
 
@@ -378,49 +400,71 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
 def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_clips=False, redo_cat=False,
                 redo_clips=False, secret="../../secrets/dropbox_token", meta=meta):
     params = meta[field][euclid_type]
-
-    # Try to load clip files from disk
-    if (os.path.exists(params['matched_jwst']) and os.path.exists(params['matched_nisp']) 
+    
+    # Generate date string for filenames
+    date_str = datetime.now().strftime("%Y%m%d")
+    
+    # Try to load clip files from disk (check both dated and undated versions)
+    matched_jwst = params['matched_jwst']
+    matched_nisp = params['matched_nisp']
+    
+    if (os.path.exists(matched_jwst) and os.path.exists(matched_nisp) 
             and not redo_clips and not redo_cat):
         print("Matched clip files exist; not re-running")
-        jwst_cutouts = np.load(params['matched_jwst'])
-        nisp_cutouts = np.load(params['matched_nisp'])
+        jwst_cutouts = np.load(matched_jwst)
+        nisp_cutouts = np.load(matched_nisp)
         return jwst_cutouts, nisp_cutouts
     
-    # Instantiate dropbox token
+    print("=" * 60)
+    print(f"Processing {field} field with {euclid_type}")
+    print("=" * 60)
+    
+    # Step 1: Connect to Dropbox
+    print("\n[Step 1/5] Connecting to Dropbox...")
     with open(secret) as token_file:
         token = token_file.read()
         dbx = dropbox.Dropbox(token.strip(), timeout=None)
+    print("✓ Connected to Dropbox")
 
-    # Get JWST files for specific field
+    # Step 2: Get file lists
+    print("\n[Step 2/5] Listing files from Dropbox...")
     jwst_path = f'/JWST/{field}/'
     jwst_files = get_shared_folder_metadata(dbx_url, dbx=dbx, path=jwst_path)
     jwst_files = [jwst_path+file.name for file in jwst_files]
+    print(f"  Found {len(jwst_files)} JWST files")
 
-    # Get NISP files for specific field
     nisp_path = f'/{euclid_type}/{field}/'
     nisp_files = get_shared_folder_metadata(dbx_url, dbx=dbx, path=nisp_path)
     psf_filenames = [nisp_path+file.name for file in nisp_files if 'PSF' in file.name]
     nisp_files = [nisp_path+file.name for file in nisp_files if 'IMAGE' in file.name]
     psf_files = [psf_filename(file, psf_filenames) for file in nisp_files]
+    print(f"  Found {len(nisp_files)} NISP image files")
 
-    # Try to load cat file from disk
-    if os.path.exists(params['matched_cat']) and not redo_cat:
-        print(f"Matched catalog file {params['matched_cat']} exists; not re-running.")
-        my_cat = pd.read_csv(params['matched_cat'])
+    # Step 3: Process catalog
+    print("\n[Step 3/5] Processing catalog...")
+    matched_cat = params['matched_cat']
+    if os.path.exists(matched_cat) and not redo_cat:
+        print(f"  Loading existing catalog: {matched_cat}")
+        my_cat = pd.read_csv(matched_cat)
+        print(f"  Loaded {len(my_cat)} galaxies from existing catalog")
     else:
-        # Apply cuts to the catalog
+        print("  Applying selection criteria to catalog...")
         my_cat = params['cut_func'](params['cat_path'])
+        print(f"  ✓ {len(my_cat)} galaxies passed selection criteria")
+        
         gal_coords = SkyCoord(my_cat.ra, my_cat.dec, unit='deg')
     
         # Match JWST files
-        for file in jwst_files:
+        print("  Matching galaxies to JWST files...")
+        for file in tqdm(jwst_files, desc="    JWST matching", leave=False):
             found_idxs = match_catalog(file, gal_coords, url=dbx_url, dbx=dbx, 
                                        hdu_idx=params['jwst_hdu'])
             my_cat.loc[found_idxs, 'jwst_image'] = str(file)
     
         # Match NISP files and PSFs
-        for file,psf_file in zip(nisp_files,psf_files):
+        print("  Matching galaxies to NISP files...")
+        for file,psf_file in tqdm(zip(nisp_files,psf_files), desc="    NISP matching", 
+                                  total=len(nisp_files), leave=False):
             found_idxs = match_catalog(file, gal_coords, url=dbx_url, dbx=dbx,
                                        hdu_idx=params['nisp_hdu'])
             my_cat.loc[found_idxs, 'nisp_image'] = str(file)
@@ -428,20 +472,41 @@ def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_c
     
         my_cat = my_cat[my_cat.nisp_image!='']
         my_cat = my_cat[my_cat.jwst_image!='']
+        print(f"  ✓ {len(my_cat)} galaxies matched to both JWST and NISP images")
     
         if save_cat:
-            my_cat.to_csv(params['matched_cat'], index=False)
+            # Add date to catalog filename
+            cat_base, cat_ext = os.path.splitext(matched_cat)
+            dated_cat = f"{cat_base}_{date_str}{cat_ext}"
+            my_cat.to_csv(dated_cat, index=False)
+            print(f"  Saved catalog to {dated_cat}")
     
-    # Clip images
+    # Step 4: Clip images
+    print(f"\n[Step 4/5] Clipping images for {len(my_cat)} galaxies...")
     clips = clip_images(my_cat, url=dbx_url, dbx=dbx, **params)
+    print(f"  ✓ Successfully clipped {len(clips)} galaxy pairs")
     
-    # Arrange data
+    # Step 5: Arrange and save data
+    print("\n[Step 5/5] Arranging data...")
     jwst_cutouts = np.array([clip[1].data for clip in clips])
     nisp_cutouts = np.array([clip[2].data for clip in clips])
+    print(f"  JWST cutouts shape: {jwst_cutouts.shape}")
+    print(f"  NISP cutouts shape: {nisp_cutouts.shape}")
     
     if save_clips:
-        np.save(params['matched_jwst'], jwst_cutouts, allow_pickle=False)
-        np.save(params['matched_nisp'], nisp_cutouts, allow_pickle=False)
+        # Add date to numpy filenames
+        jwst_base, jwst_ext = os.path.splitext(matched_jwst)
+        nisp_base, nisp_ext = os.path.splitext(matched_nisp)
+        dated_jwst = f"{jwst_base}_{date_str}{jwst_ext}"
+        dated_nisp = f"{nisp_base}_{date_str}{nisp_ext}"
+        
+        np.save(dated_jwst, jwst_cutouts, allow_pickle=False)
+        np.save(dated_nisp, nisp_cutouts, allow_pickle=False)
+        print(f"  Saved cutouts to {dated_jwst} and {dated_nisp}")
+    
+    print("\n" + "=" * 60)
+    print("Processing complete!")
+    print("=" * 60)
     
     return jwst_cutouts, nisp_cutouts
 
