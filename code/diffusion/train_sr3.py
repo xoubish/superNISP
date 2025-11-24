@@ -190,16 +190,16 @@ def main():
 
     # --- Data (using 41x41 -> 205x205 files, cropped to 21x21 -> 105x105) ---
     train_ds = SuperResolutionDataset(
-        lr_path="../data/euclid_NIR_cosmos_41px_Y_20251124.npy",
-        hr_path="../data/jwst_cosmos_205px_F115W_20251124.npy",
+        lr_path="../../data/euclid_NIR_cosmos_41px_Y_20251124.npy",
+        hr_path="../../data/jwst_cosmos_205px_F115W_20251124.npy",
         split="train",
         lr_crop_size=21,
         hr_crop_size=105,
     )
 
     val_ds = SuperResolutionDataset(
-        lr_path="../data/euclid_NIR_cosmos_41px_Y_20251124.npy",
-        hr_path="../data/jwst_cosmos_205px_F115W_20251124.npy",
+        lr_path="../../data/euclid_NIR_cosmos_41px_Y_20251124.npy",
+        hr_path="../../data/jwst_cosmos_205px_F115W_20251124.npy",
         split="test",
         lr_crop_size=21,
         hr_crop_size=105,
