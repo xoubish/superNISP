@@ -13,20 +13,17 @@ def make_sr3_cosine_betas(num_timesteps: int, s: float = 0.008, max_beta: float 
     Returns:
       betas: (T,) tensor of diffusion betas in [0, max_beta].
     """
-    # t goes from 0 to T
-    steps = torch.linspace(0, num_timesteps, num_timesteps + 1, dtype=torch.float64)  # T+1 points
+    steps = torch.linspace(0, num_timesteps, num_timesteps + 1, dtype=torch.float64)
     t = steps / num_timesteps
 
-    # alphā(t) continuous function
-    alpha_bar = torch.cos((t + s) / (1.0 + s) * math.pi / 2.0) ** 2
+    alpha_bar = torch.cos((t + s) / (1 + s) * math.pi / 2) ** 2
     alpha_bar = alpha_bar / alpha_bar[0]
 
-    alpha_bar_t = alpha_bar[:-1]      # length T
-    alpha_bar_next = alpha_bar[1:]    # length T
-
+    alpha_bar_t = alpha_bar[:-1]
+    alpha_bar_next = alpha_bar[1:]
     betas = 1.0 - (alpha_bar_next / alpha_bar_t)
-    betas = torch.clamp(betas, min=1e-8, max=max_beta)
-    return betas.float()
+
+    return torch.clamp(betas.float(), min=1e-8, max=max_beta)
 
 cosine_beta_schedule = make_sr3_cosine_betas
 
@@ -42,8 +39,7 @@ class SinusoidalTimestepEmbedding(nn.Module):
 
     def forward(self, t: torch.Tensor) -> torch.Tensor:
         """
-        t: (B,) integer or float timesteps
-        returns: (B, dim)
+        t: (B,)
         """
         half_dim = self.dim // 2
         device = t.device
@@ -52,20 +48,17 @@ class SinusoidalTimestepEmbedding(nn.Module):
             * torch.arange(half_dim, device=device).float()
             / (half_dim - 1)
         )
-        args = t.float().unsqueeze(1) * freqs.unsqueeze(0)  # (B, half_dim)
-        emb = torch.cat([torch.sin(args), torch.cos(args)], dim=-1)
-        return emb
+        args = t.float().unsqueeze(1) * freqs.unsqueeze(0)
+        return torch.cat([torch.sin(args), torch.cos(args)], dim=-1)
 
 
 # ------------------------------------------------------------------
-# Simple residual block with time + cond injection (FiLM-like)
+# Residual Block with FiLM time+condition modulation
 # ------------------------------------------------------------------
 
 class ResBlock(nn.Module):
     def __init__(self, in_ch, out_ch, time_emb_dim, cond_ch, groups=8):
         super().__init__()
-        self.in_ch = in_ch
-        self.out_ch = out_ch
 
         self.norm1 = nn.GroupNorm(groups, in_ch)
         self.conv1 = nn.Conv2d(in_ch, out_ch, 3, padding=1)
@@ -73,55 +66,36 @@ class ResBlock(nn.Module):
         self.norm2 = nn.GroupNorm(groups, out_ch)
         self.conv2 = nn.Conv2d(out_ch, out_ch, 3, padding=1)
 
-        # project time embedding to scale/shift
         self.time_proj = nn.Linear(time_emb_dim, out_ch * 2)
-
-        # project cond feature (same spatial size) to scale/shift
-        # cond_ch must match the channel size of 'c' after c_proj in the forward pass
         self.cond_proj = nn.Conv2d(cond_ch, out_ch * 2, 1)
 
-        if in_ch != out_ch:
-            self.skip = nn.Conv2d(in_ch, out_ch, 1)
-        else:
-            self.skip = nn.Identity()
-
+        self.skip = nn.Conv2d(in_ch, out_ch, 1) if in_ch != out_ch else nn.Identity()
         self.act = nn.SiLU()
 
     def forward(self, x, t_emb, cond_feat):
-        """
-        x: (B, in_ch, H, W)
-        t_emb: (B, time_emb_dim)
-        cond_feat: (B, cond_ch, H, W)
-        """
         B, _, H, W = x.shape
 
-        # --- first conv ---
         h = self.norm1(x)
         h = self.act(h)
         h = self.conv1(h)
 
-        # --- add time + cond via FiLM ---
-        t_scale_shift = self.time_proj(t_emb).view(B, 2 * self.out_ch, 1, 1)
+        # FiLM modulation
+        t_scale_shift = self.time_proj(t_emb).view(B, -1, 1, 1)
         t_scale, t_shift = torch.chunk(t_scale_shift, 2, dim=1)
 
-        # ERROR was here: self.cond_proj must have the correct input channel size (cond_ch)
-        c_scale_shift = self.cond_proj(cond_feat) 
+        c_scale_shift = self.cond_proj(cond_feat)
         c_scale, c_shift = torch.chunk(c_scale_shift, 2, dim=1)
 
         h = self.norm2(h)
-        # combine time + cond modulation
-        scale = 1.0 + t_scale + c_scale
-        shift = t_shift + c_shift
-        h = scale * h + shift
+        h = (1 + t_scale + c_scale) * h + (t_shift + c_shift)
         h = self.act(h)
-
         h = self.conv2(h)
 
         return h + self.skip(x)
 
 
 # ------------------------------------------------------------------
-# UNet backbone (SR3-like)
+# SR3 UNet (with generic padding to multiples of 8)
 # ------------------------------------------------------------------
 
 class SR3UNet(nn.Module):
@@ -135,6 +109,7 @@ class SR3UNet(nn.Module):
     ):
         super().__init__()
 
+        # --- T embedding ---
         self.time_embedding = nn.Sequential(
             SinusoidalTimestepEmbedding(time_emb_dim),
             nn.Linear(time_emb_dim, time_emb_dim * 4),
@@ -142,13 +117,15 @@ class SR3UNet(nn.Module):
             nn.Linear(time_emb_dim * 4, time_emb_dim),
         )
 
+        # --- Input convolutions ---
         self.input_conv = nn.Conv2d(in_channels, base_channels, 3, padding=1)
         self.cond_conv_in = nn.Conv2d(cond_channels, base_channels, 3, padding=1)
 
+        # Track channels for skip connections
         chs = [base_channels]
-        in_ch = base_channels # H's channel entering the level (64, 128, 256)
-        cond_in_ch = base_channels # C's channel entering the C_PROJ (64, 128, 256)
-        
+        in_ch = base_channels
+        cond_in_ch = base_channels
+
         self.downs = nn.ModuleList()
         self.cond_downs = nn.ModuleList()
         self.cond_projs = nn.ModuleList()
@@ -156,366 +133,277 @@ class SR3UNet(nn.Module):
         # --- Down path ---
         for mult in channel_mults:
             out_ch = base_channels * mult
-            
-            self.downs.append(
-                nn.ModuleList(
-                    [
-                        # Note: cond_ch is out_ch for the ResBlock to work
-                        ResBlock(in_ch, out_ch, time_emb_dim, cond_ch=out_ch), 
-                        ResBlock(out_ch, out_ch, time_emb_dim, cond_ch=out_ch),
-                        nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1),
-                    ]
-                )
-            )
-            
-            # Input to c_proj is the current size of c (cond_in_ch)
-            # Output must match h's output size (out_ch)
-            self.cond_projs.append(nn.Conv2d(cond_in_ch, out_ch, 1)) 
-            
-            # Downsampler for C must take out_ch as input
-            self.cond_downs.append(
-                nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1)
-            )
-            
-            chs.append(out_ch)
-            
-            # Update channels for the next iteration (after downsampling)
-            in_ch = out_ch 
-            cond_in_ch = out_ch # C's channel after c_down in the forward pass
 
-        # bottleneck
+            self.downs.append(
+                nn.ModuleList([
+                    ResBlock(in_ch, out_ch, time_emb_dim, cond_ch=out_ch),
+                    ResBlock(out_ch, out_ch, time_emb_dim, cond_ch=out_ch),
+                    nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1),  # downsample
+                ])
+            )
+
+            # Condition projection for this scale
+            self.cond_projs.append(nn.Conv2d(cond_in_ch, out_ch, 1))
+            self.cond_downs.append(nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1))
+
+            chs.append(out_ch)
+            in_ch = out_ch
+            cond_in_ch = out_ch
+
+        # --- Bottleneck ---
         self.bottleneck1 = ResBlock(in_ch, in_ch, time_emb_dim, cond_ch=in_ch)
         self.bottleneck2 = ResBlock(in_ch, in_ch, time_emb_dim, cond_ch=in_ch)
 
         # --- Up path ---
         self.ups = nn.ModuleList()
         self.cond_ups = nn.ModuleList()
+
         for mult in reversed(channel_mults):
             out_ch = base_channels * mult
+
             self.ups.append(
-                nn.ModuleList(
-                    [
-                        nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1),
-                        ResBlock(out_ch + chs.pop(), out_ch, time_emb_dim, cond_ch=out_ch),
-                        ResBlock(out_ch, out_ch, time_emb_dim, cond_ch=out_ch),
-                    ]
-                )
+                nn.ModuleList([
+                    nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1),
+                    ResBlock(out_ch + chs.pop(), out_ch, time_emb_dim, cond_ch=out_ch),
+                    ResBlock(out_ch, out_ch, time_emb_dim, cond_ch=out_ch),
+                ])
             )
-            self.cond_ups.append(
-                nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1)
-            )
+            self.cond_ups.append(nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1))
             in_ch = out_ch
 
-        # final conv to noise prediction
         self.out_conv = nn.Sequential(
             nn.GroupNorm(8, in_ch),
             nn.SiLU(),
             nn.Conv2d(in_ch, in_channels, 3, padding=1),
         )
 
-        self.use_checkpoint = False  # Can be set to True for memory savings
-
+    # ------------------------------------------------------------------
+    # Forward pass with PAD-TO-MULTIPLE-OF-8, then crop back
+    # ------------------------------------------------------------------
     def forward(self, x, t, cond):
         """
-        x: (B, 1, H, W)  noisy HR at timestep t
-        t: (B,) timesteps
-        cond: (B, 1, H, W) upsampled LR (fixed, noise-free)
+        x: (B,1,H,W) noisy HR image at timestep t
+        cond: (B,1,H,W) LR image upsampled to HR grid
         """
-        # *** PADDING UPDATE: Pad 205x205 to 208x208 ***
-        original_size = x.shape[2:]
-        if original_size == (205, 205):
-            x = F.pad(x, (1, 2, 1, 2), mode='reflect') # Pad to 208x208
-            cond = F.pad(cond, (1, 2, 1, 2), mode='reflect')
-        
-        # unify spatial size (if slightly off)
+        orig_H, orig_W = x.shape[2], x.shape[3]
+
+        # --- 1) Compute padding so that H, W become multiples of 8 ---
+        pad_h = (8 - orig_H % 8) % 8
+        pad_w = (8 - orig_W % 8) % 8
+
+        pad_top = pad_h // 2
+        pad_bot  = pad_h - pad_top
+        pad_left = pad_w // 2
+        pad_right = pad_w - pad_left
+
+        if pad_h > 0 or pad_w > 0:
+            x = F.pad(x, (pad_left, pad_right, pad_top, pad_bot), mode="reflect")
+            cond = F.pad(cond, (pad_left, pad_right, pad_top, pad_bot), mode="reflect")
+
+        # ensure same size
         if cond.shape[2:] != x.shape[2:]:
             cond = F.interpolate(cond, size=x.shape[2:], mode="bilinear", align_corners=False)
 
+        # --- T embedding ---
         t_emb = self.time_embedding(t)
 
-        # initial condition features
+        # --- Condition embedding ---
         c = self.cond_conv_in(cond)
 
         hs = []
         h = self.input_conv(x)
         hs.append(h)
 
-        # down path
+        # --- Down ---
         for (res1, res2, down), c_proj, c_down in zip(self.downs, self.cond_projs, self.cond_downs):
-            # c_proj changes c's channel depth to match h's output channel depth (out_ch)
             c = c_proj(c)
             c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
+
             h = res1(h, t_emb, c)
             c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
+
             h = res2(h, t_emb, c)
             hs.append(h)
 
-            # downsample both h and c
             h = down(h)
             c = c_down(c)
 
-        # bottleneck
+        # --- Bottleneck ---
         c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
         h = self.bottleneck1(h, t_emb, c)
+
         c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
         h = self.bottleneck2(h, t_emb, c)
 
-        # up path
+        # --- Up ---
         for (up, res1, res2), c_up in zip(self.ups, self.cond_ups):
             h = up(h)
-            
-            # pop skip connection and match size
+
             skip = hs.pop()
             if h.shape[2:] != skip.shape[2:]:
                 h = F.interpolate(h, size=skip.shape[2:], mode="bilinear", align_corners=False)
+
             h = torch.cat([h, skip], dim=1)
 
-            # Upsample condition feature `c` via transpose conv (handles both upsampling and channel change: in_ch -> out_ch)
             c = c_up(c)
-            # Ensure spatial size matches (in case of rounding)
             if c.shape[2:] != h.shape[2:]:
                 c = F.interpolate(c, size=h.shape[2:], mode="bilinear", align_corners=False)
 
             h = res1(h, t_emb, c)
             h = res2(h, t_emb, c)
 
-        output = self.out_conv(h)
-        
-        # *** CROPPING UPDATE: Crop back 208x208 to 205x205 ***
-        if original_size == (205, 205) and output.shape[2:] == (208, 208):
-            # Crop back to 205x205 (remove 1 from top/left, 2 from bottom/right)
-            output = output[:, :, 1:206, 1:206]
-        
-        return output
+        out = self.out_conv(h)
+
+        # --- 2) Crop back to original HR size ---
+        if pad_h > 0 or pad_w > 0:
+            out = out[:, :, pad_top:pad_top + orig_H, pad_left:pad_left + orig_W]
+
+        return out
 
 
 # ------------------------------------------------------------------
-# Diffusion wrapper (DDPM) for SR3-style conditioning
+# SR3 Diffusion wrapper
 # ------------------------------------------------------------------
 
 class SR3SuperResolution(nn.Module):
 
-    def __init__(
-        self,
-        unet: SR3UNet,
-        timesteps: int = 1000,
-        upscale_factor: int = 5,
-    ):
+    def __init__(self, unet: SR3UNet, timesteps=1000, upscale_factor=5):
         super().__init__()
         self.unet = unet
         self.timesteps = timesteps
         self.upscale_factor = upscale_factor
 
-        # --- SR3 / Improved-DDPM cosine schedule (buffers setup) ---
+        # Schedule buffers
         betas = cosine_beta_schedule(timesteps)
-        alphas = 1.0 - betas
-        alphas_cumprod = torch.cumprod(alphas, dim=0)
-        alphas_cumprod_prev = torch.cat(
-            [torch.tensor([1.0], dtype=alphas.dtype), alphas_cumprod[:-1]], dim=0
-        )
+        alphas = 1 - betas
+        alphas_cum = torch.cumprod(alphas, dim=0)
+        alphas_cum_prev = torch.cat([torch.tensor([1.0], dtype=alphas.dtype), alphas_cum[:-1]], dim=0)
 
         self.register_buffer("betas", betas)
         self.register_buffer("alphas", alphas)
-        self.register_buffer("alphas_cumprod", alphas_cumprod)
-        self.register_buffer("alphas_cumprod_prev", alphas_cumprod_prev)
+        self.register_buffer("alphas_cumprod", alphas_cum)
+        self.register_buffer("alphas_cumprod_prev", alphas_cum_prev)
 
-        self.register_buffer("sqrt_alphas_cumprod", torch.sqrt(alphas_cumprod))
-        self.register_buffer(
-            "sqrt_one_minus_alphas_cumprod",
-            torch.sqrt(1.0 - alphas_cumprod),
-        )
+        self.register_buffer("sqrt_alphas_cumprod", torch.sqrt(alphas_cum))
+        self.register_buffer("sqrt_one_minus_alphas_cumprod", torch.sqrt(1 - alphas_cum))
 
-        # Posterior calculation buffers
-        posterior_variance = betas * (1.0 - alphas_cumprod_prev) / (1.0 - alphas_cumprod)
-        posterior_variance = torch.clamp(posterior_variance, min=1e-20)
+        posterior_var = betas * (1 - alphas_cum_prev) / (1 - alphas_cum)
+        posterior_var = torch.clamp(posterior_var, min=1e-20)
 
-        self.register_buffer("posterior_log_variance_clipped", torch.log(posterior_variance))
-        self.register_buffer(
-            "posterior_mean_coef1",
-            betas * torch.sqrt(alphas_cumprod_prev) / (1.0 - alphas_cumprod),
-        )
-        self.register_buffer(
-            "posterior_mean_coef2",
-            (1.0 - alphas_cumprod_prev) * torch.sqrt(alphas)
-            / (1.0 - alphas_cumprod),
-        )
+        self.register_buffer("posterior_log_variance_clipped", torch.log(posterior_var))
+        self.register_buffer("posterior_mean_coef1", betas * torch.sqrt(alphas_cum_prev) / (1 - alphas_cum))
+        self.register_buffer("posterior_mean_coef2", (1 - alphas_cum_prev) * torch.sqrt(alphas) / (1 - alphas_cum))
 
-    # ---------------- forward diffusion q(x_t | x_0) -----------------
+    # -----------------------------------------------------
+    # Forward diffusion q(x_t | x_0)
+    # -----------------------------------------------------
 
     def q_sample(self, x0, t, noise=None):
-        """
-        x0: (B,1,H,W)
-        t:  (B,)
-        """
         if noise is None:
             noise = torch.randn_like(x0)
 
-        sqrt_a_bar_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
-        sqrt_one_minus = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
-        return sqrt_a_bar_t * x0 + sqrt_one_minus * noise, noise
+        sqrt_a = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+        sqrt_om = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
 
-    # ------------------------------------------------------------------
-    # Training interface
-    # ------------------------------------------------------------------
+        return sqrt_a * x0 + sqrt_om * noise, noise
+
+    # -----------------------------------------------------
+    # Training: model predicts epsilon
+    # -----------------------------------------------------
 
     def forward(self, lr, hr, t):
         """
-        lr: (B,1,41,41) low-res input
-        hr: (B,1,205,205) high-res target
-        t:  (B,) timesteps
-        returns:
-          pred_noise: model ε_θ(x_t, t, cond)
-          true_noise: ε used to generate x_t
-          x0_pred: predicted x0 image from the noise prediction (for Perceptual Loss)
+        lr: (B,1,21,21)
+        hr: (B,1,105,105)
         """
-        # Safety check: ensure 4D tensors
-        if lr.dim() == 3:
-            lr = lr.unsqueeze(0)
-        if hr.dim() == 3:
-            hr = hr.unsqueeze(0)
-        if isinstance(t, (int, float)):
-            t = torch.tensor([t], device=lr.device, dtype=torch.long)
-        elif t.dim() == 0:
-            t = t.unsqueeze(0)
-        
-        # upsample LR once, treat as fixed condition
-        cond = F.interpolate(
-            lr,
-            scale_factor=self.upscale_factor,
-            mode="bilinear",
-            align_corners=False,
-        )
+        # Upsample LR → HR grid
+        cond = F.interpolate(lr, scale_factor=self.upscale_factor, mode="bilinear", align_corners=False)
 
-        # ensure HR matches cond size (hr_up is the true x0)
+        # Ensure hr matches cond grid
         if hr.shape[2:] != cond.shape[2:]:
-            hr_up = F.interpolate(
-                hr,
-                size=cond.shape[2:],
-                mode="bilinear",
-                align_corners=False,
-            )
+            hr_up = F.interpolate(hr, size=cond.shape[2:], mode="bilinear", align_corners=False)
         else:
             hr_up = hr
 
+        # Forward diffusion
         x_t, noise = self.q_sample(hr_up, t)
+
+        # Predict noise
         pred_noise = self.unet(x_t, t, cond)
 
-        # small spatial mismatches → interpolate
+        # Align shapes if needed
         if pred_noise.shape[2:] != noise.shape[2:]:
-            pred_noise = F.interpolate(
-                pred_noise,
-                size=noise.shape[2:],
-                mode="bilinear",
-                align_corners=False,
-            )
+            pred_noise = F.interpolate(pred_noise, size=noise.shape[2:], mode="bilinear", align_corners=False)
 
-        # --- Calculate predicted x0 (x0_pred) ---
+        # Reconstruct x0
         B = x_t.shape[0]
-        sqrt_a_bar_t = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
-        sqrt_one_minus_a_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
+        sqrt_a = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
+        sqrt_om = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
 
-        # x0 = (x_t - sqrt(1 - ā_t) * eps) / sqrt(ā_t)
-        x0_pred = (x_t - sqrt_one_minus_a_bar_t * pred_noise) / (sqrt_a_bar_t + 1e-8)
-        x0_pred = torch.clamp(x0_pred, -1.0, 1.0) # SR3 clipping
+        x0_pred = (x_t - sqrt_om * pred_noise) / (sqrt_a + 1e-8)
+        x0_pred = torch.clamp(x0_pred, -1, 1)
 
-        # Return predicted noise, true noise, and predicted x0 (for perceptual loss)
         return pred_noise, noise, x0_pred
 
-    # ------------------------------------------------------------------
-    # DDPM reverse mean / variance (SR3 style)
-    # ------------------------------------------------------------------
+    # -----------------------------------------------------
+    # Reverse step
+    # -----------------------------------------------------
 
+    @torch.no_grad()
     def p_mean_variance(self, lr, x_t, t):
-        """
-        Compute posterior mean & log variance for q(x_{t-1} | x_t, x0)
-        using SR3 / DDPM epsilon-prediction parametrization.
-        """
         B = x_t.shape[0]
 
-        # conditioning: upsample LR → HR grid
-        cond = F.interpolate(
-            lr,
-            scale_factor=self.upscale_factor,
-            mode="bilinear",
-            align_corners=False,
-        )
+        cond = F.interpolate(lr, scale_factor=self.upscale_factor, mode="bilinear", align_corners=False)
         if cond.shape[2:] != x_t.shape[2:]:
             cond = F.interpolate(cond, size=x_t.shape[2:], mode="bilinear", align_corners=False)
 
-        # predict ε_θ(x_t, t, cond)
         eps_theta = self.unet(x_t, t, cond)
         if eps_theta.shape[2:] != x_t.shape[2:]:
-            eps_theta = F.interpolate(
-                eps_theta,
-                size=x_t.shape[2:],
-                mode="bilinear",
-                align_corners=False,
-            )
+            eps_theta = F.interpolate(eps_theta, size=x_t.shape[2:], mode="bilinear", align_corners=False)
 
-        sqrt_a_bar_t = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
-        sqrt_one_minus_a_bar_t = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
+        sqrt_a = self.sqrt_alphas_cumprod[t].view(B, 1, 1, 1)
+        sqrt_om = self.sqrt_one_minus_alphas_cumprod[t].view(B, 1, 1, 1)
 
-        # x0 = (x_t - sqrt(1 - ā_t) * eps) / sqrt(ā_t)
-        x0_pred = (x_t - sqrt_one_minus_a_bar_t * eps_theta) / (sqrt_a_bar_t + 1e-8)
-        x0_pred = torch.clamp(x0_pred, -1.0, 1.0) # SR3 clips x0 to data range
+        x0_pred = (x_t - sqrt_om * eps_theta) / (sqrt_a + 1e-8)
+        x0_pred = torch.clamp(x0_pred, -1, 1)
 
         coef1 = self.posterior_mean_coef1[t].view(B, 1, 1, 1)
         coef2 = self.posterior_mean_coef2[t].view(B, 1, 1, 1)
-        posterior_mean = coef1 * x0_pred + coef2 * x_t
+        mean = coef1 * x0_pred + coef2 * x_t
 
-        posterior_log_variance = self.posterior_log_variance_clipped[t].view(B, 1, 1, 1)
+        log_var = self.posterior_log_variance_clipped[t].view(B, 1, 1, 1)
+        return mean, log_var, x0_pred
 
-        return posterior_mean, posterior_log_variance, x0_pred
-
-    # ------------------------------------------------------------------
-    # One reverse step p(x_{t-1} | x_t, lr)
-    # ------------------------------------------------------------------
+    # -----------------------------------------------------
+    # One sampling step
+    # -----------------------------------------------------
 
     @torch.no_grad()
     def p_sample(self, lr, x_t, t):
-        """
-        lr: (B,1,41,41)
-        x_t: (B,1,H,W) at timestep t
-        t:  (B,) integer timesteps
-        """
-        B = x_t.shape[0]
-
         mean, log_var, x0_pred = self.p_mean_variance(lr, x_t, t)
         noise = torch.randn_like(x_t)
-        nonzero_mask = (t > 0).float().view(B, 1, 1, 1)  # no noise when t = 0
+        nonzero_mask = (t > 0).float().view(-1, 1, 1, 1)
+        return mean + nonzero_mask * torch.exp(0.5 * log_var) * noise, x0_pred
 
-        x_prev = mean + nonzero_mask * torch.exp(0.5 * log_var) * noise
-        return x_prev, x0_pred
-
-    # ------------------------------------------------------------------
-    # Full SR3 sampling loop
-    # ------------------------------------------------------------------
+    # -----------------------------------------------------
+    # Full sampling loop
+    # -----------------------------------------------------
 
     @torch.no_grad()
     def sample(self, lr, num_steps=None):
-        """
-        lr: (B,1,41,41)
-        returns: (B,1,HR,HR) sampled super-res images
-        """
         B = lr.shape[0]
         device = lr.device
 
-        # full DDPM chain by default
         if num_steps is None or num_steps >= self.timesteps:
             timesteps = torch.arange(self.timesteps - 1, -1, -1, device=device)
         else:
-            timesteps = torch.linspace(
-                self.timesteps - 1, 0, num_steps, device=device
-            ).long()
+            timesteps = torch.linspace(self.timesteps - 1, 0, num_steps, device=device).long()
 
-        # initial image: pure Gaussian noise on HR grid
-        cond_shape = (
-            B,
-            1,
-            lr.shape[2] * self.upscale_factor, # 41 * 5 = 205
-            lr.shape[3] * self.upscale_factor, # 41 * 5 = 205
-        )
-        x_t = torch.randn(cond_shape, device=device)
+        # Calculate HR shape from LR dynamically
+        H_hr = lr.shape[2] * self.upscale_factor
+        W_hr = lr.shape[3] * self.upscale_factor
+
+        x_t = torch.randn((B, 1, H_hr, W_hr), device=device)
 
         for t_val in timesteps:
             t = torch.full((B,), t_val, device=device, dtype=torch.long)
