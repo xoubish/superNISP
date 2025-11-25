@@ -441,21 +441,11 @@ def main():
                 )
 
         # -------------------- CHECKPOINTING --------------------
-        if val_total_loss_avg < best_val_loss - config.early_stop_min_delta:
+        if val_total_loss_avg < best_val_loss:
             best_val_loss = val_total_loss_avg
-            patience_counter = 0
-            best_path = os.path.join("checkpoints_sr3", "best_sr3.pth")
-            torch.save(model.state_dict(), best_path)
-            print(f"  ↳ New best model saved: {best_path}")
-        else:
-            patience_counter += 1
-            if patience_counter >= config.early_stop_patience:
-                print(f"Early stopping at epoch {epoch+1}")
-                break
+            torch.save(model.state_dict(), "checkpoints_sr3/best_sr3.pth")
+            print(f"  ↳ New best model saved: checkpoints_sr3/best_sr3.pth")
 
-        # Also save per-epoch checkpoint
-        ckpt_path = os.path.join("checkpoints_sr3", f"sr3_epoch_{epoch+1}.pth")
-        torch.save(model.state_dict(), ckpt_path)
 
     wandb.finish()
 
