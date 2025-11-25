@@ -1,7 +1,7 @@
 # train_sr3.py
 #
 # Training script for SR3SuperResolution using weighted epsilon-loss
-# and (optionally) Perceptual Loss on the predicted x0.
+# and Perceptual Loss on the predicted x0.
 
 import os
 import time
@@ -22,14 +22,13 @@ from model_sr3 import SR3UNet, SR3SuperResolution
 
 
 # -----------------------------------------------------------
-# PSNR helper (proxy metric)
+# PSNR helper (proxy metric in normalized space)
 # -----------------------------------------------------------
 
 def psnr(pred, target):
     """
-    Computes a PSNR-like metric using the dynamic range of the target
-    in the current batch. This is more appropriate than assuming [-1,1]
-    now that we use asinh normalization.
+    Computes a PSNR-like metric using the dynamic range of the
+    target in the current batch (rather than assuming [-1, 1]).
     """
     mse = F.mse_loss(pred, target)
     if mse <= 1e-8:
@@ -43,56 +42,53 @@ def psnr(pred, target):
 
 
 # -----------------------------------------------------------
-# Helper Functions: Gaussian Weight Map and Perceptual Loss
+# Helper functions: Gaussian weight map & Perceptual Loss
 # -----------------------------------------------------------
 
-def gaussian_weight_map_like(x, sigma=0.3):
+def gaussian_weight_map(shape, sigma=0.3):
     """
-    Generate a Gaussian weight map centered in the middle of the image,
-    on the SAME device and shape as x.
+    Generates a Gaussian weight map centered on the image.
 
-    x: tensor of shape (B, C, H, W)
+    shape: (B, C, H, W)
+    Returns: (B, C, H, W) weights normalized to mean 1.
     """
-    B, C, H, W = x.shape
-    device = x.device
+    B, C, H, W = shape
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    y, xg = torch.meshgrid(
+    y, x = torch.meshgrid(
         torch.linspace(-1, 1, H, device=device),
         torch.linspace(-1, 1, W, device=device),
         indexing='ij'
     )
-    d = torch.sqrt(xg**2 + y**2)
-
-    weights = torch.exp(-(d**2) / (2 * sigma**2))
+    d = torch.sqrt(x ** 2 + y ** 2)
+    weights = torch.exp(-(d ** 2) / (2 * sigma ** 2))
     weights = weights / weights.mean()
-
     return weights.expand(B, C, H, W)
 
 
 class PerceptualLoss(nn.Module):
     """
-    Perceptual loss using VGG16 for structure preservation on x0_pred.
+    Perceptual loss using VGG16 features to compare x0_pred and HR.
 
-    Inputs are in asinh-normalized space; we use VGG16 features
-    as a relative structural comparator.
+    Inputs are in asinh-normalized space; VGG is used purely as a
+    relative structural comparator.
     """
     def __init__(self):
         super().__init__()
         vgg = vgg16(weights=VGG16_Weights.DEFAULT).features
-        # Use features up to relu2_2 (index 9)
+        # Use layers up to relu2_2
         self.feature_extractor = nn.Sequential(*list(vgg.children())[:9]).eval()
-        for param in self.feature_extractor.parameters():
-            param.requires_grad = False
+        for p in self.feature_extractor.parameters():
+            p.requires_grad = False
 
     def forward(self, pred, target):
-        # VGG expects 3 channels; repeat grayscale input: (B,1,H,W) -> (B,3,H,W)
+        # (B,1,H,W) -> (B,3,H,W)
         pred_3 = pred.repeat(1, 3, 1, 1)
         target_3 = target.repeat(1, 3, 1, 1)
 
-        pred_features = self.feature_extractor(pred_3)
-        target_features = self.feature_extractor(target_3)
-
-        return F.mse_loss(pred_features, target_features)
+        f_pred = self.feature_extractor(pred_3)
+        f_tgt = self.feature_extractor(target_3)
+        return F.mse_loss(f_pred, f_tgt)
 
 
 # -----------------------------------------------------------
@@ -101,8 +97,8 @@ class PerceptualLoss(nn.Module):
 
 def sample_timesteps(B, timesteps, device):
     """
-    Importance sampling over timesteps: slightly higher probability
-    near earlier timesteps. You can tune this schedule.
+    Importance sampling over timesteps with slightly higher weight
+    for earlier timesteps (can be tuned).
     """
     probs = torch.linspace(1.0, 0.5, timesteps, device=device)
     probs = probs / probs.sum()
@@ -112,12 +108,14 @@ def sample_timesteps(B, timesteps, device):
 
 def to_viz(x):
     """
-    Map a tensor to [0, 1] per image for visualization only,
-    using per-image min-max. Works for (C,H,W) or (H,W).
+    Map a tensor to [0, 1] for visualization, using per-image min-max.
+
+    x: (C, H, W) or (H, W)
+    returns: (C, H, W) in [0,1]
     """
     x = x.detach().clone()
     if x.dim() == 2:
-        x2 = x.unsqueeze(0)  # (1,H,W)
+        x2 = x.unsqueeze(0)
     elif x.dim() == 3:
         x2 = x
     else:
@@ -129,7 +127,7 @@ def to_viz(x):
         x2 = (x2 - xmin) / (xmax - xmin)
     else:
         x2 = torch.zeros_like(x2)
-    return x2  # (C,H,W)
+    return x2
 
 
 # -----------------------------------------------------------
@@ -145,29 +143,29 @@ def main():
     parser.add_argument("--timesteps", type=int, default=1000)
     parser.add_argument("--hidden_dim", type=int, default=32)
 
-    # --- Loss Arguments ---
+    # Loss-related
     parser.add_argument("--gauss_sigma", type=float, default=0.4,
-                        help="Sigma for Gaussian weight map for epsilon loss.")
-    parser.add_argument("--lambda_perceptual", type=float, default=0.0,
-                        help="Weight for the VGG-based Perceptual Loss on x0_pred.")
+                        help="Sigma for Gaussian weight map on epsilon loss.")
+    parser.add_argument("--lambda_perceptual", type=float, default=1e-3,
+                        help="Weight for VGG perceptual loss on x0_pred.")
     parser.add_argument("--accumulation_steps", type=int, default=4,
-                        help="Number of gradient accumulation steps")
+                        help="Gradient accumulation steps.")
 
-    # --- Data control ---
-    parser.add_argument("--sample_fraction", type=float, default=1.0,
-                        help="Fraction of dataset to use (for debugging/overfitting).")
+    # Data-related
+    parser.add_argument("--sample_fraction", type=float, default=0.1,
+                        help="Fraction of dataset to use (0<frac<=1).")
 
-    # --- Misc / Logging ---
+    # Misc / logging
     parser.add_argument("--project", type=str, default="superNISP_sr3")
     parser.add_argument("--entity", type=str, default=None)
     parser.add_argument("--grad_clip", type=float, default=1.0)
-    parser.add_argument("--ema_decay", type=float, default=0.9999)  # not used yet
+    parser.add_argument("--ema_decay", type=float, default=0.9999)  # reserved
     parser.add_argument("--early_stop_patience", type=int, default=10)
     parser.add_argument("--early_stop_min_delta", type=float, default=1e-4)
     parser.add_argument("--inference_steps", type=int, default=100,
-                        help="Sampling steps for visualization during training.")
+                        help="Sampling steps for fast visualization.")
     parser.add_argument("--full_inference_steps", type=int, default=1000,
-                        help="Sampling steps for full inference (if different from timesteps).")
+                        help="Sampling steps for full inference (unused here).")
 
     args = parser.parse_args()
 
@@ -183,7 +181,7 @@ def main():
     )
     config = wandb.config
 
-    # --- Data (41x41 -> 205x205 files, cropped to 21x21 -> 105x105) ---
+    # --- Datasets (41x41 -> 205x205, cropped to 21x21 -> 105x105) ---
     train_ds = SuperResolutionDataset(
         lr_path="../../data/euclid_NIR_cosmos_41px_Y_20251124.npy",
         hr_path="../../data/jwst_cosmos_205px_F115W_20251124.npy",
@@ -199,7 +197,7 @@ def main():
         split="test",
         lr_crop_size=21,
         hr_crop_size=105,
-        sample_fraction=config.sample_fraction,
+        sample_fraction=1.0,   # keep full test set
     )
 
     train_loader = DataLoader(
@@ -251,7 +249,7 @@ def main():
     best_val_loss = float("inf")
     patience_counter = 0
 
-    # --- Training ---
+    # -------------------- TRAINING LOOP --------------------
     for epoch in range(config.epochs):
         model.train()
         train_eps_loss_sum = 0.0
@@ -267,27 +265,23 @@ def main():
             B = lr_batch.size(0)
             t = sample_timesteps(B, config.timesteps, device)
 
-            # model returns pred_eps, true_eps, x0_pred
+            # Forward through diffusion model: returns pred_eps, true_eps, x0_pred
             pred_eps, true_eps, x0_pred = model(lr_batch, hr_batch, t)
 
-            # --- 1. Weighted Epsilon Loss ---
-            weights = gaussian_weight_map_like(pred_eps, sigma=config.gauss_sigma)
+            # 1) Weighted epsilon loss
+            weights = gaussian_weight_map(pred_eps.shape, sigma=config.gauss_sigma).to(device)
             eps_loss = (F.mse_loss(pred_eps, true_eps, reduction='none') * weights).mean()
 
-            # --- 2. Perceptual Loss on x0 prediction (optional) ---
-            if config.lambda_perceptual > 0.0:
-                perceptual_loss = perceptual_loss_fn(x0_pred, hr_batch)
-            else:
-                perceptual_loss = torch.tensor(0.0, device=device)
+            # 2) Perceptual loss on x0_pred
+            perceptual_loss = perceptual_loss_fn(x0_pred, hr_batch)
 
-            # --- 3. Total Loss ---
+            # Total loss
             loss = eps_loss + config.lambda_perceptual * perceptual_loss
 
             # Gradient accumulation
             loss = loss / config.accumulation_steps
             loss.backward()
 
-            # Step optimizer every N steps or at end of epoch
             if ((step + 1) % config.accumulation_steps == 0) or ((step + 1) == len(train_loader)):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip)
                 optimizer.step()
@@ -297,15 +291,14 @@ def main():
             train_perceptual_loss_sum += perceptual_loss.item()
 
         train_eps_loss_avg = train_eps_loss_sum / len(train_loader)
-        train_perceptual_loss_avg = train_perceptual_loss_sum / max(len(train_loader), 1)
+        train_perceptual_loss_avg = train_perceptual_loss_sum / len(train_loader)
         train_total_loss_avg = train_eps_loss_avg + config.lambda_perceptual * train_perceptual_loss_avg
 
-        # --- Validation: Hybrid Loss + PSNR at sampled t ---
+        # -------------------- VALIDATION --------------------
         model.eval()
         val_eps_loss_sum = 0.0
         val_perceptual_loss_sum = 0.0
         val_psnr_sum = 0.0
-        logged_x0 = False  # log x0_pred only once per epoch
 
         with torch.no_grad():
             for lr_batch, hr_batch in val_loader:
@@ -323,33 +316,17 @@ def main():
 
                 pred_eps, true_eps, x0_pred = model(lr_batch, hr_batch, t)
 
-                # 1. Weighted Epsilon Loss
-                weights = gaussian_weight_map_like(pred_eps, sigma=config.gauss_sigma)
+                weights = gaussian_weight_map(pred_eps.shape, sigma=config.gauss_sigma).to(device)
                 eps_loss = (F.mse_loss(pred_eps, true_eps, reduction='none') * weights).mean()
                 val_eps_loss_sum += eps_loss.item()
 
-                # 2. Perceptual Loss
-                if config.lambda_perceptual > 0.0:
-                    perceptual_loss = perceptual_loss_fn(x0_pred, hr_batch)
-                else:
-                    perceptual_loss = torch.tensor(0.0, device=device)
+                perceptual_loss = perceptual_loss_fn(x0_pred, hr_batch)
                 val_perceptual_loss_sum += perceptual_loss.item()
 
-                # 3. PSNR on x0_pred
                 val_psnr_sum += psnr(x0_pred, hr_batch).item()
 
-                # Log one x0_pred vs HR example per epoch
-                if not logged_x0:
-                    x0_vis = to_viz(x0_pred[0].cpu())
-                    hr_vis = to_viz(hr_batch[0].cpu())
-                    wandb.log({
-                        "viz_x0_pred": wandb.Image(x0_vis, caption=f"x0_pred epoch {epoch+1}"),
-                        "viz_x0_hr": wandb.Image(hr_vis, caption="HR for x0_pred"),
-                    })
-                    logged_x0 = True
-
         val_eps_loss_avg = val_eps_loss_sum / len(val_loader)
-        val_perceptual_loss_avg = val_perceptual_loss_sum / max(len(val_loader), 1)
+        val_perceptual_loss_avg = val_perceptual_loss_sum / len(val_loader)
         val_total_loss_avg = val_eps_loss_avg + config.lambda_perceptual * val_perceptual_loss_avg
         val_psnr_avg = val_psnr_sum / len(val_loader)
 
@@ -368,6 +345,8 @@ def main():
                 "train/eps_loss": train_eps_loss_avg,
                 "train/perceptual_loss": train_perceptual_loss_avg,
                 "train/total_loss": train_total_loss_avg,
+                "train/eps_loss_weighted": train_eps_loss_avg,
+                "train/perceptual_loss_scaled": config.lambda_perceptual * train_perceptual_loss_avg,
                 "val/eps_loss": val_eps_loss_avg,
                 "val/perceptual_loss": val_perceptual_loss_avg,
                 "val/total_loss": val_total_loss_avg,
@@ -378,35 +357,46 @@ def main():
 
         scheduler.step(val_total_loss_avg)
 
-        # --- Visualization every 10 epochs (full sampling) ---
-        if (epoch + 1) % 10 == 0:
+        # -------------------- VISUALIZATION (every 5 epochs) --------------------
+        if (epoch + 1) % 5 == 0:
             with torch.no_grad():
                 idx = random.randint(0, len(val_ds) - 1)
-                lr_img, hr_img = val_ds[idx]  # asinh-normalized tensors
-                lr_img = lr_img.unsqueeze(0).to(device)  # (1,1,21,21)
+                lr_img, hr_img = val_ds[idx]       # both (1,H,W) asinh-normalized
 
+                lr_img = lr_img.unsqueeze(0).to(device)   # (1,1,21,21)
+                hr_img = hr_img.unsqueeze(0).to(device)   # (1,1,105,105)
+
+                # x0_pred at mid timestep (diagnostic)
+                t_vis = torch.tensor([config.timesteps // 2], device=device)
+                _, _, x0_pred = model(lr_img, hr_img, t_vis)
+
+                # SR sample from reverse diffusion (stochastic)
                 sr_sample = model.sample(lr_img, num_steps=config.inference_steps)[0].cpu()  # (1,105,105)
 
-                sr_sample_viz = to_viz(sr_sample)      # (1,H,W)
-                hr_img_viz = to_viz(hr_img)            # (1,H,W)
+                # Visualization versions (per-image min-max)
+                x0_pred_viz = to_viz(x0_pred[0].cpu())
+                hr_viz = to_viz(hr_img[0].cpu())
+                sr_viz = to_viz(sr_sample)
 
-                hr_up_interp = F.interpolate(
-                    lr_img[0].cpu().unsqueeze(0),       # (1,1,21,21)
-                    size=hr_img.shape[1:],              # (H,W)
+                # LR upsampled to HR grid
+                lr_up = F.interpolate(
+                    lr_img,
+                    size=hr_img.shape[2:],
                     mode="bilinear",
                     align_corners=False,
-                )[0]
-                hr_up_interp_viz = to_viz(hr_up_interp)
+                )[0].cpu()     # (1,105,105)
+                lr_up_viz = to_viz(lr_up)
 
                 wandb.log(
                     {
-                        "viz_super_res": wandb.Image(sr_sample_viz, caption=f"SR epoch {epoch+1}"),
-                        "viz_low_res_interp": wandb.Image(hr_up_interp_viz, caption="LR (Interpolated)"),
-                        "viz_high_res": wandb.Image(hr_img_viz, caption="HR (Ground Truth)"),
+                        "viz_LR_interp": wandb.Image(lr_up_viz, caption=f"LR interp epoch {epoch+1}"),
+                        "viz_HR": wandb.Image(hr_viz, caption="HR (ground truth)"),
+                        "viz_x0_pred": wandb.Image(x0_pred_viz, caption=f"x0_pred epoch {epoch+1}"),
+                        "viz_SR_sample": wandb.Image(sr_viz, caption=f"SR sample epoch {epoch+1}"),
                     }
                 )
 
-        # --- Early stopping & checkpoints ---
+        # -------------------- CHECKPOINTS & EARLY STOP --------------------
         if val_total_loss_avg < best_val_loss - config.early_stop_min_delta:
             best_val_loss = val_total_loss_avg
             patience_counter = 0
@@ -421,7 +411,6 @@ def main():
                 torch.save(model.state_dict(), ckpt_path)
                 break
 
-        # Per-epoch checkpoint (optional)
         ckpt_path = os.path.join("checkpoints_sr3", f"sr3_epoch_{epoch+1}.pth")
         torch.save(model.state_dict(), ckpt_path)
 
