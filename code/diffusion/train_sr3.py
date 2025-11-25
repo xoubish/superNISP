@@ -1,7 +1,7 @@
 # train_sr3.py
 #
 # Training script for SR3SuperResolution using weighted epsilon-loss
-# and Perceptual Loss on the predicted x0.
+# + x0 reconstruction loss + Perceptual Loss on the predicted x0.
 
 import os
 import time
@@ -149,14 +149,20 @@ def main():
     parser.add_argument(
         "--gauss_sigma",
         type=float,
-        default=0.4,
+        default=0.6,   # broader by default
         help="Sigma for Gaussian weight map on epsilon loss."
     )
     parser.add_argument(
         "--lambda_perceptual",
         type=float,
-        default=1e-3,
+        default=1e-4,  # reduced vs old 1e-3
         help="Weight for VGG perceptual loss on x0_pred."
+    )
+    parser.add_argument(
+        "--lambda_x0",
+        type=float,
+        default=0.1,
+        help="Weight for x0 reconstruction L1 loss."
     )
     parser.add_argument(
         "--accumulation_steps",
@@ -198,6 +204,7 @@ def main():
     parser.add_argument("--entity", type=str, default=None)
     parser.add_argument("--grad_clip", type=float, default=1.0)
     parser.add_argument("--ema_decay", type=float, default=0.9999)  # reserved
+    # early_stop_* kept but unused (harmless)
     parser.add_argument("--early_stop_patience", type=int, default=10)
     parser.add_argument("--early_stop_min_delta", type=float, default=1e-4)
 
@@ -281,12 +288,12 @@ def main():
 
     os.makedirs("checkpoints_sr3", exist_ok=True)
     best_val_loss = float("inf")
-    patience_counter = 0
 
     # -------------------- TRAINING LOOP --------------------
     for epoch in range(config.epochs):
         model.train()
         train_eps_loss_sum = 0.0
+        train_x0_l1_sum = 0.0
         train_perceptual_loss_sum = 0.0
 
         start = time.time()
@@ -306,11 +313,18 @@ def main():
             weights = gaussian_weight_map(pred_eps.shape, sigma=config.gauss_sigma).to(device)
             eps_loss = (F.mse_loss(pred_eps, true_eps, reduction='none') * weights).mean()
 
-            # 2) Perceptual loss on x0_pred
+            # 2) x0 reconstruction loss
+            x0_l1 = F.l1_loss(x0_pred, hr_batch)
+
+            # 3) Perceptual loss
             perceptual_loss = perceptual_loss_fn(x0_pred, hr_batch)
 
-            # Total loss
-            loss = eps_loss + config.lambda_perceptual * perceptual_loss
+            # ---- Total loss ----
+            loss = (
+                eps_loss
+                + config.lambda_x0 * x0_l1
+                + config.lambda_perceptual * perceptual_loss
+            )
 
             # Gradient accumulation
             loss = loss / config.accumulation_steps
@@ -322,17 +336,22 @@ def main():
                 optimizer.zero_grad()
 
             train_eps_loss_sum += eps_loss.item()
+            train_x0_l1_sum += x0_l1.item()
             train_perceptual_loss_sum += perceptual_loss.item()
 
         train_eps_loss_avg = train_eps_loss_sum / len(train_loader)
+        train_x0_l1_avg = train_x0_l1_sum / len(train_loader)
         train_perceptual_loss_avg = train_perceptual_loss_sum / len(train_loader)
         train_total_loss_avg = (
-            train_eps_loss_avg + config.lambda_perceptual * train_perceptual_loss_avg
+            train_eps_loss_avg
+            + config.lambda_x0 * train_x0_l1_avg
+            + config.lambda_perceptual * train_perceptual_loss_avg
         )
 
         # -------------------- VALIDATION --------------------
         model.eval()
         val_eps_loss_sum = 0.0
+        val_x0_l1_sum = 0.0
         val_perceptual_loss_sum = 0.0
         val_psnr_sum = 0.0
 
@@ -356,15 +375,21 @@ def main():
                 eps_loss = (F.mse_loss(pred_eps, true_eps, reduction='none') * weights).mean()
                 val_eps_loss_sum += eps_loss.item()
 
+                x0_l1 = F.l1_loss(x0_pred, hr_batch)
+                val_x0_l1_sum += x0_l1.item()
+
                 perceptual_loss = perceptual_loss_fn(x0_pred, hr_batch)
                 val_perceptual_loss_sum += perceptual_loss.item()
 
                 val_psnr_sum += psnr(x0_pred, hr_batch).item()
 
         val_eps_loss_avg = val_eps_loss_sum / len(val_loader)
+        val_x0_l1_avg = val_x0_l1_sum / len(val_loader)
         val_perceptual_loss_avg = val_perceptual_loss_sum / len(val_loader)
         val_total_loss_avg = (
-            val_eps_loss_avg + config.lambda_perceptual * val_perceptual_loss_avg
+            val_eps_loss_avg
+            + config.lambda_x0 * val_x0_l1_avg
+            + config.lambda_perceptual * val_perceptual_loss_avg
         )
         val_psnr_avg = val_psnr_sum / len(val_loader)
 
@@ -381,11 +406,14 @@ def main():
             {
                 "epoch": epoch + 1,
                 "train/eps_loss": train_eps_loss_avg,
+                "train/x0_l1": train_x0_l1_avg,
                 "train/perceptual_loss": train_perceptual_loss_avg,
                 "train/total_loss": train_total_loss_avg,
                 "train/eps_loss_weighted": train_eps_loss_avg,
+                "train/x0_l1_weighted": config.lambda_x0 * train_x0_l1_avg,
                 "train/perceptual_loss_scaled": config.lambda_perceptual * train_perceptual_loss_avg,
                 "val/eps_loss": val_eps_loss_avg,
+                "val/x0_l1": val_x0_l1_avg,
                 "val/perceptual_loss": val_perceptual_loss_avg,
                 "val/total_loss": val_total_loss_avg,
                 "val/psnr_x0": val_psnr_avg,
@@ -408,7 +436,7 @@ def main():
                 t_vis = torch.tensor([config.timesteps // 2], device=device)
                 _, _, x0_pred = model(lr_img, hr_img, t_vis)
 
-                # SR sample from reverse diffusion (stochastic or deterministic)
+                # SR sample from reverse diffusion (deterministic)
                 sr_sample = model.sample(
                     lr_img,
                     num_steps=config.inference_steps,
@@ -445,7 +473,6 @@ def main():
             best_val_loss = val_total_loss_avg
             torch.save(model.state_dict(), "checkpoints_sr3/best_sr3.pth")
             print(f"  ↳ New best model saved: checkpoints_sr3/best_sr3.pth")
-
 
     wandb.finish()
 
