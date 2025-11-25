@@ -11,85 +11,97 @@ metric:
   goal: maximize
 
 parameters:
+  # ----------------- core training setup -----------------
   batch_size:
     distribution: int_uniform
     min: 4
     max: 16
-    # Note: With accumulation_steps=4, effective batch size will be 16-64
 
   epochs:
     distribution: int_uniform
-    min: 100
-    max: 500
+    min: 150
+    max: 400
 
   learning_rate:
     distribution: log_uniform
     min: 1e-5
-    max: 1e-3
+    max: 5e-4
 
   weight_decay:
     distribution: log_uniform
     min: 1e-6
-    max: 1e-2
+    max: 1e-3
 
   timesteps:
     distribution: categorical
     values: [500, 1000]
-    # Common choices: 500 (faster), 1000 (standard)
 
   hidden_dim:
     distribution: categorical
-    values: [32, 48, 64]
-    # Reduced from original since we're using smaller batch sizes
-
-  gauss_sigma:
-    distribution: uniform
-    min: 0.2
-    max: 0.6
-    # Controls Gaussian weight map spread for epsilon loss
-
-  lambda_perceptual:
-    distribution: log_uniform
-    min: 1e-5
-    max: 1e-2
-    # Weight for VGG perceptual loss on x0_pred
+    values: [32, 48]
 
   accumulation_steps:
     distribution: categorical
-    values: [2, 4, 8]
-    # Gradient accumulation to maintain effective batch size
+    values: [2, 4]
 
   grad_clip:
     distribution: uniform
     min: 0.5
     max: 2.0
-    # Gradient clipping to prevent exploding gradients
 
+  # ----------------- data-related -----------------
+  sample_fraction:
+    distribution: uniform
+    min: 0.1
+    max: 0.5
+    # 0.1 = tiny subset; 0.5 = half the train set
+
+  # ----------------- loss & weighting -----------------
+  gauss_sigma:
+    distribution: uniform
+    min: 0.4
+    max: 0.9
+    # used in gaussian_weight_map for eps loss
+
+  lambda_x0:
+    distribution: log_uniform
+    min: 3e-2      # 0.03
+    max: 3e-1      # 0.3
+    # weight for x0 L1 reconstruction term
+
+  lambda_perceptual:
+    distribution: log_uniform
+    min: 1e-5
+    max: 3e-4
+    # weight for VGG perceptual loss
+
+  # ----------------- sampling / viz -----------------
+  inference_steps:
+    distribution: categorical
+    values: [50, 100]
+
+  init_sigma:
+    distribution: uniform
+    min: 0.5
+    max: 1.5
+    # initial noise std for deterministic sampling
+
+  # ----------------- mostly unused but harmless -----------------
   ema_decay:
     distribution: uniform
     min: 0.999
     max: 0.9999
-    # Exponential moving average decay for model weights
 
   early_stop_patience:
     distribution: categorical
-    values: [10, 15, 20]
-    # Early stopping patience
+    values: [10]
+    # kept for arg compatibility but unused in the script
 
   early_stop_min_delta:
     distribution: log_uniform
     min: 1e-5
     max: 1e-3
-    # Minimum improvement to reset early stopping counter
+    # also unused – W&B will still log them as configs
 
-  inference_steps:
-    distribution: categorical
-    values: [50, 100, 250]
-    # Sampling steps for visualization (faster = lower quality)
-
-early_terminate:
-  type: hyperband
-  min_iter: 10
-  max_iter: 50
-
+# No W&B early_terminate → runs always go to 'epochs'
 run_cap: 50
