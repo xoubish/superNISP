@@ -466,11 +466,13 @@ class SR3SuperResolution(nn.Module):
     @torch.no_grad()
     def sample(
         self,
-        lr: torch.Tensor,
-        num_steps: Optional[int] = None
+        lr,
+        num_steps: Optional[int] = None,
         deterministic: bool = True,
-        init_sigma: float = 1.0,
+        init_sigma: float = 1.0
     ):
+ 
+        
         """
         lr: (B,1,21,21)
         num_steps: how many reverse steps to take. If None or >= T, uses full chain.
