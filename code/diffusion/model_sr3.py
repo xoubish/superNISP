@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from typing import Optional
 
 # ------------------------------------------------------------------
 # SR3 / Improved-DDPM cosine beta schedule
@@ -466,7 +467,7 @@ class SR3SuperResolution(nn.Module):
     def sample(
         self,
         lr: torch.Tensor,
-        num_steps: int | None = None,
+        num_steps: Optional[int] = None
         deterministic: bool = True,
         init_sigma: float = 1.0,
     ):
