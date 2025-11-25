@@ -1,7 +1,12 @@
+# model_sr3.py
+#
+# SR3-style conditional diffusion model for 21x21 -> 105x105 super-resolution.
+
 import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 # ------------------------------------------------------------------
 # SR3 / Improved-DDPM cosine beta schedule
@@ -24,6 +29,7 @@ def make_sr3_cosine_betas(num_timesteps: int, s: float = 0.008, max_beta: float 
     betas = 1.0 - (alpha_bar_next / alpha_bar_t)
 
     return torch.clamp(betas.float(), min=1e-8, max=max_beta)
+
 
 cosine_beta_schedule = make_sr3_cosine_betas
 
@@ -73,16 +79,22 @@ class ResBlock(nn.Module):
         self.act = nn.SiLU()
 
     def forward(self, x, t_emb, cond_feat):
+        """
+        x: (B, in_ch, H, W)
+        t_emb: (B, time_emb_dim)
+        cond_feat: (B, cond_ch, H, W)
+        """
         B, _, H, W = x.shape
 
         h = self.norm1(x)
         h = self.act(h)
         h = self.conv1(h)
 
-        # FiLM modulation
+        # FiLM modulation from time
         t_scale_shift = self.time_proj(t_emb).view(B, -1, 1, 1)
         t_scale, t_shift = torch.chunk(t_scale_shift, 2, dim=1)
 
+        # FiLM modulation from condition
         c_scale_shift = self.cond_proj(cond_feat)
         c_scale, c_shift = torch.chunk(c_scale_shift, 2, dim=1)
 
@@ -109,7 +121,7 @@ class SR3UNet(nn.Module):
     ):
         super().__init__()
 
-        # --- T embedding ---
+        # --- Time embedding ---
         self.time_embedding = nn.Sequential(
             SinusoidalTimestepEmbedding(time_emb_dim),
             nn.Linear(time_emb_dim, time_emb_dim * 4),
@@ -142,7 +154,6 @@ class SR3UNet(nn.Module):
                 ])
             )
 
-            # Condition projection for this scale
             self.cond_projs.append(nn.Conv2d(cond_in_ch, out_ch, 1))
             self.cond_downs.append(nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1))
 
@@ -177,22 +188,19 @@ class SR3UNet(nn.Module):
             nn.Conv2d(in_ch, in_channels, 3, padding=1),
         )
 
-    # ------------------------------------------------------------------
-    # Forward pass with PAD-TO-MULTIPLE-OF-8, then crop back
-    # ------------------------------------------------------------------
     def forward(self, x, t, cond):
         """
         x: (B,1,H,W) noisy HR image at timestep t
-        cond: (B,1,H,W) LR image upsampled to HR grid
+        cond: (B,1,H,W) LR upsampled to HR grid
         """
         orig_H, orig_W = x.shape[2], x.shape[3]
 
-        # --- 1) Compute padding so that H, W become multiples of 8 ---
+        # --- 1) Pad so H,W become multiples of 8 ---
         pad_h = (8 - orig_H % 8) % 8
         pad_w = (8 - orig_W % 8) % 8
 
         pad_top = pad_h // 2
-        pad_bot  = pad_h - pad_top
+        pad_bot = pad_h - pad_top
         pad_left = pad_w // 2
         pad_right = pad_w - pad_left
 
@@ -200,11 +208,10 @@ class SR3UNet(nn.Module):
             x = F.pad(x, (pad_left, pad_right, pad_top, pad_bot), mode="reflect")
             cond = F.pad(cond, (pad_left, pad_right, pad_top, pad_bot), mode="reflect")
 
-        # ensure same size
         if cond.shape[2:] != x.shape[2:]:
             cond = F.interpolate(cond, size=x.shape[2:], mode="bilinear", align_corners=False)
 
-        # --- T embedding ---
+        # --- Time embedding ---
         t_emb = self.time_embedding(t)
 
         # --- Condition embedding ---
@@ -277,7 +284,9 @@ class SR3SuperResolution(nn.Module):
         betas = cosine_beta_schedule(timesteps)
         alphas = 1 - betas
         alphas_cum = torch.cumprod(alphas, dim=0)
-        alphas_cum_prev = torch.cat([torch.tensor([1.0], dtype=alphas.dtype), alphas_cum[:-1]], dim=0)
+        alphas_cum_prev = torch.cat(
+            [torch.tensor([1.0], dtype=alphas.dtype), alphas_cum[:-1]], dim=0
+        )
 
         self.register_buffer("betas", betas)
         self.register_buffer("alphas", alphas)
@@ -317,7 +326,8 @@ class SR3SuperResolution(nn.Module):
         hr: (B,1,105,105)
         """
         # Upsample LR → HR grid
-        cond = F.interpolate(lr, scale_factor=self.upscale_factor, mode="bilinear", align_corners=False)
+        cond = F.interpolate(lr, scale_factor=self.upscale_factor,
+                             mode="bilinear", align_corners=False)
 
         # Ensure hr matches cond grid
         if hr.shape[2:] != cond.shape[2:]:
@@ -346,14 +356,15 @@ class SR3SuperResolution(nn.Module):
         return pred_noise, noise, x0_pred
 
     # -----------------------------------------------------
-    # Reverse step
+    # Reverse step: p(x_{t-1} | x_t, lr)
     # -----------------------------------------------------
 
     @torch.no_grad()
     def p_mean_variance(self, lr, x_t, t):
         B = x_t.shape[0]
 
-        cond = F.interpolate(lr, scale_factor=self.upscale_factor, mode="bilinear", align_corners=False)
+        cond = F.interpolate(lr, scale_factor=self.upscale_factor,
+                             mode="bilinear", align_corners=False)
         if cond.shape[2:] != x_t.shape[2:]:
             cond = F.interpolate(cond, size=x_t.shape[2:], mode="bilinear", align_corners=False)
 
@@ -391,6 +402,10 @@ class SR3SuperResolution(nn.Module):
 
     @torch.no_grad()
     def sample(self, lr, num_steps=None):
+        """
+        lr: (B,1,21,21)
+        returns: (B,1,HR,HR) sampled super-res images (HR inferred from upscale_factor)
+        """
         B = lr.shape[0]
         device = lr.device
 
@@ -399,7 +414,7 @@ class SR3SuperResolution(nn.Module):
         else:
             timesteps = torch.linspace(self.timesteps - 1, 0, num_steps, device=device).long()
 
-        # Calculate HR shape from LR dynamically
+        # HR shape from LR dynamically
         H_hr = lr.shape[2] * self.upscale_factor
         W_hr = lr.shape[3] * self.upscale_factor
 
