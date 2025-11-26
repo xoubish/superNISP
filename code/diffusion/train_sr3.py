@@ -203,10 +203,6 @@ def main():
     parser.add_argument("--project", type=str, default="superNISP_sr3")
     parser.add_argument("--entity", type=str, default=None)
     parser.add_argument("--grad_clip", type=float, default=1.0)
-    parser.add_argument("--ema_decay", type=float, default=0.9999)  # reserved
-    # early_stop_* kept but unused (harmless)
-    parser.add_argument("--early_stop_patience", type=int, default=10)
-    parser.add_argument("--early_stop_min_delta", type=float, default=1e-4)
 
     args = parser.parse_args()
 
