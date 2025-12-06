@@ -524,8 +524,22 @@ def main():
         # -------------------- CHECKPOINTING --------------------
         if val_total_loss_avg < best_val_loss:
             best_val_loss = val_total_loss_avg
-            torch.save(model.state_dict(), "checkpoints_sr3/best_sr3.pth")
-            print(f"  ↳ New best model saved: checkpoints_sr3/best_sr3.pth")
+
+            # Unique filename per run
+            ckpt_path = f"checkpoints_sr3/best_sr3_{wandb.run.id}.pth"
+
+            # Save to local disk
+            torch.save(model.state_dict(), ckpt_path)
+            print(f"  ↳ New best model saved: {ckpt_path}")
+
+            # Log to W&B as an artifact for safe storage + versioning
+            artifact = wandb.Artifact(
+                name=f"sr3_model_{wandb.run.id}",
+                type="model",
+                metadata={"epoch": epoch + 1, "val_loss": val_total_loss_avg},
+            )
+            artifact.add_file(ckpt_path)
+            wandb.log_artifact(artifact)
 
     wandb.finish()
 
