@@ -40,6 +40,52 @@ def psnr(pred, target):
 
     return 10 * torch.log10((data_range ** 2) / mse)
 
+# -----------------------------------------------------------
+# Structure-sensitive metrics
+# -----------------------------------------------------------
+
+def high_sb_mask(target, frac=0.1):
+    """
+    Build a high-surface-brightness mask per image by keeping the
+    top `frac` fraction of pixels in each (B,1,H,W) image.
+
+    Returns: mask with same shape as target, values in {0,1}.
+    """
+    # target: (B,1,H,W)
+    B, C, H, W = target.shape
+    flat = target.view(B, -1)                 # (B, H*W)
+    k = (flat.size(1) * frac)
+    k = max(1, int(k))
+
+    # kth value per image (top-k threshold)
+    vals, _ = torch.topk(flat, k=k, dim=1)
+    thresh = vals[:, -1].view(B, 1, 1, 1)     # (B,1,1,1)
+
+    mask = (target >= thresh).float()
+    return mask
+
+
+def psnr_masked(pred, target, mask):
+    """
+    PSNR restricted to a given mask (e.g., high-SB regions).
+    """
+    # avoid empty masks
+    if mask.sum() < 1:
+        return torch.tensor(0.0, device=pred.device)
+
+    diff2 = (pred - target) ** 2
+    mse = (diff2 * mask).sum() / (mask.sum() + 1e-8)
+
+    if mse <= 1e-8:
+        return torch.tensor(99.0, device=pred.device)
+
+    # dynamic range restricted to the same masked region
+    masked_target = target * mask
+    data_range = masked_target.max() - masked_target.min()
+    if data_range <= 0:
+        return torch.tensor(0.0, device=pred.device)
+
+    return 10 * torch.log10((data_range ** 2) / mse)
 
 # -----------------------------------------------------------
 # Helper functions: Gaussian weight map & Perceptual Loss
@@ -350,6 +396,8 @@ def main():
         val_x0_l1_sum = 0.0
         val_perceptual_loss_sum = 0.0
         val_psnr_sum = 0.0
+        val_psnr_highsb_sum = 0.0   
+
 
         with torch.no_grad():
             for lr_batch, hr_batch in val_loader:
@@ -378,6 +426,12 @@ def main():
                 val_perceptual_loss_sum += perceptual_loss.item()
 
                 val_psnr_sum += psnr(x0_pred, hr_batch).item()
+                
+                # --- high-SB PSNR (structure-focused) ---
+                mask = high_sb_mask(hr_batch)
+                psnr_highsb = psnr_masked(x0_pred, hr_batch, mask)
+                val_psnr_highsb_sum += psnr_highsb.item()
+
 
         val_eps_loss_avg = val_eps_loss_sum / len(val_loader)
         val_x0_l1_avg = val_x0_l1_sum / len(val_loader)
@@ -388,6 +442,8 @@ def main():
             + config.lambda_perceptual * val_perceptual_loss_avg
         )
         val_psnr_avg = val_psnr_sum / len(val_loader)
+        val_psnr_highsb_avg = val_psnr_highsb_sum / len(val_loader)
+
 
         elapsed = time.time() - start
         print(
@@ -413,6 +469,7 @@ def main():
                 "val/perceptual_loss": val_perceptual_loss_avg,
                 "val/total_loss": val_total_loss_avg,
                 "val/psnr_x0": val_psnr_avg,
+                "val/psnr_highSB_x0": val_psnr_highsb_avg,   
                 "lr": optimizer.param_groups[0]["lr"],
             }
         )
