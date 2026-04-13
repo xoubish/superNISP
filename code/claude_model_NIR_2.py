@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,14 +11,16 @@ import json
 import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 import matplotlib.pyplot as plt
+import argparse
 
-from claude_sweep import sweep_config
+from claude_sweep import sweep_config, best_params
 
 LOG_FREQ = 10
 # Global variable to track best overall performance
 GLOBAL_BEST_LOSS = float('inf')
-best_model_path = f'models/final_best_sweep_model.pth'
-best_config_path = f'models/final_best_sweep_config.json'
+data_dir = os.path.expandvars("$SCRATCH/data/superNISP")
+best_model_path = f'{data_dir}/models/final_best_sweep_model.pth'
+best_config_path = f'{data_dir}/models/final_best_sweep_config.json'
 
 class ResidualDenseBlock(nn.Module):
     """Enhanced Residual Dense Block with local feature fusion"""
@@ -303,7 +306,7 @@ class EuclidToJWSTDataset(Dataset):
         # Apply transforms if available (only to input, not target)
         if self.transform is not None:
             # For paired data, we need to apply the same transform to both
-            seed = torch.randint(0, 2**32, (1,)).item()
+            seed = 42
             torch.manual_seed(seed)
             euclid_tensor = self.transform(euclid_tensor)
             torch.manual_seed(seed)
@@ -437,13 +440,13 @@ def train_for_sweep():
     config = wandb.config
     run_id = run.id  # Get unique run ID
     
-    model_path = f'models/best_sweep_model_{run_id}.pth'
-    config_path = f'models/best_sweep_config_{run_id}.pth'
+    model_path = f'{data_dir}/models/best_sweep_model_{run_id}.pth'
+    config_path = f'{data_dir}/models/best_sweep_config_{run_id}.pth'
 
     wandb.config.update({"optimizer_stage1": "Adam",
                          "optimizer_stage2": "Adam",
-                         "euclid_path": "../data/euclid_NIR_cosmos_41px_Y.npy",
-                         "jwst_path": "../data/jwst_cosmos_205px_F115W.npy",
+                         "euclid_path": f"{data_dir}/data/euclid_NIR_cosmos_41px_Y.npy",
+                         "jwst_path": f"{data_dir}/data/jwst_cosmos_205px_F115W.npy",
                          "val_split": 0.2,
                          "normalization": "z_score",
                         })
@@ -629,8 +632,8 @@ def train_for_sweep():
         # Save best model from stage 1
         if avg_val_loss < best_val_loss_stage1:
             best_val_loss_stage1 = avg_val_loss
-            torch.save(model.state_dict(), 'models/stage1_best_model.pth')
-            wandb.save('models/stage1_best_model.pth')
+            torch.save(model.state_dict(), f'{data_dir}/models/stage1_best_model.pth')
+            wandb.save(f'models/stage1_best_model.pth')
 
     log_sample_predictions(model, val_loader, device, "stage1", epoch + 1)
     
@@ -638,7 +641,7 @@ def train_for_sweep():
     print("\n=== Stage 2: Fine-tuning ===")
     
     # Load best model from stage 1
-    best_stage1 = wandb.restore('models/stage1_best_model.pth', replace=True)
+    best_stage1 = wandb.restore(f'models/stage1_best_model.pth', replace=True)
     checkpoint = torch.load(best_stage1.name, map_location=device)
     model.load_state_dict(checkpoint)
     
@@ -797,14 +800,14 @@ def train_for_sweep():
         # Save best model from stage 2
         if avg_val_loss < best_val_loss_stage2:
             best_val_loss_stage2 = avg_val_loss
-            torch.save(model.state_dict(), 'models/stage2_best_model.pth')
-            wandb.save('models/stage2_best_model.pth')
+            torch.save(model.state_dict(), f'{data_dir}/models/stage2_best_model.pth')
+            wandb.save(f'models/stage2_best_model.pth')
 
         # Save best sweep loss metrics
         if avg_sweep_loss < best_sweep_loss:
             best_sweep_loss = avg_sweep_loss
             torch.save(model.state_dict(), model_path)
-            wandb.save(model_path)
+            wandb.save(f'models/best_sweep_model_{run_id}.pth')
             
             # Save configuration as JSON
             config_dict = {
@@ -832,7 +835,7 @@ def train_for_sweep():
                 torch.save(model.state_dict(), best_model_path)
     
     # Load and return the best model
-    # model.load_state_dict(torch.load('models/final_best_model_2.pth'))
+    # model.load_state_dict(torch.load(f'{data_dir}/models/final_best_model_2.pth'))
 
     # Log final sample predictions
     print("Generating final comparison figure...")
@@ -896,7 +899,7 @@ def run_sweep():
     # Initialize the sweep
     sweep_id = wandb.sweep(
         sweep_config,
-        project="euclid-jwst-hyperparameter-sweep-v3"
+        project="euclid-jwst-hyperparameter-sweep-v5"
     )
     
     print(f"Starting sweep with ID: {sweep_id}")
@@ -913,10 +916,89 @@ def run_sweep():
         # print_sweep_summary()
         print("Summary here")
 
-# Usage example
+def train_best_params(params):
+    """
+    Train a single model with specified parameters
+    Uses the existing train_for_sweep function with fixed parameters
+    
+    Args:
+        params: Dictionary of hyperparameters to use for training
+    """
+    # Create a mock sweep config with single values
+    single_run_config = {
+        'method': 'grid',
+        'metric': {'name': 'final_sweep_loss', 'goal': 'minimize'},
+        'parameters': {}
+    }
+    
+    # Convert params dict to sweep format (with 'value' key)
+    for key, value in params.items():
+        single_run_config['parameters'][key] = {'value': value}
+    
+    # Initialize a "sweep" with just one configuration
+    sweep_id = wandb.sweep(
+        single_run_config,
+        project="euclid-jwst-final-training"  # Different project name for final training
+    )
+    
+    print("Training single model with specified parameters:")
+    for key, value in params.items():
+        print(f"  {key}: {value}")
+    
+    # Run the single training using the existing function
+    wandb.agent(sweep_id, train_for_sweep, count=1)  # count=1 for single run
+    
+    print("\nFinal model training completed!")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train Euclid to JWST Super-Resolution Model')
+    parser.add_argument('--mode', type=str, default='single', choices=['sweep', 'single'],
+                        help='Training mode: sweep for hyperparameter search, single for fixed params')
+    parser.add_argument('--sweep-count', type=int, default=50,
+                        help='Number of sweep runs (only used in sweep mode)')
+    parser.add_argument('--epochs-stage1', type=int, default=None,
+                        help='Override number of epochs for stage 1')
+    parser.add_argument('--epochs-stage2', type=int, default=None,
+                        help='Override number of epochs for stage 2')
+    parser.add_argument('--batch-size', type=int, default=None,
+                        help='Override batch size')
+    return parser.parse_args()
+
+# Then update your main section:
 if __name__ == "__main__":
-    # Make sure to install wandb first: pip install wandb
-    # Then login: wandb login
     wandb.login()
     
-    run_sweep()
+    args = parse_args()
+    
+    if args.mode == "sweep":
+        print(f"Running hyperparameter sweep with {args.sweep_count} runs...")
+        # Modify run_sweep to accept count parameter
+        def run_sweep(count=50):
+            global GLOBAL_BEST_LOSS
+            GLOBAL_BEST_LOSS = float('inf')
+            sweep_id = wandb.sweep(sweep_config, project="euclid-jwst-hyperparameter-sweep-v5")
+            print(f"Starting sweep with ID: {sweep_id}")
+            try:
+                wandb.agent(sweep_id, train_for_sweep, count=count)
+            except KeyboardInterrupt:
+                print("\nSweep interrupted by user.")
+            except Exception as e:
+                print(f"\nSweep ended with error: {e}")
+            finally:
+                print("Sweep completed")
+        
+        run_sweep(count=args.sweep_count)
+        
+    elif args.mode == "single":
+        print("Training single model with best parameters...")
+        
+        # Override parameters from command line if provided
+        if args.epochs_stage1 is not None:
+            best_params['num_epochs_stage1'] = args.epochs_stage1
+        if args.epochs_stage2 is not None:
+            best_params['num_epochs_stage2'] = args.epochs_stage2
+        if args.batch_size is not None:
+            best_params['batch_size'] = args.batch_size
+        
+        train_best_params(best_params)

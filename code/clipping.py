@@ -28,6 +28,7 @@ from skimage import restoration
 
 dbx_url = 'https://www.dropbox.com/scl/fo/37ooho4m924wb3d2m1gt8/ABJjd8gNUl0h_rmUP41S3cI?rlkey=nqy0t7p9sgxa3a853bf1ris9l&st=clxv8yui&dl=0'
 FRAC_ZERO = 0.25
+data_dir = os.path.expandvars("$SCRATCH/data/superNISP")
 
 warnings.simplefilter('ignore', FITSFixedWarning)
 
@@ -136,17 +137,17 @@ meta = {
             'pad_jwst': 20,
             'rot_jwst': -20,
             'psf_hdu': 1,
-            'jwst_psf_file': '../data/PSF_NIRCam_in_flight_opd_filter_F115W.fits',
+            'jwst_psf_file': f'{data_dir}/data/PSF_NIRCam_in_flight_opd_filter_F115W.fits',
             'matched_cat': '../catalog/matched_cat_cosmos_1.csv',
-            'matched_jwst': '../data/jwst_cosmos_69px_F115W.npy',
-            'matched_nisp': '../data/euclid_MER_cosmos_41px_Y.npy',
+            'matched_jwst': f'{data_dir}/data/jwst_cosmos_69px_F115W.npy',
+            'matched_nisp': f'{data_dir}/data/euclid_MER_cosmos_41px_Y.npy',
             # 'matched_nisp_psf': '../data/nisp_cosmos_psf.npy',
         },
         'NISP-Y': {
             'cut_func': cut_catalog,
             'jwst_hdu': 0,
             'nisp_hdu': 1,
-            'cat_path': '../catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits', # COSMOS classic
+            'cat_path': '{data_dir}/catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits', # COSMOS classic
             'size_jwst': 205,
             'size_nisp': 41,
             'mirror_nisp': True,
@@ -155,8 +156,8 @@ meta = {
             'pad_jwst': 20,
             'rot_jwst': -3.945,
             'matched_cat': '../catalog/matched_cat_cosmos_2.csv',
-            'matched_jwst': '../data/jwst_cosmos_205px_F115W.npy',
-            'matched_nisp': '../data/euclid_NIR_cosmos_41px_Y.npy',
+            'matched_jwst': f'{data_dir}/data/jwst_cosmos_205px_F115W.npy',
+            'matched_nisp': f'{data_dir}/data/euclid_NIR_cosmos_41px_Y.npy',
         },
     },
     'HUDF': {
@@ -171,8 +172,8 @@ meta = {
             'rot_jwst': 0,
             'psf_hdu': 1,
             'matched_cat': '../catalog/matched_cat_hudf_1.csv',
-            'matched_jwst': '../data/jwst_hudf_135px_F115W.npy',
-            'matched_nisp': '../data/euclid_MER_hudf_41px_Y.npy',
+            'matched_jwst': f'{data_dir}/data/jwst_hudf_135px_F115W.npy',
+            'matched_nisp': f'{data_dir}/data/euclid_MER_hudf_41px_Y.npy',
             # 'matched_nisp_psf': '../data/nisp_hudf_psf.npy',
         },
         'NISP-Y': {
@@ -185,8 +186,8 @@ meta = {
             'pad_jwst': 0,
             'rot_jwst': 0,
             'matched_cat': '../catalog/matched_cat_hudf_2.csv',
-            'matched_jwst': '../data/jwst_hudf_205px_F115W.npy',
-            'matched_nisp': '../data/euclid_NIR_hudf_41px_Y.npy',
+            'matched_jwst': f'{data_dir}/data/jwst_hudf_205px_F115W.npy',
+            'matched_nisp': f'{data_dir}/data/euclid_NIR_hudf_41px_Y.npy',
         },
     },
 }

@@ -66,3 +66,29 @@ sweep_config = {
         }
     }
 }
+
+best_params = {
+        # Model architecture
+        'num_rrdb': 8,  # Update with your best value
+        'features': 64,  # Update with your best value
+        
+        # Training parameters
+        'batch_size': 16,  # Update with your best value
+        'num_epochs_stage1': 50,  # Can use more epochs for final training
+        'num_epochs_stage2': 50,  # Can use more epochs for final training
+        
+        # Learning rates
+        'lr_stage1': 0.00005662124820190853,  # Update with your best value
+        'lr_stage2': 0.00009223193223543192,  # Update with your best value
+        
+        # Loss weights
+        'l1_weight_stage1': 0.8,  # Update with your best value
+        'mse_weight_stage2': 0.1,  # Update with your best value
+        'ssim_weight_stage2': 0.5,  # Update with your best value
+        
+        # Regularization
+        'weight_decay': 0.00001215158933763565,  # Update with your best value
+        'gradient_clip_norm': 1,  # Update with your best value
+
+        'normalization': 'z_score',
+}
