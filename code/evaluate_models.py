@@ -7,14 +7,17 @@ same validation set for both.
 """
 
 import torch
+import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 import galsim
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader, random_split
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
 # Import model classes and dataset from your existing files
 from claude_model_NIR_2 import EuclidToJWSTDataset, EuclidToJWSTSuperResolution
 from diffusion.model_sr3 import SR3UNet, SR3SuperResolution
+from diffusion.dataset import AsinhNormalizer   # adjust import path as needed
 
 # ============================================================
 # CONFIGURATION — edit these
@@ -26,35 +29,39 @@ JWST_PATH            = "/global/cfs/cdirs/m2218/eramey16/SR_data/jwst_cosmos_205
 
 DEVICE         = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 VAL_SPLIT      = 0.2
-SEED           = 42          # Must match the seed used during training
-N_EVAL         = 2000        # Samples to use for ellipticity metrics
-N_DISPLAY      = 8           # Samples to show in image grid
+SEED           = 42
+N_EVAL         = 2000
+N_DISPLAY      = 8
 
 RRDB_NUM_RRDB  = 8
 RRDB_FEATURES  = 64
 
-DIFF_HIDDEN_DIM    = 64
-LR_CROP_SIZE       = 21      # Diffusion model was trained on center-cropped inputs
-HR_CROP_SIZE       = 105     # Corresponding HR crop size
+DIFF_HIDDEN_DIM  = 32        # base_channels used during training
+DIFF_TIMESTEPS   = 1000
+LR_CROP_SIZE     = 21
+HR_CROP_SIZE     = 105
 
 PIXEL_SCALE_LR = 0.10        # arcsec/pixel — Euclid NISP
 PIXEL_SCALE_HR = 0.06        # arcsec/pixel — JWST NIRCam
 
-class DiffusionValWrapper(Dataset):
-    """
-    Wraps the RRDB EuclidToJWSTDataset validation split and applies
-    the same preprocessing that SuperResolutionDataset applies for
-    the diffusion model: center crop + asinh normalization.
-    """
-    def __init__(self, val_dataset, lr_crop_size=21, hr_crop_size=105):
-        self.val_dataset   = val_dataset
-        self.lr_crop_size  = lr_crop_size
-        self.hr_crop_size  = hr_crop_size
+DIFF_INFERENCE_STEPS = 100
+DIFF_INIT_SIGMA      = 1.0
 
-        # Fit asinh normalizers on the full underlying numpy arrays,
-        # same way SuperResolutionDataset does it
-        full_ds = val_dataset.dataset   # unwrap the random_split Subset
-        lr_all  = full_ds.euclid_data   # raw numpy arrays
+
+# ============================================================
+# DIFFUSION VALIDATION WRAPPER
+# Applies center crop + asinh normalization to the shared
+# RRDB validation split, so both models see the same galaxies
+# ============================================================
+class DiffusionValWrapper(Dataset):
+    def __init__(self, val_dataset, lr_crop_size=21, hr_crop_size=105):
+        self.val_dataset  = val_dataset
+        self.lr_crop_size = lr_crop_size
+        self.hr_crop_size = hr_crop_size
+
+        # Fit asinh normalizers on the full raw numpy arrays
+        full_ds = val_dataset.dataset        # unwrap random_split Subset
+        lr_all  = full_ds.euclid_data
         hr_all  = full_ds.jwst_data
 
         self.lr_norm = AsinhNormalizer(alpha=3.0)
@@ -66,85 +73,23 @@ class DiffusionValWrapper(Dataset):
         return len(self.val_dataset)
 
     def __getitem__(self, idx):
-        # Get raw tensors from RRDB dataset (already z-score normalized)
-        # We need to go back to the raw numpy data instead
         global_idx = self.val_dataset.indices[idx]
         full_ds    = self.val_dataset.dataset
 
         lr_np = full_ds.euclid_data[global_idx].astype(np.float32)
         hr_np = full_ds.jwst_data[global_idx].astype(np.float32)
 
-        lr_tensor = torch.from_numpy(lr_np).unsqueeze(0)   # [1,41,41]
-        hr_tensor = torch.from_numpy(hr_np).unsqueeze(0)   # [1,205,205]
+        lr_tensor = torch.from_numpy(lr_np).unsqueeze(0)    # [1,41,41]
+        hr_tensor = torch.from_numpy(hr_np).unsqueeze(0)    # [1,205,205]
 
-        # Center crop
-        lr_tensor = center_crop_tensor(lr_tensor, self.lr_crop_size)  # [1,21,21]
-        hr_tensor = center_crop_tensor(hr_tensor, self.hr_crop_size)  # [1,105,105]
+        lr_tensor = center_crop_tensor(lr_tensor, self.lr_crop_size)
+        hr_tensor = center_crop_tensor(hr_tensor, self.hr_crop_size)
 
-        # Asinh normalization
         lr_norm_np, _ = self.lr_norm.normalize(lr_tensor.squeeze(0).numpy())
         hr_norm_np, _ = self.hr_norm.normalize(hr_tensor.squeeze(0).numpy())
 
         return (torch.from_numpy(lr_norm_np).unsqueeze(0),
                 torch.from_numpy(hr_norm_np).unsqueeze(0))
-
-
-# ============================================================
-# SHARED VALIDATION DATASET
-# Uses the same seed as training to reproduce the identical split
-# ============================================================
-def get_val_datasets():
-    """
-    Returns both val datasets sharing the same underlying indices.
-    """
-    full_dataset = EuclidToJWSTDataset(EUCLID_PATH, JWST_PATH, normalize_method='z_score')
-    val_size     = int(VAL_SPLIT * len(full_dataset))
-    train_size   = len(full_dataset) - val_size
-
-    torch.manual_seed(SEED)
-    _, val_dataset = random_split(full_dataset, [train_size, val_size])
-
-    # Diffusion wrapper uses the same indices but applies its own normalization
-    diff_val_dataset = DiffusionValWrapper(val_dataset, 
-                                           lr_crop_size=LR_CROP_SIZE, 
-                                           hr_crop_size=HR_CROP_SIZE)
-
-    print(f"Validation set: {val_size} samples (seed={SEED}) — shared by both models")
-    return val_dataset, diff_val_dataset
-
-
-# ============================================================
-# MODEL LOADERS
-# ============================================================
-def load_rrdb_model():
-    model = EuclidToJWSTSuperResolution(num_rrdb=RRDB_NUM_RRDB, features=RRDB_FEATURES)
-    model.load_state_dict(torch.load(RRDB_MODEL_PATH, map_location=DEVICE))
-    return model.to(DEVICE).eval()
-
-
-def load_diffusion_model(hidden_dim=32, timesteps=1000, upscale_factor=5):
-    """
-    Load the SR3-based diffusion model.
-    
-    Args:
-        hidden_dim:     base_channels used during training (default 32)
-        timesteps:      diffusion timesteps used during training (default 1000)
-        upscale_factor: SR upscale factor (default 5, for 21->105)
-    """
-    unet = SR3UNet(
-        in_channels=1,
-        cond_channels=1,
-        base_channels=hidden_dim,
-        channel_mults=(1, 2, 4),
-        time_emb_dim=256,
-    )
-    model = SR3SuperResolution(
-        unet=unet,
-        timesteps=timesteps,
-        upscale_factor=upscale_factor,
-    )
-    model.load_state_dict(torch.load(DIFFUSION_MODEL_PATH, map_location=DEVICE))
-    return model.to(DEVICE).eval()
 
 
 # ============================================================
@@ -178,123 +123,181 @@ def get_moments(image_np, pixel_scale, bkg_subtract=True):
         return [np.nan, np.nan, np.nan, np.nan]
 
 
+def compute_pixel_metrics(pred_np, target_np):
+    """Compute L1, L2, PSNR, SSIM between pred and target 2D arrays."""
+    data_range = target_np.max() - target_np.min()
+    return {
+        'l1':   np.mean(np.abs(pred_np - target_np)),
+        'l2':   np.sqrt(np.mean((pred_np - target_np) ** 2)),
+        'psnr': peak_signal_noise_ratio(target_np, pred_np, data_range=data_range),
+        'ssim': structural_similarity(target_np, pred_np, data_range=data_range),
+    }
+
+
+def empty_results_dict():
+    return {k: [] for k in [
+        'display_lr', 'display_sr', 'display_hr', 'display_bilinear',
+        'e1_lr', 'e2_lr', 'g1_lr', 'g2_lr',
+        'e1_hr', 'e2_hr', 'g1_hr', 'g2_hr',
+        'e1_sr', 'e2_sr', 'g1_sr', 'g2_sr',
+        'e1_bl', 'e2_bl', 'g1_bl', 'g2_bl',
+        'l1_sr', 'l2_sr', 'psnr_sr', 'ssim_sr',
+        'l1_bl', 'l2_bl', 'psnr_bl', 'ssim_bl',
+    ]}
+
+
+# ============================================================
+# SHARED VALIDATION DATASETS
+# ============================================================
+def get_val_datasets():
+    """
+    Returns val datasets for both models using the same underlying indices.
+    The RRDB split (torch.manual_seed + random_split) is the source of truth.
+    """
+    full_dataset = EuclidToJWSTDataset(EUCLID_PATH, JWST_PATH, normalize_method='z_score')
+    val_size     = int(VAL_SPLIT * len(full_dataset))
+    train_size   = len(full_dataset) - val_size
+
+    torch.manual_seed(SEED)
+    _, val_dataset = random_split(full_dataset, [train_size, val_size])
+
+    diff_val_dataset = DiffusionValWrapper(
+        val_dataset,
+        lr_crop_size=LR_CROP_SIZE,
+        hr_crop_size=HR_CROP_SIZE,
+    )
+
+    print(f"Validation set: {val_size} samples (seed={SEED}) — shared by both models")
+    return val_dataset, diff_val_dataset
+
+
+# ============================================================
+# MODEL LOADERS
+# ============================================================
+def load_rrdb_model():
+    model = EuclidToJWSTSuperResolution(num_rrdb=RRDB_NUM_RRDB, features=RRDB_FEATURES)
+    model.load_state_dict(torch.load(RRDB_MODEL_PATH, map_location=DEVICE))
+    print(f"RRDB model loaded from {RRDB_MODEL_PATH}")
+    return model.to(DEVICE).eval()
+
+
+def load_diffusion_model():
+    unet = SR3UNet(
+        in_channels=1,
+        cond_channels=1,
+        base_channels=DIFF_HIDDEN_DIM,
+        channel_mults=(1, 2, 4),
+        time_emb_dim=256,
+    )
+    model = SR3SuperResolution(
+        unet=unet,
+        timesteps=DIFF_TIMESTEPS,
+        upscale_factor=5,
+    )
+    model.load_state_dict(torch.load(DIFFUSION_MODEL_PATH, map_location=DEVICE))
+    print(f"Diffusion model loaded from {DIFFUSION_MODEL_PATH}")
+    return model.to(DEVICE).eval()
+
+
 # ============================================================
 # INFERENCE
-# Returns a dict with display images and per-sample shape metrics
 # ============================================================
 def run_inference(model, val_dataset, model_type='rrdb'):
     """
-    Run inference over the validation set and collect shape metrics.
+    Run inference over the validation set and collect shape and pixel metrics.
 
     Args:
-        model:       Loaded PyTorch model (eval mode)
-        val_dataset: Shared validation dataset
-        model_type:  'rrdb' or 'diffusion'
+        model:       Loaded PyTorch model, or None for bilinear baseline
+        val_dataset: Validation dataset — EuclidToJWSTDataset split for 'rrdb'
+                     and 'bilinear', DiffusionValWrapper for 'diffusion'
+        model_type:  'rrdb', 'diffusion', or 'bilinear'
 
     Returns:
-        dict with keys: display_lr/sr/hr (lists of 2D arrays for plotting)
-                        e1/e2/g1/g2 for lr/sr/hr (lists of floats)
+        dict containing display images, ellipticity/shear values, and pixel
+        metrics for both SR output and bilinear baseline
     """
-    n = min(N_EVAL, len(val_dataset))
-    t_test = torch.zeros((1,), dtype=torch.long, device=DEVICE)  # only used by diffusion
-
-    results = {k: [] for k in [
-        'display_lr', 'display_sr', 'display_hr',
-        'e1_lr', 'e2_lr', 'g1_lr', 'g2_lr',
-        'e1_hr', 'e2_hr', 'g1_hr', 'g2_hr',
-        'e1_sr', 'e2_sr', 'g1_sr', 'g2_sr',
-    ]}
+    n       = min(N_EVAL, len(val_dataset))
+    results = empty_results_dict()
 
     for i in range(n):
-        lr_img, hr_img, _ = val_dataset[i]   # [1,41,41], [1,205,205]
 
+        # --- Load sample ---
         if model_type == 'diffusion':
-            # Diffusion model was trained on center crops
-            lr_input = center_crop_tensor(lr_img, LR_CROP_SIZE)
-            hr_ref   = center_crop_tensor(hr_img, HR_CROP_SIZE)
-            with torch.no_grad():
-                sr_img = model(lr_input.unsqueeze(0).to(DEVICE), t_test)
+            lr_img, hr_img = val_dataset[i]        # [1,21,21], [1,105,105]
         else:
-            # RRDB takes full 41x41 and outputs 205x205
-            lr_input = lr_img
-            hr_ref   = hr_img
+            lr_img, hr_img, _ = val_dataset[i]     # [1,41,41], [1,205,205]
+
+        lr_input = lr_img
+        hr_ref   = hr_img
+
+        # --- SR output ---
+        if model_type == 'rrdb':
             with torch.no_grad():
                 sr_img = model(lr_input.unsqueeze(0).to(DEVICE))
+            sr_img = sr_img.detach().cpu().squeeze(0)          # [1,205,205]
 
-        sr_img = sr_img.detach().cpu().squeeze(0)  # [1, H, W]
+        elif model_type == 'diffusion':
+            with torch.no_grad():
+                sr_img = model.sample(
+                    lr_input.unsqueeze(0).to(DEVICE),
+                    num_steps=DIFF_INFERENCE_STEPS,
+                    deterministic=True,
+                    init_sigma=DIFF_INIT_SIGMA,
+                )[0].cpu()                                     # [1,105,105]
+
+        elif model_type == 'bilinear':
+            sr_img = F.interpolate(
+                lr_input.unsqueeze(0),
+                size=(hr_ref.shape[-2], hr_ref.shape[-1]),
+                mode='bilinear',
+                align_corners=False,
+            ).squeeze(0)
+
+        else:
+            raise ValueError(f"Unknown model_type: {model_type!r}. "
+                             "Expected 'rrdb', 'diffusion', or 'bilinear'.")
+
+        # --- Bilinear baseline (always computed for comparison) ---
+        bl_img = F.interpolate(
+            lr_input.unsqueeze(0),
+            size=(hr_ref.shape[-2], hr_ref.shape[-1]),
+            mode='bilinear',
+            align_corners=False,
+        ).squeeze(0)
 
         lr_np = lr_input[0].cpu().numpy()
         hr_np = hr_ref[0].cpu().numpy()
-        sr_np = sr_img[0].numpy()
+        sr_np = sr_img[0].numpy() if torch.is_tensor(sr_img) else sr_img[0]
+        bl_np = bl_img[0].numpy()
 
-        # Save images for display grid
+        # --- Display grid ---
         if i < N_DISPLAY:
             results['display_lr'].append(lr_np)
             results['display_sr'].append(sr_np)
             results['display_hr'].append(hr_np)
+            results['display_bilinear'].append(bl_np)
 
-        # Shape metrics
-        lr_scale = PIXEL_SCALE_LR if model_type == 'rrdb' else PIXEL_SCALE_LR
+        # --- Shape metrics ---
         for key_prefix, arr, scale in [
             ('lr', lr_np, PIXEL_SCALE_LR),
             ('hr', hr_np, PIXEL_SCALE_HR),
             ('sr', sr_np, PIXEL_SCALE_HR),
+            ('bl', bl_np, PIXEL_SCALE_HR),
         ]:
             e1, e2, g1, g2 = get_moments(arr, pixel_scale=scale)
             results[f'e1_{key_prefix}'].append(e1)
             results[f'e2_{key_prefix}'].append(e2)
             results[f'g1_{key_prefix}'].append(g1)
             results[f'g2_{key_prefix}'].append(g2)
+
+        # --- Pixel metrics vs HR ---
+        for key_prefix, arr in [('sr', sr_np), ('bl', bl_np)]:
+            m = compute_pixel_metrics(arr, hr_np)
+            for metric_key, val in m.items():
+                results[f'{metric_key}_{key_prefix}'].append(val)
 
         if (i + 1) % 200 == 0:
             print(f"  [{model_type}] {i+1}/{n} done")
-
-    return results
-
-def run_inference_diffusion(model, diff_val_dataset, inference_steps=100, init_sigma=1.0):
-    n = min(N_EVAL, len(diff_val_dataset))
-
-    results = {k: [] for k in [
-        'display_lr', 'display_sr', 'display_hr',
-        'e1_lr', 'e2_lr', 'g1_lr', 'g2_lr',
-        'e1_hr', 'e2_hr', 'g1_hr', 'g2_hr',
-        'e1_sr', 'e2_sr', 'g1_sr', 'g2_sr',
-    ]}
-
-    for i in range(n):
-        lr_img, hr_img = diff_val_dataset[i]         # [1,21,21], [1,105,105]
-        lr_batch = lr_img.unsqueeze(0).to(DEVICE)    # [1,1,21,21]
-
-        with torch.no_grad():
-            sr_img = model.sample(
-                lr_batch,
-                num_steps=inference_steps,
-                deterministic=True,
-                init_sigma=init_sigma,
-            )[0].cpu()                               # [1,105,105]
-
-        lr_np = lr_img[0].numpy()
-        hr_np = hr_img[0].numpy()
-        sr_np = sr_img[0].numpy()
-
-        if i < N_DISPLAY:
-            results['display_lr'].append(lr_np)
-            results['display_sr'].append(sr_np)
-            results['display_hr'].append(hr_np)
-
-        for key_prefix, arr, scale in [
-            ('lr', lr_np, PIXEL_SCALE_LR),
-            ('hr', hr_np, PIXEL_SCALE_HR),
-            ('sr', sr_np, PIXEL_SCALE_HR),
-        ]:
-            e1, e2, g1, g2 = get_moments(arr, pixel_scale=scale)
-            results[f'e1_{key_prefix}'].append(e1)
-            results[f'e2_{key_prefix}'].append(e2)
-            results[f'g1_{key_prefix}'].append(g1)
-            results[f'g2_{key_prefix}'].append(g2)
-
-        if (i + 1) % 200 == 0:
-            print(f"  [diffusion] {i+1}/{n} done")
 
     return results
 
@@ -303,33 +306,30 @@ def run_inference_diffusion(model, diff_val_dataset, inference_steps=100, init_s
 # PLOTTING
 # ============================================================
 def plot_image_grid(results, title):
-    """Plot a grid of (LR, SR, HR) triplets."""
+    """Plot a grid of (LR, Bilinear, SR, HR) quadruplets."""
     n     = len(results['display_lr'])
     ncols = 4
     nrows = (n + ncols - 1) // ncols
-    fig, axs = plt.subplots(nrows, ncols * 3, figsize=(ncols * 4.5, nrows * 4.5))
+    fig, axs = plt.subplots(nrows, ncols * 4, figsize=(ncols * 6, nrows * 6))
     if nrows == 1:
         axs = axs.reshape(1, -1)
 
-    labels = ['NISP Y', 'Super-Res', 'NIRCam F115W']
+    labels       = ['NISP Y', 'Bilinear', 'Super-Res', 'NIRCam F115W']
+    display_keys = ['display_lr', 'display_bilinear', 'display_sr', 'display_hr']
 
     for i in range(n):
         row  = i // ncols
-        base = (i % ncols) * 3
-        for j, (img, label) in enumerate(zip(
-            [results['display_lr'][i], results['display_sr'][i], results['display_hr'][i]],
-            labels
-        )):
+        base = (i % ncols) * 4
+        for j, (key, label) in enumerate(zip(display_keys, labels)):
             ax = axs[row, base + j]
-            ax.imshow(img, origin='lower', cmap='gray')
+            ax.imshow(results[key][i], origin='lower', cmap='gray')
             ax.axis('off')
             ax.set_title(label, fontsize=8)
 
-    # Turn off any unused axes
     for i in range(n, nrows * ncols):
         row  = i // ncols
-        base = (i % ncols) * 3
-        for j in range(3):
+        base = (i % ncols) * 4
+        for j in range(4):
             axs[row, base + j].axis('off')
 
     fig.suptitle(title, fontsize=13, y=1.01)
@@ -340,7 +340,7 @@ def plot_image_grid(results, title):
 def plot_ellipticity_comparison(rrdb_results, diff_results):
     """
     2x4 grid: rows = RRDB / Diffusion, columns = e1, e2, g1, g2.
-    Each panel shows LR (blue) and SR (red) vs HR on the same axes.
+    Each panel shows LR (blue), bilinear (green), and SR (red) vs HR.
     """
     metrics = [
         ('e1', r'$e_1$'),
@@ -362,13 +362,16 @@ def plot_ellipticity_comparison(rrdb_results, diff_results):
             hr = np.array(results[f'{key}_hr'], dtype=float)
             lr = np.array(results[f'{key}_lr'], dtype=float)
             sr = np.array(results[f'{key}_sr'], dtype=float)
+            bl = np.array(results[f'{key}_bl'], dtype=float)
 
-            # Mask NaNs
             mask_lr = np.isfinite(lr) & np.isfinite(hr)
             mask_sr = np.isfinite(sr) & np.isfinite(hr)
+            mask_bl = np.isfinite(bl) & np.isfinite(hr)
 
             ax.scatter(lr[mask_lr], hr[mask_lr], s=6, alpha=0.3,
-                       color='steelblue', label='NISP (LR)', rasterized=True)
+                       color='steelblue', label='NISP (LR)',       rasterized=True)
+            ax.scatter(bl[mask_bl], hr[mask_bl], s=6, alpha=0.3,
+                       color='seagreen',  label='Bilinear',         rasterized=True)
             ax.scatter(sr[mask_sr], hr[mask_sr], s=6, alpha=0.3,
                        color='tomato',    label=f'{model_name} SR', rasterized=True)
             ax.plot([-1, 1], [-1, 1], 'k--', lw=0.8)
@@ -387,22 +390,32 @@ def plot_ellipticity_comparison(rrdb_results, diff_results):
 
 def plot_shear_residuals(rrdb_results, diff_results):
     """
-    Bonus plot: SR - HR residuals for both models side by side.
+    Residual histograms (SR − HR) for RRDB, Diffusion, and bilinear baseline.
     """
     metrics = [('e1', r'$e_1$'), ('e2', r'$e_2$'), ('g1', r'$g_1$'), ('g2', r'$g_2$')]
     fig, axs = plt.subplots(1, 4, figsize=(18, 4))
 
-    colors = {'RRDB': 'tomato', 'Diffusion': 'seagreen'}
-
     for col, (key, label) in enumerate(metrics):
         ax = axs[col]
-        for results, model_name in [(rrdb_results, 'RRDB'), (diff_results, 'Diffusion')]:
+        for results, model_name, color in [
+            (rrdb_results, 'RRDB',      'tomato'),
+            (diff_results, 'Diffusion', 'seagreen'),
+        ]:
             sr  = np.array(results[f'{key}_sr'], dtype=float)
             hr  = np.array(results[f'{key}_hr'], dtype=float)
             res = sr - hr
             mask = np.isfinite(res)
-            ax.hist(res[mask], bins=60, alpha=0.5, color=colors[model_name],
-                    label=f'{model_name} (μ={np.nanmean(res):.3f})', density=True)
+            ax.hist(res[mask], bins=60, alpha=0.5, color=color, density=True,
+                    label=f'{model_name} (μ={np.nanmean(res):.3f})')
+
+        # Bilinear residual — use rrdb_results since it's the same baseline
+        bl  = np.array(rrdb_results[f'{key}_bl'], dtype=float)
+        hr  = np.array(rrdb_results[f'{key}_hr'], dtype=float)
+        res_bl = bl - hr
+        mask_bl = np.isfinite(res_bl)
+        ax.hist(res_bl[mask_bl], bins=60, alpha=0.5, color='steelblue', density=True,
+                label=f'Bilinear (μ={np.nanmean(res_bl):.3f})')
+
         ax.axvline(0, color='k', lw=1, ls='--')
         ax.set_xlabel(f'{label} residual (SR − HR)', fontsize=10)
         ax.set_ylabel('Density' if col == 0 else '')
@@ -413,45 +426,14 @@ def plot_shear_residuals(rrdb_results, diff_results):
     plt.tight_layout()
     return fig
 
-def plot_image_grid(results, title):
-    """Plot a grid of (LR, Bilinear, SR, HR) quadruplets."""
-    n     = len(results['display_lr'])
-    ncols = 4
-    nrows = (n + ncols - 1) // ncols
-    fig, axs = plt.subplots(nrows, ncols * 4, figsize=(ncols * 6, nrows * 6))
-    if nrows == 1:
-        axs = axs.reshape(1, -1)
-
-    labels = ['NISP Y', 'Bilinear', 'Super-Res', 'NIRCam F115W']
-    display_keys = ['display_lr', 'display_bilinear', 'display_sr', 'display_hr']
-
-    for i in range(n):
-        row  = i // ncols
-        base = (i % ncols) * 4
-        for j, (key, label) in enumerate(zip(display_keys, labels)):
-            ax  = axs[row, base + j]
-            img = results[key][i]
-            ax.imshow(img, origin='lower', cmap='gray')
-            ax.axis('off')
-            ax.set_title(label, fontsize=8)
-
-    for i in range(n, nrows * ncols):
-        row  = i // ncols
-        base = (i % ncols) * 4
-        for j in range(4):
-            axs[row, base + j].axis('off')
-
-    fig.suptitle(title, fontsize=13, y=1.01)
-    plt.tight_layout()
-    return fig
 
 def plot_pixel_metrics(rrdb_results, diff_results, bins=60):
     """
-    2x4 grid of histograms: rows = metric (L1, L2, PSNR, SSIM),
-    columns = RRDB / Diffusion. Each panel shows SR vs bilinear baseline.
+    2x4 grid of histograms: rows = RRDB / Diffusion,
+    columns = L1, L2, PSNR, SSIM. Each panel shows SR vs bilinear.
     """
     metrics = [
-        ('l1',   'L1 (MAE)',  False),   # (key, label, higher_is_better)
+        ('l1',   'L1 (MAE)',  False),
         ('l2',   'L2 (RMSE)', False),
         ('psnr', 'PSNR (dB)', True),
         ('ssim', 'SSIM',      True),
@@ -469,16 +451,13 @@ def plot_pixel_metrics(rrdb_results, diff_results, bins=60):
 
             sr_vals = np.array(results[f'{metric_key}_sr'], dtype=float)
             bl_vals = np.array(results[f'{metric_key}_bl'], dtype=float)
-
             sr_vals = sr_vals[np.isfinite(sr_vals)]
             bl_vals = bl_vals[np.isfinite(bl_vals)]
 
-            ax.hist(bl_vals, bins=bins, alpha=0.5, color='steelblue',
-                    label=f'Bilinear (μ={np.mean(bl_vals):.3f})', density=True)
-            ax.hist(sr_vals, bins=bins, alpha=0.5, color='tomato',
-                    label=f'{model_name} SR (μ={np.mean(sr_vals):.3f})', density=True)
-
-            # Mark means
+            ax.hist(bl_vals, bins=bins, alpha=0.5, color='steelblue', density=True,
+                    label=f'Bilinear (μ={np.mean(bl_vals):.3f})')
+            ax.hist(sr_vals, bins=bins, alpha=0.5, color='tomato',    density=True,
+                    label=f'{model_name} SR (μ={np.mean(sr_vals):.3f})')
             ax.axvline(np.mean(bl_vals), color='steelblue', lw=1.5, ls='--')
             ax.axvline(np.mean(sr_vals), color='tomato',    lw=1.5, ls='--')
 
@@ -495,8 +474,7 @@ def plot_pixel_metrics(rrdb_results, diff_results, bins=60):
 
 def plot_pixel_metrics_summary(rrdb_results, diff_results):
     """
-    Single summary bar chart comparing mean metrics across both models
-    and the bilinear baseline. Good for a paper figure.
+    Summary bar chart comparing mean metrics for bilinear, RRDB, and Diffusion.
     """
     metrics = [
         ('l1',   'L1 (MAE)',  False),
@@ -504,19 +482,17 @@ def plot_pixel_metrics_summary(rrdb_results, diff_results):
         ('psnr', 'PSNR (dB)', True),
         ('ssim', 'SSIM',      True),
     ]
-
-    labels   = ['Bilinear', 'RRDB SR', 'Diffusion SR']
-    colors   = ['steelblue', 'tomato', 'seagreen']
-    x        = np.arange(len(labels))
-    width    = 0.6
+    labels = ['Bilinear', 'RRDB SR', 'Diffusion SR']
+    colors = ['steelblue', 'tomato', 'seagreen']
+    x      = np.arange(len(labels))
+    width  = 0.6
 
     fig, axs = plt.subplots(1, 4, figsize=(18, 4))
 
     for col, (metric_key, metric_label, higher_is_better) in enumerate(metrics):
         ax = axs[col]
-
         means = [
-            np.nanmean(rrdb_results[f'{metric_key}_bl']),   # bilinear (same for both)
+            np.nanmean(rrdb_results[f'{metric_key}_bl']),
             np.nanmean(rrdb_results[f'{metric_key}_sr']),
             np.nanmean(diff_results[f'{metric_key}_sr']),
         ]
@@ -525,23 +501,17 @@ def plot_pixel_metrics_summary(rrdb_results, diff_results):
             np.nanstd(rrdb_results[f'{metric_key}_sr']),
             np.nanstd(diff_results[f'{metric_key}_sr']),
         ]
-
         bars = ax.bar(x, means, width, yerr=stds, capsize=4,
                       color=colors, alpha=0.8, ecolor='black', error_kw={'lw': 1})
-
         ax.set_xticks(x)
         ax.set_xticklabels(labels, fontsize=9)
         ax.set_ylabel(metric_label, fontsize=10)
         ax.set_title(metric_label, fontsize=11)
-
-        # Annotate bars with mean values
         for bar, mean in zip(bars, means):
             ax.text(bar.get_x() + bar.get_width() / 2,
                     bar.get_height() * 1.01,
                     f'{mean:.3f}', ha='center', va='bottom', fontsize=8)
-
-        better_arrow = '↓ better' if not higher_is_better else '↑ better'
-        ax.set_xlabel(better_arrow, fontsize=9)
+        ax.set_xlabel('↓ better' if not higher_is_better else '↑ better', fontsize=9)
 
     fig.suptitle('Mean Pixel Metrics vs NIRCam Ground Truth', fontsize=14)
     plt.tight_layout()
@@ -552,8 +522,8 @@ def plot_pixel_metrics_summary(rrdb_results, diff_results):
 # MAIN
 # ============================================================
 if __name__ == "__main__":
-    print("=== Loading validation dataset ===")
-    val_dataset = get_val_dataset()
+    print("=== Loading validation datasets ===")
+    val_dataset, diff_val_dataset = get_val_datasets()
 
     print("\n=== Loading models ===")
     rrdb_model      = load_rrdb_model()
@@ -563,7 +533,7 @@ if __name__ == "__main__":
     rrdb_results = run_inference(rrdb_model, val_dataset, model_type='rrdb')
 
     print(f"\n=== Diffusion inference on {N_EVAL} samples ===")
-    diff_results = run_inference(diffusion_model, val_dataset, model_type='diffusion')
+    diff_results = run_inference(diffusion_model, diff_val_dataset, model_type='diffusion')
 
     print("\n=== Generating plots ===")
     fig1 = plot_image_grid(rrdb_results, title="RRDB Super-Resolution")
@@ -578,6 +548,14 @@ if __name__ == "__main__":
     fig4 = plot_shear_residuals(rrdb_results, diff_results)
     fig4.savefig("../figs/shear_residuals.pdf", bbox_inches='tight', dpi=150)
 
-    print("\nDone! Saved: rrdb_image_grid.pdf, diffusion_image_grid.pdf,")
-    print("             ellipticity_comparison.pdf, shear_residuals.pdf")
+    fig5 = plot_pixel_metrics(rrdb_results, diff_results)
+    fig5.savefig("../figs/pixel_metrics_histograms.pdf", bbox_inches='tight', dpi=150)
+
+    fig6 = plot_pixel_metrics_summary(rrdb_results, diff_results)
+    fig6.savefig("../figs/pixel_metrics_summary.pdf", bbox_inches='tight', dpi=150)
+
+    print("\nDone! Saved:")
+    print("  rrdb_image_grid.pdf, diffusion_image_grid.pdf")
+    print("  ellipticity_comparison.pdf, shear_residuals.pdf")
+    print("  pixel_metrics_histograms.pdf, pixel_metrics_summary.pdf")
     plt.show()
