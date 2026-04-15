@@ -195,19 +195,21 @@ class SuperResolutionDataset(Dataset):
                 self.hr_data = None
 
             total_len = len(self.lr_data)
-            split_idx = int(total_len * 0.8)
+            train_size = int(total_len * 0.8)
+
+            gen = torch.Generator().manual_seed(42)
+            perm = torch.randperm(total_len, generator=gen).numpy()
 
             if split == "train":
-                indices = np.arange(split_idx)
+                indices = perm[:train_size]
             elif split == "test":
-                indices = np.arange(split_idx, total_len)
+                indices = perm[train_size:]
             else:
                 raise ValueError(f"Unknown split: {split}")
 
-            num_samples = int(len(indices) * sample_fraction)
-            self.indices = indices[:num_samples]
-
-            self.length = len(self.indices)
+            num_samples   = int(len(indices) * sample_fraction)
+            self.indices  = indices[:num_samples]
+            self.length   = len(self.indices)
 
         # ----------------------------------------------------
         # Asinh Normalizers (global per instrument)
