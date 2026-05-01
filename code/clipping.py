@@ -148,7 +148,7 @@ meta = {
             'cut_func': cut_catalog,
             'jwst_hdu': 0,
             'nisp_hdu': 0,
-            'cat_path': '../catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits', # COSMOS classic
+            'cat_path': '/global/cfs/cdirs/m2218/eramey16/catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits', # COSMOS classic
             'size_jwst': 69, # Change to 41 and 69 px
             'size_nisp': 41,
             'pad_jwst': 20,
@@ -164,7 +164,7 @@ meta = {
             'cut_func': cut_catalog,
             'jwst_hdu': 0,
             'nisp_hdu': 1,
-            'cat_path': '../catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits', # COSMOS classic
+            'cat_path': '/global/cfs/cdirs/m2218/eramey16/catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits', # COSMOS classic
             'size_jwst': 205,
             'size_nisp': 41,
             'mirror_nisp': True,
@@ -172,9 +172,9 @@ meta = {
             'deconvolve': False,
             'pad_jwst': 20,
             'rot_jwst': -3.945,
-            'matched_cat': '../catalog/matched_cat_cosmos_2.csv',
-            'matched_jwst': '../data/jwst_cosmos_205px_F115W.npy',
-            'matched_nisp': '../data/euclid_NIR_cosmos_41px_Y.npy',
+            'matched_cat': '/global/cfs/cdirs/m2218/eramey16/catalog/matched_cat_cosmos_2.csv',
+            'matched_jwst': '/global/cfs/cdirs/m2218/eramey16/SR_data/jwst_cosmos_205px_F115W.npy',
+            'matched_nisp': '/global/cfs/cdirs/m2218/eramey16/SR_data/euclid_NIR_cosmos_41px_Y.npy',
         },
     },
     'HUDF': {
@@ -282,6 +282,7 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
     
     # Use tqdm for progress bar
     pbar = tqdm(total=total_galaxies, desc="  Clipping galaxies", unit="gal")
+    print(f"Rotating JWST by {rot_jwst} degrees")
     
     for match, cat in image_pairs:
         jwst_file, nisp_file = match
@@ -335,15 +336,15 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
             gal = cat.iloc[i]
             # Get JWST clip (larger than final size)
             clip_jwst = Cutout2D(jwst_data, gal_coords[i], size=size_jwst+pad, wcs=wcs_jwst, mode='trim')
-            if sum(clip_jwst.data.shape)!=(size_jwst+pad)*2: continue
-            if np.sum((clip_jwst.data==0.0).astype(int))/((size_jwst+pad)**2) > FRAC_ZERO: continue
+            if sum(clip_jwst.data.shape)!=(size_jwst+pad)*2: pbar.update(1); continue # Edge case
+            if np.sum((clip_jwst.data==0.0).astype(int))/((size_jwst+pad)**2) > FRAC_ZERO: pbar.update(1); continue # Masked
             
             # Get NISP clip
             clip_nisp = Cutout2D(nisp_data, gal_coords[i], size=size_nisp, wcs=wcs_nisp, mode='trim')
-            if sum(clip_nisp.data.shape)!=(size_nisp)*2: continue
+            if sum(clip_nisp.data.shape)!=(size_nisp)*2: pbar.update(1); continue
             
             # Check for blank clips
-            if np.sum((clip_nisp.data==0.0).astype(int))/((size_nisp)**2) > FRAC_ZERO: continue
+            if np.sum((clip_nisp.data==0.0).astype(int))/((size_nisp)**2) > FRAC_ZERO: pbar.update(1); continue
 
             # Mask nisp clip, if requested
             if mask:
@@ -351,6 +352,7 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
                 clip_mask = (clip_mask.data>=1) # < 1 is good data, greater is bad
                 masked_clip = np.ma.array(clip_nisp.data, mask=clip_mask)
                 clip_nisp.data = masked_clip.filled(0)
+            if np.sum(clip_mask.data) / (size_nisp**2) > FRAC_ZERO: pbar.update(1); continue # Masked
 
             # Mirror nisp clip, if requested
             if mirror_nisp:
@@ -398,7 +400,7 @@ def clip_images(catalog, url=None, dbx=None, size_jwst=69, size_nisp=41, pad=20,
 
 
 def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_clips=False, redo_cat=False,
-                redo_clips=False, secret="../../secrets/dropbox_token", meta=meta):
+                redo_clips=False, secret="../../secrets/dropbox_token", meta=meta, cat_dir='../catalog/'):
     params = meta[field][euclid_type]
     
     # Generate date string for filenames
@@ -476,10 +478,10 @@ def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_c
     
         if save_cat:
             # Add date to catalog filename
-            cat_base, cat_ext = os.path.splitext(matched_cat)
-            dated_cat = f"{cat_base}_{date_str}{cat_ext}"
-            my_cat.to_csv(dated_cat, index=False)
-            print(f"  Saved catalog to {dated_cat}")
+            # cat_base, cat_ext = os.path.splitext(matched_cat)
+            # dated_cat = f"{cat_base}_{date_str}{cat_ext}"
+            my_cat.to_csv(matched_cat, index=False)
+            print(f"  Saved catalog to {matched_cat}")
     
     # Step 4: Clip images
     print(f"\n[Step 4/5] Clipping images for {len(my_cat)} galaxies...")
@@ -497,12 +499,12 @@ def process_all(field='cosmos', euclid_type='NISP-Y_MER', save_cat=False, save_c
         # Add date to numpy filenames
         jwst_base, jwst_ext = os.path.splitext(matched_jwst)
         nisp_base, nisp_ext = os.path.splitext(matched_nisp)
-        dated_jwst = f"{jwst_base}_{date_str}{jwst_ext}"
-        dated_nisp = f"{nisp_base}_{date_str}{nisp_ext}"
+        # dated_jwst = f"{jwst_base}_{date_str}{jwst_ext}"
+        # dated_nisp = f"{nisp_base}_{date_str}{nisp_ext}"
         
-        np.save(dated_jwst, jwst_cutouts, allow_pickle=False)
-        np.save(dated_nisp, nisp_cutouts, allow_pickle=False)
-        print(f"  Saved cutouts to {dated_jwst} and {dated_nisp}")
+        np.save(matched_jwst, jwst_cutouts, allow_pickle=False)
+        np.save(matched_nisp, nisp_cutouts, allow_pickle=False)
+        print(f"  Saved cutouts to {matched_jwst} and {matched_nisp}")
     
     print("\n" + "=" * 60)
     print("Processing complete!")

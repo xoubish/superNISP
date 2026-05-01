@@ -10,6 +10,7 @@ import json
 import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 import matplotlib.pyplot as plt
+import argparse
 
 from claude_sweep import sweep_config
 
@@ -442,8 +443,8 @@ def train_for_sweep():
 
     wandb.config.update({"optimizer_stage1": "Adam",
                          "optimizer_stage2": "Adam",
-                         "euclid_path": "../data/euclid_NIR_cosmos_41px_Y.npy",
-                         "jwst_path": "../data/jwst_cosmos_205px_F115W.npy",
+                         "euclid_path": "/global/cfs/cdirs/m2218/eramey16/SR_data/euclid_NIR_cosmos_41px_Y.npy",
+                         "jwst_path": "/global/cfs/cdirs/m2218/eramey16/SR_data/jwst_cosmos_205px_F115W.npy",
                          "val_split": 0.2,
                          "normalization": "z_score",
                         })
@@ -466,8 +467,8 @@ def train_for_sweep():
     train_size = dataset_size - val_size
     
     # Split the dataset
-    torch.manual_seed(42)  # For reproducible splits
-    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+    gen = torch.Generator().manual_seed(42)  # For reproducible splits
+    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size], generator=gen)
     
     print(f"Dataset split: {train_size} training samples, {val_size} validation samples")
     wandb.config.update({"train_size": train_size, "val_size": val_size})
@@ -885,6 +886,43 @@ def train_for_sweep():
     # return model
     return best_val_loss_stage2
 
+def train_from_run_id(run_id, project="euclid-jwst-hyperparameter-sweep-v3", 
+                      n_stage1=100, n_stage2=100,
+                      entity="eaev-uc-berkeley"):
+    """
+    Fetch the config from a completed W&B run and train a new model with those parameters.
+    
+    Args:
+        run_id: The W&B run ID to pull config from
+        project: The W&B project the run belongs to
+        entity: The W&B entity (username or team)
+    """
+    # Pull config from the existing run
+    api = wandb.Api()
+    run = api.run(f"{entity}/{project}/{run_id}")
+    params = dict(run.config)
+
+    # Override epochs with user-specified values
+    params['num_epochs_stage1'] = n_stage1
+    params['num_epochs_stage2'] = n_stage2
+
+    params['euclid_path'] = "/global/cfs/cdirs/m2218/eramey16/SR_data/euclid_NIR_cosmos_41px_Y.npy"
+    params['jwst_path'] = "/global/cfs/cdirs/m2218/eramey16/SR_data/jwst_cosmos_205px_F115W.npy"
+    
+    print(f"Fetched config from run: {run.name} ({run_id})")
+    print(f"Parameters: {params}")
+    
+    # Convert to sweep format with single fixed values
+    single_run_config = {
+        'method': 'grid',
+        'metric': {'name': 'final_sweep_loss', 'goal': 'minimize'},
+        'parameters': {key: {'value': value} for key, value in params.items()}
+    }
+    
+    # Run in a separate project so it doesn't pollute the sweep
+    sweep_id = wandb.sweep(single_run_config, project="euclid-jwst-final-training")
+    wandb.agent(sweep_id, train_for_sweep, count=1)
+
 # Create and run the sweep
 def run_sweep():
     """Initialize and run the hyperparameter sweep"""
@@ -896,14 +934,14 @@ def run_sweep():
     # Initialize the sweep
     sweep_id = wandb.sweep(
         sweep_config,
-        project="euclid-jwst-hyperparameter-sweep-v3"
+        project="euclid-jwst-hyperparameter-sweep-test"
     )
     
     print(f"Starting sweep with ID: {sweep_id}")
     
     # Run the sweep
     try:
-        wandb.agent(sweep_id, train_for_sweep, count=50) # Run experiments
+        wandb.agent(sweep_id, train_for_sweep, count=3) # Run experiments
     except KeyboardInterrupt:
         print("\nSweep interrupted by user.")
     except Exception as e:
@@ -917,6 +955,23 @@ def run_sweep():
 if __name__ == "__main__":
     # Make sure to install wandb first: pip install wandb
     # Then login: wandb login
+    parser = argparse.ArgumentParser(description="Runs W&B training for ResNet model")
+    parser.add_argument("--sweep", action='store_true', 
+                        help="Runs a full sweep for hyperparameter training")
+    parser.add_argument("--from_run", default="tbra2akh", help='Run ID for training parameters')
+    parser.add_argument("--project", type=str, default="euclid-jwst-hyperparameter-sweep-v3", 
+                        help="Project name to use on W&B")
+    parser.add_argument("--n_stage1", type=int, default=100, 
+                        help="Num epochs stage 1")
+    parser.add_argument("--n_stage2", type=int, default=100, 
+                        help="Num epochs stage 2")
+    args = parser.parse_args()
+
     wandb.login()
     
-    run_sweep()
+    if args.sweep:
+        run_sweep()
+    else:
+        if args.from_run is None: raise ValueError("Must pass a run ID if sweep not enabled")
+        train_from_run_id(args.from_run, project=args.project,
+                          n_stage1=args.n_stage1, n_stage2=args.n_stage2)

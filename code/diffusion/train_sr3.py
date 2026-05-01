@@ -266,8 +266,8 @@ def main():
 
     # --- Datasets (41x41 -> 205x205, cropped to 21x21 -> 105x105) ---
     train_ds = SuperResolutionDataset(
-        lr_path="../../data/euclid_NIR_cosmos_41px_Y_20251124.npy",
-        hr_path="../../data/jwst_cosmos_205px_F115W_20251124.npy",
+        lr_path="/global/cfs/cdirs/m2218/eramey16/SR_data/euclid_NIR_cosmos_41px_Y.npy",
+        hr_path="/global/cfs/cdirs/m2218/eramey16/SR_data/jwst_cosmos_205px_F115W.npy",
         split="train",
         lr_crop_size=21,
         hr_crop_size=105,
@@ -275,8 +275,8 @@ def main():
     )
 
     val_ds = SuperResolutionDataset(
-        lr_path="../../data/euclid_NIR_cosmos_41px_Y_20251124.npy",
-        hr_path="../../data/jwst_cosmos_205px_F115W_20251124.npy",
+        lr_path="/global/cfs/cdirs/m2218/eramey16/SR_data/euclid_NIR_cosmos_41px_Y.npy",
+        hr_path="/global/cfs/cdirs/m2218/eramey16/SR_data/jwst_cosmos_205px_F115W.npy",
         split="test",
         lr_crop_size=21,
         hr_crop_size=105,
@@ -325,7 +325,7 @@ def main():
 
     from torch.optim.lr_scheduler import ReduceLROnPlateau
     scheduler = ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.5, patience=5, verbose=True
+        optimizer, mode='min', factor=0.5, patience=5
     )
 
     os.makedirs("checkpoints_sr3", exist_ok=True)
