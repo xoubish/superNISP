@@ -455,12 +455,15 @@ def plot_ellipticity_comparison(rrdb_results, diff_results):
             mask_sr = np.isfinite(sr) & np.isfinite(hr)
             mask_bl = np.isfinite(bl) & np.isfinite(hr)
 
-            ax.scatter(lr[mask_lr], hr[mask_lr], s=6, alpha=0.3,
-                       color='steelblue', label='NISP (LR)',       rasterized=True)
-            ax.scatter(bl[mask_bl], hr[mask_bl], s=6, alpha=0.3,
-                       color='seagreen',  label='Bilinear',         rasterized=True)
-            ax.scatter(sr[mask_sr], hr[mask_sr], s=6, alpha=0.3,
-                       color='tomato',    label=f'{model_name} SR', rasterized=True)
+            labels = ['NISP (LR)', 'Bilinear', f'{model_name} SR']
+            if col==0: labels = ["_"+el for el in labels]
+
+            ax.scatter(lr[mask_lr], hr[mask_lr], s=2, alpha=0.3,
+                       color='steelblue', label=labels[0],       rasterized=True)
+            ax.scatter(bl[mask_bl], hr[mask_bl], s=2, alpha=0.3,
+                       color='seagreen',  label=labels[1],         rasterized=True)
+            ax.scatter(sr[mask_sr], hr[mask_sr], s=2, alpha=0.3,
+                       color='tomato',    label=labels[2], rasterized=True)
 
             # 1:1 reference line
             ax.plot([-1, 1], [-1, 1], 'k--', lw=0.8)
@@ -482,7 +485,6 @@ def plot_ellipticity_comparison(rrdb_results, diff_results):
             if col == 0:
                 ax.set_ylabel(f'{label} (NIRCam)')
             ax.set_title(f'{model_name} — {label}')
-            # only put slope in legend if not first plot
             ax.legend(markerscale=2)
 
     fig.suptitle('Ellipticity & Shear Comparison')
@@ -508,7 +510,7 @@ def plot_shear_residuals(rrdb_results, diff_results):
             res = sr - hr
             mask = np.isfinite(res)
             ax.hist(res[mask], bins=60, alpha=0.5, color=color, density=True,
-                    label=f'{model_name} (μ={np.nanmean(res):.3f})')
+                    label=f'{model_name}')# (μ={np.nanmean(res):.3f})')
 
         # Bilinear residual — use rrdb_results since it's the same baseline
         bl  = np.array(rrdb_results[f'{key}_bl'], dtype=float)
