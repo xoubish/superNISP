@@ -53,6 +53,17 @@ DIFF_INIT_SIGMA      = 1.0
 
 os.makedirs("/global/cfs/cdirs/m2218/eramey16/SR_data/results", exist_ok=True)
 
+FONT_SIZE = 16
+plt.rcParams.update({
+    'font.size':        FONT_SIZE,
+    'axes.titlesize':   FONT_SIZE + 2,
+    'axes.labelsize':   FONT_SIZE,
+    'xtick.labelsize':  FONT_SIZE - 2,
+    'ytick.labelsize':  FONT_SIZE - 2,
+    'legend.fontsize':  FONT_SIZE - 6,
+    'figure.titlesize': FONT_SIZE + 4,
+})
+
 # ============================================================
 # DIFFUSION VALIDATION WRAPPER
 # Applies center crop + asinh normalization to the shared
@@ -375,7 +386,7 @@ def plot_image_grid(results, title, ncols=3, nrows=4):
     if nrows == 1:
         axs = axs.reshape(1, -1)
 
-    labels       = ['NISP Y', 'Super-Res', 'NIRCam']
+    labels       = ['NISP Y', 'SR', 'NIRCam']
     display_keys = ['display_lr', 'display_sr', 'display_hr']
 
     for i in range(n_display):
@@ -391,7 +402,7 @@ def plot_image_grid(results, title, ncols=3, nrows=4):
             ax.axis('off')
             # Labels only on the first row
             if row == 0:
-                ax.set_title(label, fontsize=7, pad=2)
+                ax.set_title(label, pad=2)
 
     # Hide spacer axes and any unused image axes
     for row in range(nrows):
@@ -408,7 +419,7 @@ def plot_image_grid(results, title, ncols=3, nrows=4):
             if i >= n_display:
                 ax.set_visible(False)
 
-    fig.suptitle(title, fontsize=11, y=1.01)
+    fig.suptitle(title, y=1.01)
     return fig
 
 
@@ -467,13 +478,14 @@ def plot_ellipticity_comparison(rrdb_results, diff_results):
 
             ax.set_xlim(-1, 1)
             ax.set_ylim(-1, 1)
-            ax.set_xlabel(f'{label} (input / SR)', fontsize=10)
+            ax.set_xlabel(f'{label} (input / SR)')
             if col == 0:
-                ax.set_ylabel(f'{label} (NIRCam)', fontsize=10)
-            ax.set_title(f'{model_name} — {label}', fontsize=10)
-            ax.legend(fontsize=7, markerscale=2)
+                ax.set_ylabel(f'{label} (NIRCam)')
+            ax.set_title(f'{model_name} — {label}')
+            # only put slope in legend if not first plot
+            ax.legend(markerscale=2)
 
-    fig.suptitle('Ellipticity & Shear Comparison', fontsize=14)
+    fig.suptitle('Ellipticity & Shear Comparison')
     plt.tight_layout()
     return fig
 
@@ -507,12 +519,12 @@ def plot_shear_residuals(rrdb_results, diff_results):
                 label=f'Bilinear (μ={np.nanmean(res_bl):.3f})')
 
         ax.axvline(0, color='k', lw=1, ls='--')
-        ax.set_xlabel(f'{label} residual (SR − HR)', fontsize=10)
+        ax.set_xlabel(f'{label} residual (SR − HR)')
         ax.set_ylabel('Density' if col == 0 else '')
-        ax.set_title(label, fontsize=10)
-        ax.legend(fontsize=8)
+        ax.set_title(label)
+        ax.legend()
 
-    fig.suptitle('Moment Residuals vs. NIRCam', fontsize=14)
+    fig.suptitle('Moment Residuals vs. NIRCam')
     plt.tight_layout()
     return fig
 
@@ -552,12 +564,12 @@ def plot_pixel_metrics(rrdb_results, diff_results, bins=60):
             ax.axvline(np.mean(sr_vals), color='tomato',    lw=1.5, ls='--')
 
             better = '← better' if not higher_is_better else 'better →'
-            ax.set_xlabel(f'{metric_label}  ({better})', fontsize=9)
-            ax.set_ylabel('Density' if col == 0 else '', fontsize=9)
-            ax.set_title(f'{model_name} — {metric_label}', fontsize=10)
-            ax.legend(fontsize=8)
+            ax.set_xlabel(f'{metric_label}  ({better})')
+            ax.set_ylabel('Density' if col == 0 else '')
+            ax.set_title(f'{model_name} — {metric_label}')
+            ax.legend()
 
-    fig.suptitle('Pixel-level Metrics vs NIRCam: SR vs Bilinear Baseline', fontsize=14)
+    fig.suptitle('Pixel-level Metrics vs NIRCam')
     plt.tight_layout()
     return fig
 
@@ -642,15 +654,14 @@ def plot_shear_bias(rrdb_results, diff_results):
             ax.axhline(0, color='k', lw=1, ls='--')
             ax.axvline(0, color='k', lw=0.5, ls=':')
 
-            ax.set_xlabel(f'{label} (NIRCam)', fontsize=10)
+            ax.set_xlabel(f'{label} (NIRCam)')
             if col == 0:
-                ax.set_ylabel(f'{label} residual (SR − NIRCam)', fontsize=10)
-            ax.set_title(f'{model_name} — {label}', fontsize=10)
-            ax.legend(fontsize=7, markerscale=2)
+                ax.set_ylabel(f'{label} residual (SR − NIRCam)')
+            ax.set_title(f'{model_name} — {label}')
+            ax.legend(markerscale=2)
 
     fig.suptitle('Shape Measurement Bias: Residual vs NIRCam Truth\n'
-                 r'Slope $m$ = multiplicative bias, intercept $c$ = additive bias',
-                 fontsize=13)
+                 r'Slope $m$ = multiplicative bias, intercept $c$ = additive bias')
     plt.tight_layout()
     return fig
 
@@ -686,16 +697,16 @@ def plot_pixel_metrics_summary(rrdb_results, diff_results):
         bars = ax.bar(x, means, width, yerr=stds, capsize=4,
                       color=colors, alpha=0.8, ecolor='black', error_kw={'lw': 1})
         ax.set_xticks(x)
-        ax.set_xticklabels(labels, fontsize=9)
-        ax.set_ylabel(metric_label, fontsize=10)
-        ax.set_title(metric_label, fontsize=11)
+        ax.set_xticklabels(labels)
+        ax.set_ylabel(metric_label)
+        ax.set_title(metric_label)
         for bar, mean in zip(bars, means):
             ax.text(bar.get_x() + bar.get_width() / 2,
                     bar.get_height() * 1.01,
-                    f'{mean:.3f}', ha='center', va='bottom', fontsize=8)
-        ax.set_xlabel('↓ better' if not higher_is_better else '↑ better', fontsize=9)
+                    f'{mean:.3f}', ha='center', va='bottom')
+        ax.set_xlabel('↓ better' if not higher_is_better else '↑ better')
 
-    fig.suptitle('Mean Pixel Metrics vs NIRCam', fontsize=14)
+    fig.suptitle('Mean Pixel Metrics vs NIRCam')
     plt.tight_layout()
     return fig
 
