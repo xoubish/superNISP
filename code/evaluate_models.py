@@ -66,14 +66,12 @@ plt.rcParams.update({
 
 # ============================================================
 # DIFFUSION VALIDATION WRAPPER
-# Applies center crop + asinh normalization to the shared
-# ResNet validation split, so both models see the same galaxies
+# Applies asinh normalization to the shared ResNet validation split.
+# Returns both normalized (for model input) and raw (for metrics) data.
 # ============================================================
 class DiffusionValWrapper(Dataset):
-    def __init__(self, val_dataset, lr_crop_size=21, hr_crop_size=105):
-        self.val_dataset  = val_dataset
-        self.lr_crop_size = lr_crop_size
-        self.hr_crop_size = hr_crop_size
+    def __init__(self, val_dataset):
+        self.val_dataset = val_dataset
 
         # Fit asinh normalizers on the full raw numpy arrays
         full_ds = val_dataset.dataset        # unwrap random_split Subset
@@ -95,17 +93,16 @@ class DiffusionValWrapper(Dataset):
         lr_np = full_ds.euclid_data[global_idx].astype(np.float32)
         hr_np = full_ds.jwst_data[global_idx].astype(np.float32)
 
-        lr_tensor = torch.from_numpy(lr_np).unsqueeze(0)    # [1,41,41]
-        hr_tensor = torch.from_numpy(hr_np).unsqueeze(0)    # [1,205,205]
+        # Apply asinh normalization
+        lr_norm_np, _ = self.lr_norm.normalize(lr_np)
+        hr_norm_np, _ = self.hr_norm.normalize(hr_np)
 
-        lr_tensor = center_crop_tensor(lr_tensor, self.lr_crop_size)
-        hr_tensor = center_crop_tensor(hr_tensor, self.hr_crop_size)
-
-        lr_norm_np, _ = self.lr_norm.normalize(lr_tensor.squeeze(0).numpy())
-        hr_norm_np, _ = self.hr_norm.normalize(hr_tensor.squeeze(0).numpy())
-
+        # Return: normalized (for model), raw (for metrics), and normalizer (for denorm)
         return (torch.from_numpy(lr_norm_np).unsqueeze(0),
-                torch.from_numpy(hr_norm_np).unsqueeze(0))
+                torch.from_numpy(hr_norm_np).unsqueeze(0),
+                torch.from_numpy(lr_np).unsqueeze(0),
+                torch.from_numpy(hr_np).unsqueeze(0),
+                self.hr_norm)
     
 
 
@@ -192,6 +189,7 @@ def get_val_datasets():
     """
     Returns val datasets for both models using the same underlying indices.
     The ResNet split (torch.manual_seed + random_split) is the source of truth.
+    Both models now use the full 41×41 → 205×205 images.
     """
     full_dataset = EuclidToJWSTDataset(EUCLID_PATH, JWST_PATH, normalize_method='z_score')
     val_size     = int(VAL_SPLIT * len(full_dataset))
@@ -200,13 +198,11 @@ def get_val_datasets():
     torch.manual_seed(SEED)
     _, val_dataset = random_split(full_dataset, [train_size, val_size])
 
-    diff_val_dataset = DiffusionValWrapper(
-        val_dataset,
-        lr_crop_size=LR_CROP_SIZE,
-        hr_crop_size=HR_CROP_SIZE,
-    )
+    # Diffusion wrapper applies asinh normalization (no cropping)
+    diff_val_dataset = DiffusionValWrapper(val_dataset)
 
     print(f"Validation set: {val_size} samples (seed={SEED}) — shared by both models")
+    print(f"  Both models use full 41×41 → 205×205 images")
     return val_dataset, diff_val_dataset
 
 
@@ -269,9 +265,9 @@ def run_inference(model, val_dataset, model_type='rrdb'):
 
         # --- Load sample ---
         if model_type == 'diffusion':
-            lr_img, hr_img = val_dataset[i]        # [1,21,21], [1,105,105]
+            lr_img, hr_img = val_dataset[i]        # [1,41,41], [1,205,205] (asinh normalized)
         else:
-            lr_img, hr_img, _ = val_dataset[i]     # [1,41,41], [1,205,205]
+            lr_img, hr_img, _ = val_dataset[i]     # [1,41,41], [1,205,205] (z-score normalized)
 
         lr_input = lr_img
         hr_ref   = hr_img
@@ -456,7 +452,7 @@ def plot_ellipticity_comparison(rrdb_results, diff_results):
             mask_bl = np.isfinite(bl) & np.isfinite(hr)
 
             labels = ['NISP (LR)', 'Bilinear', f'{model_name} SR']
-            if col==0: labels = ["_"+el for el in labels]
+            if col!=0: labels = ["_"+el for el in labels]
 
             ax.scatter(lr[mask_lr], hr[mask_lr], s=2, alpha=0.3,
                        color='steelblue', label=labels[0],       rasterized=True)
@@ -510,7 +506,7 @@ def plot_shear_residuals(rrdb_results, diff_results):
             res = sr - hr
             mask = np.isfinite(res)
             ax.hist(res[mask], bins=60, alpha=0.5, color=color, density=True,
-                    label=f'{model_name}')# (μ={np.nanmean(res):.3f})')
+                    label=f'{model_name} (μ={np.nanmean(res):.3f})')
 
         # Bilinear residual — use rrdb_results since it's the same baseline
         bl  = np.array(rrdb_results[f'{key}_bl'], dtype=float)
@@ -696,7 +692,7 @@ def plot_pixel_metrics_summary(rrdb_results, diff_results):
             np.nanstd(rrdb_results[f'{metric_key}_sr']),
             np.nanstd(diff_results[f'{metric_key}_sr']),
         ]
-        bars = ax.bar(x, means, width, yerr=stds, capsize=4,
+        bars = ax.bar(x, means, width, capsize=4, #yerr=stds,
                       color=colors, alpha=0.8, ecolor='black', error_kw={'lw': 1})
         ax.set_xticks(x)
         ax.set_xticklabels(labels)
@@ -704,11 +700,149 @@ def plot_pixel_metrics_summary(rrdb_results, diff_results):
         ax.set_title(metric_label)
         for bar, mean in zip(bars, means):
             ax.text(bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() * 1.01,
+                    bar.get_height() - 0.25,
                     f'{mean:.3f}', ha='center', va='bottom')
         ax.set_xlabel('↓ better' if not higher_is_better else '↑ better')
 
     fig.suptitle('Mean Pixel Metrics vs NIRCam')
+    plt.tight_layout()
+    return fig
+
+
+def plot_ellipticity_plane_single_model(results, model_name):
+    """
+    Plot e1 vs. e2 and g1 vs. g2 in the shape plane for a single model.
+    Shows HR, Bilinear, and SR side-by-side for each shape metric.
+    2 rows x 3 cols: (e1-e2, g1-g2) x (HR, Bilinear, SR)
+    """
+    shape_pairs = [
+        ('e1', 'e2', r'$e_1$ vs. $e_2$'),
+        ('g1', 'g2', r'$g_1$ vs. $g_2$'),
+    ]
+    
+    # 2 rows (e1-e2, g1-g2), 3 columns (HR, Bilinear, SR)
+    fig, axs = plt.subplots(2, 3, figsize=(15, 10))
+    
+    for row_idx, (key1, key2, shape_label) in enumerate(shape_pairs):
+        # Extract data
+        hr_x = np.array(results[f'{key1}_hr'], dtype=float)
+        hr_y = np.array(results[f'{key2}_hr'], dtype=float)
+        sr_x = np.array(results[f'{key1}_sr'], dtype=float)
+        sr_y = np.array(results[f'{key2}_sr'], dtype=float)
+        bl_x = np.array(results[f'{key1}_bl'], dtype=float)
+        bl_y = np.array(results[f'{key2}_bl'], dtype=float)
+        
+        # Create masks for finite values
+        mask_hr = np.isfinite(hr_x) & np.isfinite(hr_y)
+        mask_sr = np.isfinite(sr_x) & np.isfinite(sr_y)
+        mask_bl = np.isfinite(bl_x) & np.isfinite(bl_y)
+        
+        # Plot HR, Bilinear, SR in separate columns
+        for col_idx, (x_data, y_data, mask, label, cmap) in enumerate([
+            (hr_x, hr_y, mask_hr, 'NIRCam (HR)', 'Greys'),
+            (bl_x, bl_y, mask_bl, 'Bilinear', 'Blues'),
+            (sr_x, sr_y, mask_sr, f'{model_name} SR', 'Reds'),
+        ]):
+            ax = axs[row_idx, col_idx]
+            
+            # Hexbin density plot
+            hb = ax.hexbin(x_data[mask], y_data[mask], gridsize=30,
+                          cmap=cmap, mincnt=1, extent=[-1, 1, -1, 1])
+            
+            # Add colorbar
+            cb = plt.colorbar(hb, ax=ax)
+            cb.set_label('Count', rotation=270, labelpad=15)
+            
+            # Add reference lines at 0
+            ax.axhline(0, color='gray', lw=0.5, ls='--', alpha=0.5)
+            ax.axvline(0, color='gray', lw=0.5, ls='--', alpha=0.5)
+            
+            # Add unit circle for reference
+            circle = plt.Circle((0, 0), 1.0, fill=False, color='gray',
+                               ls=':', lw=1, alpha=0.5)
+            ax.add_patch(circle)
+            
+            ax.set_xlim(-1, 1)
+            ax.set_ylim(-1, 1)
+            ax.set_aspect('equal')
+            ax.set_xlabel(f'${key1}$')
+            if col_idx == 0:
+                ax.set_ylabel(f'${key2}$')
+            ax.set_title(f'{shape_label} — {label}')
+            ax.grid(True, alpha=0.3)
+    
+    fig.suptitle(f'{model_name} Shape Measurements in the Ellipticity/Shear Plane', y=0.995)
+    plt.tight_layout()
+    return fig
+
+
+def plot_ellipticity_plane_residuals(rrdb_results, diff_results):
+    """
+    Plot residuals (SR - HR) in the e1-e2 and g1-g2 planes.
+    Shows where the SR models systematically over/under-predict shapes.
+    2x2 grid: rows = e1 vs. e2 / g1 vs. g2, columns = ResNet / Diffusion
+    """
+    model_results = [
+        (rrdb_results, 'ResNet'),
+        (diff_results, 'Diffusion'),
+    ]
+    shape_pairs = [
+        ('e1', 'e2', r'$\Delta e_1$ vs. $\Delta e_2$'),
+        ('g1', 'g2', r'$\Delta g_1$ vs. $\Delta g_2$'),
+    ]
+    
+    fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+    
+    for row, (key1, key2, title_suffix) in enumerate(shape_pairs):
+        for col, (results, model_name) in enumerate(model_results):
+            ax = axs[row, col]
+            
+            # Extract data
+            hr_x = np.array(results[f'{key1}_hr'], dtype=float)
+            hr_y = np.array(results[f'{key2}_hr'], dtype=float)
+            sr_x = np.array(results[f'{key1}_sr'], dtype=float)
+            sr_y = np.array(results[f'{key2}_sr'], dtype=float)
+            
+            # Compute residuals
+            res_x = sr_x - hr_x
+            res_y = sr_y - hr_y
+            
+            # Create mask for finite values
+            mask = np.isfinite(res_x) & np.isfinite(res_y)
+            
+            # Hexbin plot for residuals
+            hb = ax.hexbin(res_x[mask], res_y[mask], gridsize=30,
+                          cmap='RdBu_r', alpha=0.8, mincnt=1,
+                          extent=[-0.5, 0.5, -0.5, 0.5], reduce_C_function=np.mean)
+            
+            # Add colorbar
+            cb = plt.colorbar(hb, ax=ax)
+            cb.set_label('Count', rotation=270, labelpad=15)
+            
+            # Add reference lines at 0
+            ax.axhline(0, color='black', lw=1, ls='--', alpha=0.7)
+            ax.axvline(0, color='black', lw=1, ls='--', alpha=0.7)
+            
+            # Calculate and display statistics
+            mean_x = np.nanmean(res_x[mask])
+            mean_y = np.nanmean(res_y[mask])
+            std_x = np.nanstd(res_x[mask])
+            std_y = np.nanstd(res_y[mask])
+            
+            ax.text(0.05, 0.95,
+                   f'μ_x={mean_x:.4f}, σ_x={std_x:.4f}\nμ_y={mean_y:.4f}, σ_y={std_y:.4f}',
+                   transform=ax.transAxes, fontsize=10, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+            
+            ax.set_xlim(-0.5, 0.5)
+            ax.set_ylim(-0.5, 0.5)
+            ax.set_aspect('equal')
+            ax.set_xlabel(f'$\Delta {key1}$ (SR − HR)')
+            ax.set_ylabel(f'$\Delta {key2}$ (SR − HR)')
+            ax.set_title(f'{model_name} — {title_suffix}')
+            ax.grid(True, alpha=0.3)
+    
+    fig.suptitle('Shape Residuals in the Ellipticity/Shear Plane', y=0.995)
     plt.tight_layout()
     return fig
 
@@ -752,8 +886,19 @@ if __name__ == "__main__":
     fig7 = plot_pixel_metrics_summary(rrdb_results, diff_results)
     fig7.savefig("../figs/pixel_metrics_summary.png", bbox_inches='tight', dpi=150)
 
+    fig8 = plot_ellipticity_plane_single_model(rrdb_results, 'ResNet')
+    fig8.savefig("../figs/ellipticity_plane_resnet.png", bbox_inches='tight', dpi=150)
+
+    fig9 = plot_ellipticity_plane_single_model(diff_results, 'Diffusion')
+    fig9.savefig("../figs/ellipticity_plane_diffusion.png", bbox_inches='tight', dpi=150)
+
+    fig10 = plot_ellipticity_plane_residuals(rrdb_results, diff_results)
+    fig10.savefig("../figs/ellipticity_plane_residuals.png", bbox_inches='tight', dpi=150)
+
     print("\nDone! Saved:")
     print("  rrdb_image_grid.png, diffusion_image_grid.png")
     print("  ellipticity_comparison.png, shear_residuals.png, shear_bias.png")
     print("  pixel_metrics_histograms.png, pixel_metrics_summary.png")
+    print("  ellipticity_plane_resnet.png, ellipticity_plane_diffusion.png")
+    print("  ellipticity_plane_residuals.png")
     plt.show()
