@@ -66,12 +66,14 @@ plt.rcParams.update({
 
 # ============================================================
 # DIFFUSION VALIDATION WRAPPER
-# Applies asinh normalization to the shared ResNet validation split.
-# Returns both normalized (for model input) and raw (for metrics) data.
+# Applies center crop + asinh normalization to the shared
+# ResNet validation split, so both models see the same galaxies
 # ============================================================
 class DiffusionValWrapper(Dataset):
-    def __init__(self, val_dataset):
-        self.val_dataset = val_dataset
+    def __init__(self, val_dataset, lr_crop_size=21, hr_crop_size=105):
+        self.val_dataset  = val_dataset
+        self.lr_crop_size = lr_crop_size
+        self.hr_crop_size = hr_crop_size
 
         # Fit asinh normalizers on the full raw numpy arrays
         full_ds = val_dataset.dataset        # unwrap random_split Subset
@@ -93,16 +95,17 @@ class DiffusionValWrapper(Dataset):
         lr_np = full_ds.euclid_data[global_idx].astype(np.float32)
         hr_np = full_ds.jwst_data[global_idx].astype(np.float32)
 
-        # Apply asinh normalization
-        lr_norm_np, _ = self.lr_norm.normalize(lr_np)
-        hr_norm_np, _ = self.hr_norm.normalize(hr_np)
+        lr_tensor = torch.from_numpy(lr_np).unsqueeze(0)    # [1,41,41]
+        hr_tensor = torch.from_numpy(hr_np).unsqueeze(0)    # [1,205,205]
 
-        # Return: normalized (for model), raw (for metrics), and normalizer (for denorm)
+        lr_tensor = center_crop_tensor(lr_tensor, self.lr_crop_size)
+        hr_tensor = center_crop_tensor(hr_tensor, self.hr_crop_size)
+
+        lr_norm_np, _ = self.lr_norm.normalize(lr_tensor.squeeze(0).numpy())
+        hr_norm_np, _ = self.hr_norm.normalize(hr_tensor.squeeze(0).numpy())
+
         return (torch.from_numpy(lr_norm_np).unsqueeze(0),
-                torch.from_numpy(hr_norm_np).unsqueeze(0),
-                torch.from_numpy(lr_np).unsqueeze(0),
-                torch.from_numpy(hr_np).unsqueeze(0),
-                self.hr_norm)
+                torch.from_numpy(hr_norm_np).unsqueeze(0))
     
 
 
@@ -189,7 +192,6 @@ def get_val_datasets():
     """
     Returns val datasets for both models using the same underlying indices.
     The ResNet split (torch.manual_seed + random_split) is the source of truth.
-    Both models now use the full 41×41 → 205×205 images.
     """
     full_dataset = EuclidToJWSTDataset(EUCLID_PATH, JWST_PATH, normalize_method='z_score')
     val_size     = int(VAL_SPLIT * len(full_dataset))
@@ -198,11 +200,13 @@ def get_val_datasets():
     torch.manual_seed(SEED)
     _, val_dataset = random_split(full_dataset, [train_size, val_size])
 
-    # Diffusion wrapper applies asinh normalization (no cropping)
-    diff_val_dataset = DiffusionValWrapper(val_dataset)
+    diff_val_dataset = DiffusionValWrapper(
+        val_dataset,
+        lr_crop_size=LR_CROP_SIZE,
+        hr_crop_size=HR_CROP_SIZE,
+    )
 
     print(f"Validation set: {val_size} samples (seed={SEED}) — shared by both models")
-    print(f"  Both models use full 41×41 → 205×205 images")
     return val_dataset, diff_val_dataset
 
 
@@ -265,9 +269,9 @@ def run_inference(model, val_dataset, model_type='rrdb'):
 
         # --- Load sample ---
         if model_type == 'diffusion':
-            lr_img, hr_img = val_dataset[i]        # [1,41,41], [1,205,205] (asinh normalized)
+            lr_img, hr_img = val_dataset[i]        # [1,21,21], [1,105,105]
         else:
-            lr_img, hr_img, _ = val_dataset[i]     # [1,41,41], [1,205,205] (z-score normalized)
+            lr_img, hr_img, _ = val_dataset[i]     # [1,41,41], [1,205,205]
 
         lr_input = lr_img
         hr_ref   = hr_img
@@ -700,78 +704,89 @@ def plot_pixel_metrics_summary(rrdb_results, diff_results):
         ax.set_title(metric_label)
         for bar, mean in zip(bars, means):
             ax.text(bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() - 0.25,
-                    f'{mean:.3f}', ha='center', va='bottom')
+                    bar.get_height()*1.05,
+                    f'{mean:.3f}', ha='center', va='bottom', 
+                    fontsize=10)
         ax.set_xlabel('↓ better' if not higher_is_better else '↑ better')
+        ylim = ax.get_ylim()
+        ax.set_ylim([ylim[0], ylim[1]*1.2])
 
     fig.suptitle('Mean Pixel Metrics vs NIRCam')
     plt.tight_layout()
     return fig
 
 
-def plot_ellipticity_plane_single_model(results, model_name):
+def plot_ellipticity_plane(rrdb_results, diff_results):
     """
-    Plot e1 vs. e2 and g1 vs. g2 in the shape plane for a single model.
-    Shows HR, Bilinear, and SR side-by-side for each shape metric.
-    2 rows x 3 cols: (e1-e2, g1-g2) x (HR, Bilinear, SR)
+    Plot e1 vs. e2 and g1 vs. g2 in the shape plane using hexbin density plots.
+    Shows HR, Bilinear, and SR side-by-side for each model and shape metric.
+    4 rows x 6 cols: (e1-e2 ResNet, e1-e2 Diffusion, g1-g2 ResNet, g1-g2 Diffusion) x (HR, Bilinear, SR)
     """
+    model_results = [
+        (rrdb_results, 'ResNet'),
+        (diff_results, 'Diffusion'),
+    ]
     shape_pairs = [
         ('e1', 'e2', r'$e_1$ vs. $e_2$'),
         ('g1', 'g2', r'$g_1$ vs. $g_2$'),
     ]
     
-    # 2 rows (e1-e2, g1-g2), 3 columns (HR, Bilinear, SR)
-    fig, axs = plt.subplots(2, 3, figsize=(15, 10))
+    # 4 rows (2 shape pairs x 2 models), 3 columns (HR, Bilinear, SR)
+    fig, axs = plt.subplots(4, 3, figsize=(15, 18))
     
-    for row_idx, (key1, key2, shape_label) in enumerate(shape_pairs):
-        # Extract data
-        hr_x = np.array(results[f'{key1}_hr'], dtype=float)
-        hr_y = np.array(results[f'{key2}_hr'], dtype=float)
-        sr_x = np.array(results[f'{key1}_sr'], dtype=float)
-        sr_y = np.array(results[f'{key2}_sr'], dtype=float)
-        bl_x = np.array(results[f'{key1}_bl'], dtype=float)
-        bl_y = np.array(results[f'{key2}_bl'], dtype=float)
-        
-        # Create masks for finite values
-        mask_hr = np.isfinite(hr_x) & np.isfinite(hr_y)
-        mask_sr = np.isfinite(sr_x) & np.isfinite(sr_y)
-        mask_bl = np.isfinite(bl_x) & np.isfinite(bl_y)
-        
-        # Plot HR, Bilinear, SR in separate columns
-        for col_idx, (x_data, y_data, mask, label, cmap) in enumerate([
-            (hr_x, hr_y, mask_hr, 'NIRCam (HR)', 'Greys'),
-            (bl_x, bl_y, mask_bl, 'Bilinear', 'Blues'),
-            (sr_x, sr_y, mask_sr, f'{model_name} SR', 'Reds'),
-        ]):
-            ax = axs[row_idx, col_idx]
+    row_idx = 0
+    for shape_idx, (key1, key2, shape_label) in enumerate(shape_pairs):
+        for model_idx, (results, model_name) in enumerate(model_results):
+            # Extract data
+            hr_x = np.array(results[f'{key1}_hr'], dtype=float)
+            hr_y = np.array(results[f'{key2}_hr'], dtype=float)
+            sr_x = np.array(results[f'{key1}_sr'], dtype=float)
+            sr_y = np.array(results[f'{key2}_sr'], dtype=float)
+            bl_x = np.array(results[f'{key1}_bl'], dtype=float)
+            bl_y = np.array(results[f'{key2}_bl'], dtype=float)
             
-            # Hexbin density plot
-            hb = ax.hexbin(x_data[mask], y_data[mask], gridsize=30,
-                          cmap=cmap, mincnt=1, extent=[-1, 1, -1, 1])
+            # Create masks for finite values
+            mask_hr = np.isfinite(hr_x) & np.isfinite(hr_y)
+            mask_sr = np.isfinite(sr_x) & np.isfinite(sr_y)
+            mask_bl = np.isfinite(bl_x) & np.isfinite(bl_y)
             
-            # Add colorbar
-            cb = plt.colorbar(hb, ax=ax)
-            cb.set_label('Count', rotation=270, labelpad=15)
+            # Plot HR, Bilinear, SR in separate columns
+            for col_idx, (x_data, y_data, mask, label, cmap) in enumerate([
+                (hr_x, hr_y, mask_hr, 'NIRCam (HR)', 'Greys'),
+                (bl_x, bl_y, mask_bl, 'Bilinear', 'Blues'),
+                (sr_x, sr_y, mask_sr, f'{model_name} SR', 'Reds'),
+            ]):
+                ax = axs[row_idx, col_idx]
+                
+                # Hexbin density plot
+                hb = ax.hexbin(x_data[mask], y_data[mask], gridsize=30,
+                              cmap=cmap, mincnt=1, extent=[-1, 1, -1, 1])
+                
+                # Add colorbar
+                cb = plt.colorbar(hb, ax=ax)
+                cb.set_label('Count', rotation=270, labelpad=15)
+                
+                # Add reference lines at 0
+                ax.axhline(0, color='gray', lw=0.5, ls='--', alpha=0.5)
+                ax.axvline(0, color='gray', lw=0.5, ls='--', alpha=0.5)
+                
+                # Add unit circle for reference
+                circle = plt.Circle((0, 0), 1.0, fill=False, color='gray',
+                                   ls=':', lw=1, alpha=0.5)
+                ax.add_patch(circle)
+                
+                ax.set_xlim(-1, 1)
+                ax.set_ylim(-1, 1)
+                ax.set_aspect('equal')
+                ax.set_xlabel(f'${key1}$')
+                if col_idx == 0:
+                    ax.set_ylabel(f'${key2}$')
+                ax.set_title(f'{model_name} {shape_label}\n{label}')
+                ax.grid(True, alpha=0.3)
             
-            # Add reference lines at 0
-            ax.axhline(0, color='gray', lw=0.5, ls='--', alpha=0.5)
-            ax.axvline(0, color='gray', lw=0.5, ls='--', alpha=0.5)
-            
-            # Add unit circle for reference
-            circle = plt.Circle((0, 0), 1.0, fill=False, color='gray',
-                               ls=':', lw=1, alpha=0.5)
-            ax.add_patch(circle)
-            
-            ax.set_xlim(-1, 1)
-            ax.set_ylim(-1, 1)
-            ax.set_aspect('equal')
-            ax.set_xlabel(f'${key1}$')
-            if col_idx == 0:
-                ax.set_ylabel(f'${key2}$')
-            ax.set_title(f'{shape_label} — {label}')
-            ax.grid(True, alpha=0.3)
+            row_idx += 1
     
-    fig.suptitle(f'{model_name} Shape Measurements in the Ellipticity/Shear Plane', y=0.995)
+    fig.suptitle('Shape Measurements in the Ellipticity/Shear Plane', y=0.995)
     plt.tight_layout()
     return fig
 
@@ -886,14 +901,63 @@ if __name__ == "__main__":
     fig7 = plot_pixel_metrics_summary(rrdb_results, diff_results)
     fig7.savefig("../figs/pixel_metrics_summary.png", bbox_inches='tight', dpi=150)
 
-    fig8 = plot_ellipticity_plane_single_model(rrdb_results, 'ResNet')
-    fig8.savefig("../figs/ellipticity_plane_resnet.png", bbox_inches='tight', dpi=150)
+    fig8 = plot_ellipticity_plane(rrdb_results, diff_results)
+    fig8.savefig("../figs/ellipticity_plane.png", bbox_inches='tight', dpi=150)
 
-    fig9 = plot_ellipticity_plane_single_model(diff_results, 'Diffusion')
-    fig9.savefig("../figs/ellipticity_plane_diffusion.png", bbox_inches='tight', dpi=150)
+    fig9 = plot_ellipticity_plane_residuals(rrdb_results, diff_results)
+    fig9.savefig("../figs/ellipticity_plane_residuals.png", bbox_inches='tight', dpi=150)
 
-    fig10 = plot_ellipticity_plane_residuals(rrdb_results, diff_results)
-    fig10.savefig("../figs/ellipticity_plane_residuals.png", bbox_inches='tight', dpi=150)
+    # ============================================================
+    # PERFORMANCE SUMMARY
+    # ============================================================
+    print("\n" + "="*70)
+    print("PERFORMANCE SUMMARY: SR Models vs. Bilinear Baseline")
+    print("="*70)
+    
+    # Compute mean metrics
+    bl_ssim_rrdb = np.nanmean(rrdb_results['ssim_bl'])
+    bl_ssim_diff = np.nanmean(diff_results['ssim_bl'])
+    rrdb_ssim = np.nanmean(rrdb_results['ssim_sr'])
+    diff_ssim = np.nanmean(diff_results['ssim_sr'])
+    
+    bl_psnr_rrdb = np.nanmean(rrdb_results['psnr_bl'])
+    bl_psnr_diff = np.nanmean(diff_results['psnr_bl'])
+    rrdb_psnr = np.nanmean(rrdb_results['psnr_sr'])
+    diff_psnr = np.nanmean(diff_results['psnr_sr'])
+    
+    bl_l2_rrdb = np.nanmean(rrdb_results['l2_bl'])
+    bl_l2_diff = np.nanmean(diff_results['l2_bl'])
+    rrdb_l2 = np.nanmean(rrdb_results['l2_sr'])
+    diff_l2 = np.nanmean(diff_results['l2_sr'])
+    
+    # Compute percentage improvements (for SSIM and PSNR, higher is better)
+    rrdb_ssim_improvement = ((rrdb_ssim - bl_ssim_rrdb) / bl_ssim_rrdb) * 100
+    diff_ssim_improvement = ((diff_ssim - bl_ssim_diff) / bl_ssim_diff) * 100
+    
+    rrdb_psnr_improvement = ((rrdb_psnr - bl_psnr_rrdb) / bl_psnr_rrdb) * 100
+    diff_psnr_improvement = ((diff_psnr - bl_psnr_diff) / bl_psnr_diff) * 100
+    
+    # For L2, lower is better, so improvement is negative of percentage change
+    rrdb_l2_improvement = ((bl_l2_rrdb - rrdb_l2) / bl_l2_rrdb) * 100
+    diff_l2_improvement = ((bl_l2_diff - diff_l2) / bl_l2_diff) * 100
+    
+    print(f"\nBilinear Baseline:")
+    print(f"  SSIM: {bl_ssim_rrdb:.4f}  |  PSNR: {bl_psnr_rrdb:.2f} dB  |  L2 (RMSE): {bl_l2_rrdb:.4f}")
+    
+    print(f"\nResNet SR:")
+    print(f"  SSIM: {rrdb_ssim:.4f} ({rrdb_ssim_improvement:+.1f}% vs bilinear)")
+    print(f"  PSNR: {rrdb_psnr:.2f} dB ({rrdb_psnr_improvement:+.1f}% vs bilinear)")
+    print(f"  L2 (RMSE): {rrdb_l2:.4f} ({rrdb_l2_improvement:+.1f}% vs bilinear)")
+    
+    print(f"\nDiffusion SR:")
+    print(f"  SSIM: {diff_ssim:.4f} ({diff_ssim_improvement:+.1f}% vs bilinear)")
+    print(f"  PSNR: {diff_psnr:.2f} dB ({diff_psnr_improvement:+.1f}% vs bilinear)")
+    print(f"  L2 (RMSE): {diff_l2:.4f} ({diff_l2_improvement:+.1f}% vs bilinear)")
+    
+    print("\n" + "="*70)
+    print(f"Summary: ResNet achieves {rrdb_ssim_improvement:.1f}% better SSIM than bilinear")
+    print(f"         Diffusion achieves {diff_ssim_improvement:.1f}% better SSIM than bilinear")
+    print("="*70)
 
     print("\nDone! Saved:")
     print("  rrdb_image_grid.png, diffusion_image_grid.png")
