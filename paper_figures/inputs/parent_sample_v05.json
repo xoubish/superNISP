@@ -1,0 +1,72 @@
+{
+  "catalog_rows": 1720700,
+  "parent_rows": 233784,
+  "selection": "ACS_F814W_MAG < 25; valid magnitude required",
+  "magnitude_limit": 25.0,
+  "invalid_catalog_magnitudes": 1016291,
+  "valid_catalog_magnitudes_at_or_above_limit": 470625,
+  "footprint": "Full COSMOS2020 catalog; no mosaic-footprint restriction.",
+  "classification": "All lp_type values included; no galaxy-class restriction.",
+  "parent_class_counts": {
+    "-99": 3339,
+    "0": 212186,
+    "1": 15967,
+    "2": 2292
+  },
+  "catalog_path": "/Users/shemmati/Dropbox/superNISP/catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits",
+  "catalog_sha256": "42ea2f1b2ac12fbd9ab199b631909e010b7811fdf353b0e89f3c4e8ccef6c5c1",
+  "histogram_accounting": {
+    "ACS_F814W_MAG": {
+      "parent": {
+        "objects": 233784,
+        "valid_measurements": 233784,
+        "invalid_measurements": 0,
+        "outside_display": 534
+      },
+      "train": {
+        "objects": 17816,
+        "valid_measurements": 17816,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      },
+      "validation": {
+        "objects": 2118,
+        "valid_measurements": 2118,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      },
+      "test": {
+        "objects": 2876,
+        "valid_measurements": 2876,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      }
+    },
+    "ez_z_phot": {
+      "parent": {
+        "objects": 233784,
+        "valid_measurements": 225567,
+        "invalid_measurements": 8217,
+        "outside_display": 10322
+      },
+      "train": {
+        "objects": 17816,
+        "valid_measurements": 17816,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      },
+      "validation": {
+        "objects": 2118,
+        "valid_measurements": 2118,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      },
+      "test": {
+        "objects": 2876,
+        "valid_measurements": 2876,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      }
+    }
+  }
+}

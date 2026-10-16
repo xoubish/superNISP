@@ -1,0 +1,202 @@
+{
+  "status": "Figure 2: selected splits and magnitude-only COSMOS parent catalog",
+  "notebook": "02_sample_properties.ipynb",
+  "notebook_source_sha256": "b8df2a768b924f62c7b706d42cf80db8e8d298d46c6fdcd09c31e8910c8d817f",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "data/ready/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "data/ready/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/inputs/parent_sample_v05.json": "26d8c259ce6236c2b5d8b816cac7bce8802e6770441b82ceebea65020c597868",
+    "paper_figures/parent_sample.py": "510c77c58ac954327f71505422abb26f3484286ab3c1ce4e91025e77873008f4"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      2.8
+    ],
+    "property_splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "colors": {
+      "train": "#009E73",
+      "validation": "#E69F00",
+      "test": "#8856A7"
+    },
+    "parent_color": "#BDBDBD",
+    "legend": "left panel only",
+    "magnitude_bins": [
+      16.0,
+      16.333333333333332,
+      16.666666666666668,
+      17.0,
+      17.333333333333332,
+      17.666666666666668,
+      18.0,
+      18.333333333333332,
+      18.666666666666668,
+      19.0,
+      19.333333333333332,
+      19.666666666666668,
+      20.0,
+      20.333333333333332,
+      20.666666666666664,
+      21.0,
+      21.333333333333332,
+      21.666666666666664,
+      22.0,
+      22.333333333333332,
+      22.666666666666664,
+      23.0,
+      23.333333333333332,
+      23.666666666666664,
+      24.0,
+      24.333333333333332,
+      24.666666666666664,
+      25.0
+    ],
+    "redshift_bins": [
+      0.0,
+      0.12,
+      0.24,
+      0.36,
+      0.48,
+      0.6,
+      0.72,
+      0.84,
+      0.96,
+      1.08,
+      1.2,
+      1.3199999999999998,
+      1.44,
+      1.56,
+      1.68,
+      1.7999999999999998,
+      1.92,
+      2.04,
+      2.16,
+      2.28,
+      2.4,
+      2.52,
+      2.6399999999999997,
+      2.76,
+      2.88,
+      3.0,
+      3.12,
+      3.2399999999999998,
+      3.36,
+      3.48,
+      3.5999999999999996,
+      3.7199999999999998,
+      3.84,
+      3.96,
+      4.08,
+      4.2,
+      4.32,
+      4.4399999999999995,
+      4.56,
+      4.68,
+      4.8,
+      4.92,
+      5.04,
+      5.16,
+      5.279999999999999,
+      5.3999999999999995,
+      5.52,
+      5.64,
+      5.76,
+      5.88,
+      6.0
+    ],
+    "catalog_sentinels": [
+      -99,
+      99,
+      -999,
+      999
+    ],
+    "normalization": "Per sample and quantity: all valid measurements, including tails outside axes",
+    "parent": {
+      "catalog_rows": 1720700,
+      "parent_rows": 233784,
+      "selection": "ACS_F814W_MAG < 25; valid magnitude required",
+      "magnitude_limit": 25.0,
+      "invalid_catalog_magnitudes": 1016291,
+      "valid_catalog_magnitudes_at_or_above_limit": 470625,
+      "footprint": "Full COSMOS2020 catalog; no mosaic-footprint restriction.",
+      "classification": "All lp_type values included; no galaxy-class restriction.",
+      "parent_class_counts": {
+        "-99": 3339,
+        "0": 212186,
+        "1": 15967,
+        "2": 2292
+      },
+      "catalog_path": "/Users/shemmati/Dropbox/superNISP/catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits",
+      "catalog_sha256": "42ea2f1b2ac12fbd9ab199b631909e010b7811fdf353b0e89f3c4e8ccef6c5c1",
+      "histogram_accounting": {
+        "ACS_F814W_MAG": {
+          "parent": {
+            "objects": 233784,
+            "valid_measurements": 233784,
+            "invalid_measurements": 0,
+            "outside_display": 534
+          },
+          "train": {
+            "objects": 17816,
+            "valid_measurements": 17816,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "validation": {
+            "objects": 2118,
+            "valid_measurements": 2118,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "test": {
+            "objects": 2876,
+            "valid_measurements": 2876,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          }
+        },
+        "ez_z_phot": {
+          "parent": {
+            "objects": 233784,
+            "valid_measurements": 225567,
+            "invalid_measurements": 8217,
+            "outside_display": 10322
+          },
+          "train": {
+            "objects": 17816,
+            "valid_measurements": 17816,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "validation": {
+            "objects": 2118,
+            "valid_measurements": 2118,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "test": {
+            "objects": 2876,
+            "valid_measurements": 2876,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          }
+        }
+      }
+    },
+    "test_access": "catalog magnitude/redshift only; no images, predictions or performance metrics"
+  },
+  "versions": {
+    "matplotlib": "3.10.5",
+    "pandas": "2.3.2"
+  },
+  "exports": {
+    "fig02_sample_properties_v05.pdf": "974bd921b84f2f7a864834c6b312aeb8fd525a9fb790b4920947589f9118ce35",
+    "fig02_sample_properties_v05.svg": "033a53c7e9a03d44e11c4f654d6aec55340cb0cdc4110e722f50b2a0206277b7",
+    "fig02_sample_properties_v05.png": "da7be884c2e830b0c255639f3e453786379095a5a1280f26923f942dd6a3d992"
+  }
+}

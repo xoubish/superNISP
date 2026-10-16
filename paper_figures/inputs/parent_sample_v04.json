@@ -1,0 +1,67 @@
+{
+  "catalog_rows": 1720700,
+  "galaxy_class_rows": 1677646,
+  "parent_rows": 269169,
+  "selection": "lp_type == 0; within union(NISP pixel rectangles) intersect union(JWST pixel rectangles)",
+  "footprint": "Geometric WCS coverage from sample source headers; no exposure or pixel-quality masks.",
+  "source_mosaics": {
+    "nisp": 4,
+    "jwst": 19
+  },
+  "catalog_path": "/Users/shemmati/Dropbox/superNISP/catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits",
+  "catalog_sha256": "42ea2f1b2ac12fbd9ab199b631909e010b7811fdf353b0e89f3c4e8ccef6c5c1",
+  "histogram_accounting": {
+    "ACS_F814W_MAG": {
+      "parent": {
+        "objects": 269169,
+        "valid_measurements": 210417,
+        "invalid_measurements": 58752,
+        "outside_display": 21
+      },
+      "train": {
+        "objects": 17816,
+        "valid_measurements": 17816,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      },
+      "validation": {
+        "objects": 2118,
+        "valid_measurements": 2118,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      },
+      "test": {
+        "objects": 2876,
+        "valid_measurements": 2876,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      }
+    },
+    "ez_z_phot": {
+      "parent": {
+        "objects": 269169,
+        "valid_measurements": 253709,
+        "invalid_measurements": 15460,
+        "outside_display": 4961
+      },
+      "train": {
+        "objects": 17816,
+        "valid_measurements": 17816,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      },
+      "validation": {
+        "objects": 2118,
+        "valid_measurements": 2118,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      },
+      "test": {
+        "objects": 2876,
+        "valid_measurements": 2876,
+        "invalid_measurements": 0,
+        "outside_display": 0
+      }
+    }
+  }
+}

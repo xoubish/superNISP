@@ -1,0 +1,235 @@
+{
+  "status": "Figure 2: selected splits and geometric-footprint parent catalog",
+  "notebook": "02_sample_properties.ipynb",
+  "notebook_source_sha256": "b7d484a64d3e506b07863bf653647032733c1a18fe991d15495547bf73c485c8",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "data/ready/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "data/ready/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/inputs/parent_sample_v04.json": "bc66c76c201a6f5f03cd2ab219e0a3062fa79d506d46cf49b4fd5ad84df5235e",
+    "paper_figures/parent_sample.py": "568acaaa1faace66336fefb1d672acc695c21f660b1951804020d613b0ee1864",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/EUC_NIR_W-STK-IMAGE_Y-4907_20250423T232759.861242Z.fits.gz.json": "65422dd7dbeb9f931439e3aa955c9569ebc5f50f043a639a9bde66d08179ebc7",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A3_v0_8_sci.fits.json": "71f6c5adfb4cc0bb4de4b09ead37c73d59e8a6b1bec1e8e6a092e4eaa313d1f6",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A8_v0_8_sci.fits.json": "af40b100ffd7f1dbb8f2fc7677cc304210a11391642c46c949500b29de064905",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B7_v0_8_sci.fits.json": "5286f0781e2e16d042225e3436746cf8bf8efe24160c5b69407d6d8be2108a1a",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B8_v0_8_sci.fits.json": "10fbc74d51cf1e81ea34badf1cb28f3299ce59f1fe94835b5d8548630678471d",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/EUC_NIR_W-STK-IMAGE_Y-4910_20250424T000156.010196Z.fits.gz.json": "f9e1cabbde7398be819e7d7e03f8958c23ddeefaf2205b31467e9214942047d7",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B10_v0_8_sci.fits.json": "2c759db859b44d254af51741c6b5c3ba0d5dfe57a08fa9cd520f689ce01463a7",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B2_v0_8_sci.fits.json": "27527a692a9499f95ac7269f51a10a4ebcbaded0afacf41696035083aae78004",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B3_v0_8_sci.fits.json": "f9a5f2b57eabe39ed41d8f8540eef566fa8e2d51a558c007f920b8aa25d9c6c6",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B4_v0_8_sci.fits.json": "eb81aac08bb1f4878de8b46972e14fe38e64f83f81471f883743e1651bb6e377",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B5_v0_8_sci.fits.json": "ed4b963554a301e7058f53ae32b21dc785f85ca327833ad01a08e219e860d73e",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B9_v0_8_sci.fits.json": "4df26b540c0b2bca311a0f35798b0639148d0b970b2a95ca3929fb1339af9b97",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/EUC_NIR_W-STK-IMAGE_Y-4911_20250423T231840.182094Z.fits.gz.json": "1a863ba35f2d4a446147143b7f5ea0ea5d9cc1d221c67b76e5a52217e9e9c0a5",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A10_v0_8_sci.fits.json": "387536b56db55dd7e7e6bab3bc8e6f3eecfdac53fb3886d9ddb50342d9cd6568",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A4_v0_8_sci.fits.json": "ea41ab90d717f4f0a70bd2ef41844c588d7b9d59f824640252f4c03592e82a20",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A5_v0_8_sci.fits.json": "560f42b7742b5d9575b2abece9289e67fdad13333df7a82e496d5053eaf45470",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A9_v0_8_sci.fits.json": "301f732e893509a5f1a373192b00305443d79522c68a17c935bf56bfca7f2e25",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/EUC_NIR_W-STK-IMAGE_Y-4932_20250424T021642.305471Z.fits.gz.json": "98409c9941b030cdfbd54fd85da8f488102cbf5caf4952099257f50f536b7e81",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A1_v0_8_sci.fits.json": "d3459abc429d0e16dd5be3ed8d24296fbd5a8c8059bdb235334a88deb96f173b",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A2_v0_8_sci.fits.json": "a6a190deb9ca4606eff2af9b063bce0997eac49f0d0d684f7c488e1ee022138e",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A6_v0_8_sci.fits.json": "2f832442fed995f51a0f0d30d541f58a3a5acac334a0261ad456beada2bfb1aa",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_A7_v0_8_sci.fits.json": "d14d337d0ed9f27b805fecf070d6c4b3d363d91f76c4961c0e502eacba5d7c63",
+    "data/ready/supernisp_nir_y_f115w_v1/source_headers/mosaic_nircam_f115w_COSMOS-Web_60mas_B6_v0_8_sci.fits.json": "9313262213370133628b8ae9e319b436bd8b62dbdd21b5f054e824f47bfe225c"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      2.8
+    ],
+    "property_splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "colors": {
+      "train": "#009E73",
+      "validation": "#E69F00",
+      "test": "#8856A7"
+    },
+    "parent_color": "#BDBDBD",
+    "legend": "left panel only",
+    "magnitude_bins": [
+      16.0,
+      16.333333333333332,
+      16.666666666666668,
+      17.0,
+      17.333333333333332,
+      17.666666666666668,
+      18.0,
+      18.333333333333332,
+      18.666666666666668,
+      19.0,
+      19.333333333333332,
+      19.666666666666668,
+      20.0,
+      20.333333333333332,
+      20.666666666666664,
+      21.0,
+      21.333333333333332,
+      21.666666666666664,
+      22.0,
+      22.333333333333332,
+      22.666666666666664,
+      23.0,
+      23.333333333333332,
+      23.666666666666664,
+      24.0,
+      24.333333333333332,
+      24.666666666666664,
+      25.0,
+      25.333333333333332,
+      25.666666666666664,
+      26.0,
+      26.333333333333332,
+      26.666666666666664,
+      27.0,
+      27.333333333333332,
+      27.666666666666664,
+      28.0,
+      28.333333333333332,
+      28.666666666666664,
+      29.0,
+      29.333333333333332,
+      29.666666666666664,
+      30.0
+    ],
+    "redshift_bins": [
+      0.0,
+      0.12,
+      0.24,
+      0.36,
+      0.48,
+      0.6,
+      0.72,
+      0.84,
+      0.96,
+      1.08,
+      1.2,
+      1.3199999999999998,
+      1.44,
+      1.56,
+      1.68,
+      1.7999999999999998,
+      1.92,
+      2.04,
+      2.16,
+      2.28,
+      2.4,
+      2.52,
+      2.6399999999999997,
+      2.76,
+      2.88,
+      3.0,
+      3.12,
+      3.2399999999999998,
+      3.36,
+      3.48,
+      3.5999999999999996,
+      3.7199999999999998,
+      3.84,
+      3.96,
+      4.08,
+      4.2,
+      4.32,
+      4.4399999999999995,
+      4.56,
+      4.68,
+      4.8,
+      4.92,
+      5.04,
+      5.16,
+      5.279999999999999,
+      5.3999999999999995,
+      5.52,
+      5.64,
+      5.76,
+      5.88,
+      6.0
+    ],
+    "catalog_sentinels": [
+      -99,
+      99,
+      -999,
+      999
+    ],
+    "normalization": "Per sample and quantity: all valid measurements, including tails outside axes",
+    "parent": {
+      "catalog_rows": 1720700,
+      "galaxy_class_rows": 1677646,
+      "parent_rows": 269169,
+      "selection": "lp_type == 0; within union(NISP pixel rectangles) intersect union(JWST pixel rectangles)",
+      "footprint": "Geometric WCS coverage from sample source headers; no exposure or pixel-quality masks.",
+      "source_mosaics": {
+        "nisp": 4,
+        "jwst": 19
+      },
+      "catalog_path": "/Users/shemmati/Dropbox/superNISP/catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits",
+      "catalog_sha256": "42ea2f1b2ac12fbd9ab199b631909e010b7811fdf353b0e89f3c4e8ccef6c5c1",
+      "histogram_accounting": {
+        "ACS_F814W_MAG": {
+          "parent": {
+            "objects": 269169,
+            "valid_measurements": 210417,
+            "invalid_measurements": 58752,
+            "outside_display": 21
+          },
+          "train": {
+            "objects": 17816,
+            "valid_measurements": 17816,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "validation": {
+            "objects": 2118,
+            "valid_measurements": 2118,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "test": {
+            "objects": 2876,
+            "valid_measurements": 2876,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          }
+        },
+        "ez_z_phot": {
+          "parent": {
+            "objects": 269169,
+            "valid_measurements": 253709,
+            "invalid_measurements": 15460,
+            "outside_display": 4961
+          },
+          "train": {
+            "objects": 17816,
+            "valid_measurements": 17816,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "validation": {
+            "objects": 2118,
+            "valid_measurements": 2118,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "test": {
+            "objects": 2876,
+            "valid_measurements": 2876,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          }
+        }
+      }
+    },
+    "test_access": "catalog magnitude/redshift only; no images, predictions or performance metrics"
+  },
+  "versions": {
+    "matplotlib": "3.10.5",
+    "pandas": "2.3.2"
+  },
+  "exports": {
+    "fig02_sample_properties_v04.pdf": "8aef818b906f8fdeddebf344a7cc2bebe942d0cc03b9a39b40bad9b1086373b3",
+    "fig02_sample_properties_v04.svg": "7eef72d914a74129c8be2e41263f5c5c93fe720abff17c0b8b19171164f05fc7",
+    "fig02_sample_properties_v04.png": "8634fea51bf6cd52954bf79404d0c211a3cedc5f17f3bf06fa71045398617ec4"
+  }
+}

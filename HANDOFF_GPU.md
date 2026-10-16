@@ -6,15 +6,16 @@ the old paper results or claim a trained model is ready.
 
 ## Paper figure notebooks started
 
-Figure 2 parent comparison is prepared in `paper_figures/02_sample_properties.ipynb`
-as v04, with `parent_sample.py` selecting galaxy-class COSMOS2020 objects in the
-geometric NISP/JWST mosaic overlap before science/quality/buffer cuts. Light-gray
-filled histograms sit behind the three colored splits; axes extend beyond the
-sample cuts. Full catalog absent here: user will run on their other machine,
-setting `COSMOS_CATALOG` in the notebook. No parent plot has been rendered here.
-On successful execution the notebook installs v04 into the manuscript and updates
-its caption. Until then the manuscript retains the real v03 export. The v03
-executed notebook is archived. Do not use pre-cut candidates as the full parent.
+Figure 2 parent comparison v05 is rendered in `paper_figures/02_sample_properties.ipynb`.
+At the user's request, the parent now uses only valid ACS F814W magnitude < 25
+from the full COSMOS2020 catalog: 233,784 objects. No classification, footprint,
+redshift, size, quality, or buffer cut is applied. Invalid redshifts are omitted
+only from the redshift histogram (225,567 valid measurements), not the parent.
+Gray histograms sit behind the selected splits. Counts, tails, and catalog
+checksum are in `inputs/parent_sample_v05.json`; all 22,810 selected IDs are
+in the parent. PDF/SVG/PNG, the executed notebook, and the manuscript PDF/caption
+are updated. v04's footprint/classification comparison and notebook/helper
+snapshots are preserved. No images or model outputs are used.
 
 The user subsequently approved adding the latest overview v07 to the paper.
 It shows a 24.3-arcsec validation field centred on COSMOS2020 734405 in block
@@ -29,9 +30,9 @@ stops at missing etex.sty before processing manuscript content. The asset hash,
 figure ordering, unique label and whitespace checks pass.
 
 Sample properties is now Figure 2, with notebook `02_sample_properties.ipynb`
-and export `fig02_sample_properties_v03`. It uses one legend in the left panel
+and export `fig02_sample_properties_v05`. It uses one legend in the left panel
 and teal/orange/dashed-purple training/validation/test curves. The PDF is
-included second in the manuscript as `paper/figs/sample_properties_v03.pdf`,
+included second in the manuscript as `paper/figs/sample_properties_v05.pdf`,
 label `fig:sample_properties`; later manuscript figures shift automatically.
 The v02 notebook is archived under `revisions/`.
 The histograms include test magnitude/redshift distributions, explicitly

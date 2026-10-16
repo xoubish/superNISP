@@ -219,8 +219,11 @@ The corresponding point-spread functions differ by an order of magnitude: the NI
 The learned mapping must therefore perform an effective deconvolution in addition to the change of sampling.
 
 We clip the images with enough space to fully visualize extended galaxies without including too many of their neighbors, and for this purpose have settled on an image size of 41 pixels for NISP galaxies and 205 pixels for JWST galaxies, which gives cutouts of nearly identical angular extent on the sky ($\sim$12$''$ on a side).
-We limit our galaxy sample to those that are brighter than 25th magnitude, below a redshift of 3, and with a flux radius less than 100 pixels at JWST's pixel scale \citep{shooby_calibration}. % TODO: state the band of the magnitude cut and the catalogue quantities used for the redshift and flux-radius cuts; confirm shooby_calibration is the intended reference for these cuts
-This requires galaxies to be bright enough to be detected by Euclid NISP imaging, but compact enough to be captured by our image clip sizes.
+We select COSMOS2020 Classic galaxy-class objects (\texttt{lp\_type}$=0$) with ACS F814W AB magnitude $<25$, EAZY photometric redshift $0.01<z_{\rm phot}<3$, and $4<\texttt{FLUX\_RADIUS}<500$ in catalog pixels.
+The catalog radius encloses half of the flux in the PSF-homogenized $K_s$ image; it is not a radius measured in JWST pixels \citep{cosmos2020_classic}.
+The optical magnitude threshold is motivated by the approximate $riz<25$ Euclid-depth selection adopted by \citet[Section~5.2]{shooby_calibration}, with F814W serving here as an optical-band proxy rather than an equivalent Euclid passband.
+Their WFIRST lensing-analog selection also illustrates the joint role of brightness and angular size in obtaining measurable galaxy shapes \citep[Section~2.3 and Figure~3]{shooby_calibration}.
+Our catalog cuts define the sample for resolved-morphology analysis; they do not implement that survey-specific shape-quality selection or establish a NISP detection limit.
 
 The Euclid data consists of 33 full images of $\sim$0.5 square degrees each, and the JWST data consists of 20 full images with a field of view of $\sim$10 square arcminutes each.
 Starting from 39\,024 coverage candidates identified using the COSMOS2020 Classic catalog \citep{cosmos2020_classic}, the corrected extraction retains 22\,810 paired galaxies after coverage, pixel-quality, and spatial-buffer cuts.
@@ -230,7 +233,7 @@ Training data are used to fit model weights and normalization scales; validation
 The test sample is reserved for final evaluation after these choices are fixed.
 This spatial separation reduces overlap between neighbouring cutouts across splits, although all three subsets sample the same COSMOS field.
 Figure~\ref{fig:sample_overview} shows the spatial distribution and an illustrative pair of observed images.
-Figure~\ref{fig:sample_properties} shows the magnitude and redshift distributions of the three subsets.
+Figure~\ref{fig:sample_properties} compares the magnitude and redshift distributions of the three subsets with the full COSMOS2020 parent catalog selected only by valid ACS F814W magnitude $<25$, with no other population cuts.
 
 \begin{figure*}[t]
     \centering
@@ -245,9 +248,10 @@ Figure~\ref{fig:sample_properties} shows the magnitude and redshift distribution
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{figs/sample_properties_v03.pdf}
+    \includegraphics[width=\textwidth]{figs/sample_properties_v05.pdf}
     \caption{ACS F814W magnitude (a) and photometric-redshift (b) distributions of the training (teal), validation (orange), and test (dashed purple) samples.
-    Each histogram is normalized to unit integral, with common bins across subsets.}
+    Gray shading shows the full COSMOS2020 catalog with only valid ACS F814W magnitude $<25$; no classification, footprint, redshift, size, or quality cuts are applied to the parent. Invalid redshifts are omitted only from the redshift histogram.
+    Histograms use common bins and are normalized by all valid measurements in each sample, including those outside the displayed ranges.}
     \label{fig:sample_properties}
 \end{figure*}
 

@@ -17,7 +17,7 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | Figure | Notebook | Proposed content | Initial state |
 | --- | --- | --- | --- |
 | 1 | [01_sample.ipynb](01_sample.ipynb) | Footprint/splits and matched ~24-arcsec NISP/JWST field | True image footprint with connector lines; v07 |
-| 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Separate horizontal figure; rendered |
+| 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v05 rendered |
 | 3 | [02_diffusion_architecture.ipynb](02_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
 | 4 | [03_residual_architecture.ipynb](03_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
 | 5 | [04_galaxy_examples.ipynb](04_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Wait for completed predictions |
@@ -90,27 +90,28 @@ placeholder results are substituted when those artifacts are missing.
 
 ## Rendered drafts and current sample revision
 
-Figure 2's notebook is now prepared for **v04**, adding a light-gray parent
-histogram. Set `COSMOS_CATALOG` in `02_sample_properties.ipynb` (or environment
-variable `SUPERNISP_COSMOS_CATALOG`) to the full COSMOS2020 Classic FITS catalog
-on the other machine, then run all cells. The parent uses `lp_type == 0` within
-the geometric intersection of the NISP and JWST mosaic unions, using saved
-source WCS headers. It precedes the sample magnitude/redshift/size, buffer and
-pixel-quality cuts; internal mosaic gaps and masked pixels are not excluded.
-`candidates.csv` already has science cuts and is deliberately not substituted.
-Axes extend to magnitude 30 and redshift 6; density normalization includes all
-valid measurements, including tails outside these ranges. Explicit sentinel
-codes and missing/out-of-range counts are recorded for review. A single legend
-serves both panels. The catalog checksum is streamed and saved with provenance.
-After successful export, `UPDATE_PAPER=True` installs the v04 PDF and updates
-the Figure 2 caption. **The full catalog is absent on this GPU copy, so v04 has
-not yet been rendered; the manuscript still uses the verified v03 below.**
-The executed v03 notebook is preserved in `revisions/02_sample_properties_v03.ipynb`.
+Figure 2's [current v05](exports/fig02_sample_properties_v05.png) uses the full
+COSMOS2020 catalog with **only valid ACS F814W magnitude < 25**, yielding
+233,784 parent objects. There is no classification, footprint, redshift, size,
+quality, or buffer cut. Gray shading sits behind train (teal), validation
+(orange), and test (dashed purple), with one legend in the left panel.
+The magnitude axis ends at 25; the redshift axis extends to 6. All histograms
+use common bins and normalization over all valid measurements, including
+values outside the displayed ranges. Missing magnitude values cannot satisfy
+the magnitude cut; invalid redshifts are excluded only from that histogram,
+not from the parent population. The redshift histogram has 225,567 valid
+measurements. Counts, exclusions, classification counts, and source checksums
+are recorded in `inputs/parent_sample_v05.json`.
 
-The current [sample properties figure](exports/fig02_sample_properties_v03.png)
-shows train (teal), validation (orange), and test (dashed purple) distributions
-without titles, with one legend in the left panel; each histogram has unit integral and shares the original bin edges.
-Its notebook explains training versus validation versus final test evaluation.
+The notebook is executed and the v05 PDF/caption installed in the manuscript.
+The catalog checksum matches the sample manifest, and all 22,810 selected IDs
+belong to the parent. To rerun elsewhere, set `COSMOS_CATALOG` or environment
+variable `SUPERNISP_COSMOS_CATALOG` to the full catalog. `UPDATE_PAPER` controls
+manuscript installation. The earlier footprint/classification parent v04,
+its executed notebook and helper snapshot are preserved in `revisions/` and
+`exports/` for comparison. The notebook explains training versus validation
+versus final test evaluation.
+
 The current [overview](exports/fig01_sample_v07.png) is exported as
 `fig01_sample_v07` (PDF/SVG/PNG). It shows real NISP Y and JWST F115W observations
 of the same 24.3-arcsec field centred on COSMOS2020 object **734405**, a larger
