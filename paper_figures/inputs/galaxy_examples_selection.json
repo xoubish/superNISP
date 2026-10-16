@@ -1,0 +1,67 @@
+{
+  "split": "validation",
+  "seed": 20261016,
+  "pool_size": 256,
+  "rule": "20th, 45th, 70th and 95th percentile ranks of central NISP 90th-percentile brightness in a seeded pool of 256 validation galaxies; selected before inference, with no shape-success cuts.",
+  "quantiles": [
+    0.2,
+    0.45,
+    0.7,
+    0.95
+  ],
+  "indices": [
+    357,
+    435,
+    1555,
+    228
+  ],
+  "rows": [
+    2665,
+    2949,
+    14280,
+    1302
+  ],
+  "object_ids": [
+    992795,
+    1024714,
+    463235,
+    1106391
+  ],
+  "data_hashes": {
+    "manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "normalization.json": "384090aaa84cfe27218bc295fb1eed923b7854b45912094d9b078f57f564c72a",
+    "SHA256SUMS": "a4bf71c37253615d14e01341ae7a485399d2461c5c4924cb3f9a6ed4deaa65ac"
+  },
+  "limits_mjy_sr": [
+    {
+      "low": -0.042980757653713224,
+      "high": 0.3503179705142919,
+      "stretch": 0.013646726496517658,
+      "residual": 0.11798961845040154
+    },
+    {
+      "low": -0.03771063402295113,
+      "high": 1.860171556472637,
+      "stretch": 0.05693646571486764,
+      "residual": 0.5693646571486765
+    },
+    {
+      "low": -0.03836707681417465,
+      "high": 0.18204611361026696,
+      "stretch": 0.013646726496517658,
+      "residual": 0.06612395712733247
+    },
+    {
+      "low": -0.04312081679701805,
+      "high": 0.7603288269042876,
+      "stretch": 0.02410348931103917,
+      "residual": 0.2410348931103917
+    }
+  ],
+  "display_crop_native_pixels": 21,
+  "sampling_seeds": [
+    314159,
+    314160,
+    314161
+  ]
+}

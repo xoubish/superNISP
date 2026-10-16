@@ -1,0 +1,34 @@
+{
+  "status": "Companion residual review sheet; same objects, checkpoints and crops as Figure 5",
+  "notebook": "05_galaxy_examples.ipynb",
+  "notebook_source_sha256": "a4bb4dd6f19305dfb53988ef1c934637339c41249e0200690bae7a93a06642d0",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/galaxy_examples_v02.npz": "81c3259ab8b7f624d6e60ac973e9b565dee17827a8842c11c6dea213af198395",
+    "paper_figures/inputs/galaxy_examples_v02.json": "23706c8cef91a7689ac7d92d484e77d9ee4cbce32d5acf28354c638891586945"
+  },
+  "settings": {
+    "predictions": [
+      "bilinear",
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "crop_native": 21,
+    "residual_limits": [
+      0.9816458044051863,
+      0.7651405345916583,
+      1.0328253330230628,
+      3.6611106101989304
+    ]
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig05_galaxy_residuals_v02.pdf": "f5fc1be89c22dbef3f97113a0ff363a22aa7e92c968962cd4607cf3a028a7d8f",
+    "fig05_galaxy_residuals_v02.svg": "1c29c1c3b81667e6c2a64456b9c4fab543847d4fc9d2eb40ed56d3f0bf3497d3",
+    "fig05_galaxy_residuals_v02.png": "eb237be9471afd6f34496284954e3ad2d77b6e3cc87d0dccae4d3773f310c46a"
+  }
+}

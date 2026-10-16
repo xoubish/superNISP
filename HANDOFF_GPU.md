@@ -4,6 +4,83 @@ Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
+## Figure 5 v04 — retain a/b/d, replace c and add e
+
+Current five-row selection: 722361, 677525, 504234, 679385, 1126532.
+New c/e chosen from observed NISP/JWST pairs in the existing seeded 40-object
+pool before inspecting predictions. C is a modest inclined galaxy; e is an
+asymmetric compact galaxy. Illustrative selection, not population statistics.
+Use `paper_figures/inputs/galaxy_examples_selection_v04.json` for future updates.
+Notebook VERSION v04, N_EXAMPLES=5; v03 notebook archived. Six columns unchanged.
+All a/b/d arrays and display scales exactly retained; checkpoint hashes unchanged
+(best epochs ResNet49/direct5 49/diffusion35). Main grid visually reviewed;
+bundle, source, inputs and export hashes checked. Main/residual v04 exports ready.
+Completed tmux `supernisp-figure5-v04`, runs/figure5-v04, exit 0; W&B
+https://wandb.ai/AI-Astro/superNISP-corrected/runs/xqwixuq9 . Exporter and executed
+notebook frozen in the run folder. No manuscript insertion or Overleaf push.
+
+## Figure 5 v03 — retain b/d, replace a/c
+
+User liked b/d and requested more representative a/c. Current v03 IDs are
+722361, 677525, 1033198, 679385. New a/c selected from observed images only in
+a seeded 40-object validation pool (22.5<F814W<24, 4.3<FLUX_RADIUS<6); their
+magnitudes 22.88/23.11 and catalog radii 5.03/4.84 are nearer sample middle.
+Still illustrative, not statistically representative. Selection/scales saved
+in `inputs/galaxy_examples_selection_v03.json`; use it for future exports.
+Six-column order unchanged. All b/d arrays and display limits are exactly equal
+to v02; checkpoint hashes remain 49/49/35. Export/bundle/notebook hashes verified.
+Completed tmux `supernisp-figure5-v03`, `runs/figure5-v03/`, exit 0, W&B
+https://wandb.ai/AI-Astro/superNISP-corrected/runs/p9068svz . Main and companion
+residual exports v03 are ready; main grid visually checked. V02 notebook archived.
+No manuscript insertion/push, training changes or test-data access.
+
+## Figure 5 v02 — requested ordering and observed morphology selection
+
+Current main grid: NISP Y, JWST F115W, Bilinear, Diffusion, ResNet, directResNet.
+User requested clearer paper examples. Inspected NISP/JWST-only candidate sheets
+from the 60 brightest validation galaxies with F814W<23 and 5<FLUX_RADIUS<25;
+selected 734405, 677525, 671723, 679385 before new predictions, illustrating
+barred spiral, more face-on disk, edge-on disk, compact smooth morphology.
+Explicitly illustrative bright examples, not a random population/performance
+selection. Freeze in `paper_figures/inputs/galaxy_examples_selection_v02.json`.
+Shared display limits use observed JWST only; no per-model stretching.
+
+Exporter supports `--selection`, stores bilinear values in physical NISP units
+and a strict interpolation support mask. Main notebook VERSION v02 has six
+columns; residual sheet includes bilinear and the three models in matching order.
+V01 notebook and artifacts retained. `runs/figure5-v02/` completed, exit 0,
+tmux `supernisp-figure5-v02`, W&B
+https://wandb.ai/AI-Astro/superNISP-corrected/runs/wh0bth5m . Checkpoints 49/49/35.
+Verified new selection hash, bilinear native-center alignment/units, masks,
+finite predictions, linear sample mean, notebook/export hashes. Main grid
+visually reviewed. No training changes or test data. Not added to paper/pushed.
+
+## Figure 5 provisional model comparison
+
+The user authorized Figure 5 using the best ResNet/direct5 and best-current
+diffusion, with later updates. `code/export_paper_examples.py` snapshots stable
+`best.pt` copies, verifies recorded code/data hashes, freezes validation IDs and
+display limits before inference, requires tmux + online W&B, and exports a
+versioned physical-intensity bundle. It then executes only the plotting notebook
+and logs the main grid and residual sheet. Future versions reuse selection/scales
+and diffusion noise seeds. No training code was changed and no test data used.
+
+Completed `runs/figure5-v01/`, tmux `supernisp-figure5-v01`, exit 0;
+W&B https://wandb.ai/AI-Astro/superNISP-corrected/runs/napgcdal . Best snapshots:
+ResNet epoch 49, direct5 epoch 49, diffusion epoch 35 (training was ongoing).
+Validation IDs 992795, 1024714, 463235, 1106391 were selected by central NISP
+brightness ranks 20/45/70/95 percent in a seeded 256-object pool before model
+outputs. Four matched rows use ~6.3-arcsec central crops, common fixed per-row
+asinh limits and 2-arcsec bars. Separate linear residual review sheet. Three
+seeded diffusion samples and a linear mean are stored; main grid uses one draw.
+
+Updated `paper_figures/05_galaxy_examples.ipynb`; exports
+`fig05_galaxy_examples_v01` and `fig05_galaxy_residuals_v01` (PDF/SVG/PNG+JSON).
+Bundle `inputs/galaxy_examples_v01.npz` is ignored; metadata and frozen selection
+JSON are retained. Source hashes, stable snapshots, bundle hash, sample mean,
+notebook source/export hashes and successful execution checked; both figures
+visually reviewed. Not inserted into Results or pushed to Overleaf yet.
+
 ## Overleaf full main.tex
 
 At the user's request, `scripts/overleaf.py` now copies the complete local

@@ -20,7 +20,7 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v05 rendered |
 | 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
 | 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
-| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Wait for completed predictions |
+| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Five rows: replaced c, added e, retained a/b/d; v04 |
 | 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
 | 7 | [07_observed_shapes.ipynb](07_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
 | 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
@@ -70,12 +70,12 @@ recorded source hashes without importing the models.
   shows a field within the selected validation block and performs no held-out
   evaluation. This is an optically
   selected COSMOS subset, not a NISP-complete galaxy sample.
-- Results previews are explicitly labeled **validation / legacy baseline**.
-  They do not automatically add an unfinished model or claim a final result.
-- Figure 5 waits for one aligned, physical-intensity prediction bundle from a
-  separate tmux/W&B export job after model choices are ready. It does not crop
-  screenshots or rerun models inside the notebook. Its proposed selection is
-  based on input properties, with exact IDs saved before comparing outputs.
+- Shape-results previews are explicitly labeled **validation / legacy baseline**.
+  Figure 5 is a provisional best-checkpoint visual comparison with frozen inputs.
+- Figure 5 reads a versioned physical-intensity prediction bundle from a
+  separate tmux/W&B export job. Checkpoints, input-selected galaxy IDs, scales
+  and noise seeds are frozen for review; diffusion may still be training.
+  The notebook displays arrays and does not rerun models.
 - Figure 6 requires per-object metrics on the same validation objects and a
   controlled inference timing benchmark. Differently normalized training losses
   and differently sized validation subsets must not be ranked as comparable
@@ -171,9 +171,8 @@ The legacy-only validation previews are
 [Figure 8: property dependence](exports/fig08_shape_dependence_v01.png), and
 [Figure 9: measurement robustness](exports/fig09_shape_robustness_v01.png).
 Their input analyses are frozen; rerunning these notebooks will not silently
-switch to newer model results. Figures 5–6 intentionally have no exported plot
-until their required prediction/benchmark bundles are available. Their waiting
-paths have been executed; the populated plotting paths await those real inputs.
+switch to newer model results. Figure 6 awaits its matched prediction/benchmark bundle. Figure 5 now uses
+versioned best-checkpoint exports; its earlier waiting notebook is archived.
 
 Figure 4 v02 uses the same simplified style as Figure 3: common feature
 extraction, two alternative enlargement paths, and a compact dense-block inset.
@@ -205,3 +204,84 @@ The result notebooks, headings, and current export stems are numbered 5–9.
 Earlier notebook names are archived in `revisions/*_before_renumber.ipynb`;
 old export files are retained as historical versions. The manuscript uses
 automatic LaTeX figure numbering and has no duplicate counter assignments.
+
+## Figure 5: first current-checkpoint comparison
+
+[Figure 5 v01](exports/fig05_galaxy_examples_v01.png) and its
+[companion residual sheet](exports/fig05_galaxy_residuals_v01.png) show four
+validation galaxies (IDs 992795, 1024714, 463235, 1106391). ResNet and direct-5×
+use their best epoch-49 checkpoints; diffusion uses the best available epoch-35
+checkpoint, snapshotted while training continued. These are visual examples,
+not a final model ranking. The main grid uses 21-native/105-target-pixel central
+crops (~6.3 arcsec), identical per-row stretches, and 2-arcsec scale bars.
+
+The input-brightness selection and display scales are frozen in
+`inputs/galaxy_examples_selection.json`. Predictions and checkpoint provenance
+are in `inputs/galaxy_examples_v01.npz` and its JSON sidecar. The saved bundle
+also contains three independently seeded diffusion samples and their linear
+mean, available as an optional notebook column. Snapshot files remain under
+`runs/figure5-v01/`. The plot notebook constructs no models.
+
+The completed job ran in `supernisp-figure5-v01` with
+[online W&B monitoring](https://wandb.ai/AI-Astro/superNISP-corrected/runs/napgcdal),
+including both figures and a versioned prediction artifact. See `inputs/README.md`
+for the checkpoint-update workflow. This draft has not replaced the historical
+Results figures in the manuscript and has not been pushed to Overleaf.
+
+## Figure 5 v02: reordered columns and clearer morphology examples
+
+The current [Figure 5](exports/fig05_galaxy_examples_v02.png) is ordered
+**NISP Y, JWST F115W, Bilinear, Diffusion, ResNet, directResNet**.
+The [residual sheet](exports/fig05_galaxy_residuals_v02.png) follows the same
+method order. Bilinear uses NISP in linear MJy/sr and its own interpolation
+support mask, without a band conversion.
+
+At the user's request, the examples were replaced by four bright validation
+galaxies selected visually from observed NISP/JWST pairs: 734405 (barred spiral),
+677525 (more face-on disk), 671723 (edge-on disk), and 679385 (compact smooth
+source). The candidate pool was the 60 brightest validation objects satisfying
+F814W<23 and 5<catalog FLUX_RADIUS<25. No model predictions or shape-success
+cuts entered this new selection. These illustrate morphology and are not a
+representative random sample. The frozen IDs, candidate pool and shared
+observed-image display rule are in `inputs/galaxy_examples_selection_v02.json`.
+
+Epochs remain ResNet 49, direct5 49 and diffusion 35. The completed export used
+tmux `supernisp-figure5-v02`, with
+[W&B wh0bth5m](https://wandb.ai/AI-Astro/superNISP-corrected/runs/wh0bth5m).
+V01's notebook, selection and predictions are preserved. Future checkpoint
+updates should reuse the v02 selection via the exporter's `--selection` option.
+The v02 figures are not yet inserted into the manuscript or pushed to Overleaf.
+
+## Figure 5 v03: typical replacements for rows a and c
+
+[Current Figure 5](exports/fig05_galaxy_examples_v03.png) keeps rows b and d
+exactly as in v02 (all arrays, checkpoint hashes and display limits verified).
+Rows a/c now use validation objects 722361 and 1033198, with F814W magnitudes
+22.88/23.11 and catalog radii 5.03/4.84 pixels. They were selected from observed
+NISP/JWST pairs in a seeded 40-object pool with 22.5<F814W<24 and
+4.3<FLUX_RADIUS<6, before inspecting predictions. These are closer to the sample
+middle in size/brightness; the four-panel selection is still illustrative.
+
+The six-column order is unchanged. [Residuals](exports/fig05_galaxy_residuals_v03.png)
+use the same new rows. Reuse `inputs/galaxy_examples_selection_v03.json` for
+future updates. The export completed in tmux `supernisp-figure5-v03`, with
+[W&B p9068svz](https://wandb.ai/AI-Astro/superNISP-corrected/runs/p9068svz).
+The notebook and previous selection are archived; v03 has not been pushed.
+
+## Figure 5 v04: replacement c and fifth row
+
+[Current Figure 5](exports/fig05_galaxy_examples_v04.png) retains a/b/d exactly
+from v03, replaces c with a modest inclined galaxy (504234), and adds an
+asymmetric compact galaxy as e (1126532). Both new objects were chosen using
+only the observed NISP/JWST images in the same seeded 40-object candidate pool.
+Their F814W magnitudes are 22.61/22.80 and catalog radii 4.92/5.18 pixels.
+The selection is illustrative; apparent sharpness does not establish accurate
+shape recovery. Shared per-row intensity scales and column order are unchanged.
+
+The [residual sheet](exports/fig05_galaxy_residuals_v04.png) also has five rows.
+Reuse `inputs/galaxy_examples_selection_v04.json` for subsequent exports.
+Checkpoint epochs remain 49/49/35. All retained-row arrays match v03 exactly;
+source, input and export hashes were verified, and the main grid visually reviewed.
+Completed in tmux `supernisp-figure5-v04` with
+[W&B xqwixuq9](https://wandb.ai/AI-Astro/superNISP-corrected/runs/xqwixuq9), exit 0.
+V03 notebook archived. V04 has not yet been inserted into the manuscript.

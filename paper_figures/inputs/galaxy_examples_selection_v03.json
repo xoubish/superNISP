@@ -1,0 +1,114 @@
+{
+  "split": "validation",
+  "rule": "Rows b and d retained at user request. Rows a and c selected from NISP/JWST observations of a seeded 40-object validation pool with 22.5<F814W<24 and 4.3<FLUX_RADIUS<6, before inspecting their model predictions. Illustrative examples nearer the sample middle in magnitude and catalog size, not a statistically representative subsample.",
+  "candidate_object_ids": [
+    729758,
+    706491,
+    770480,
+    1164380,
+    775217,
+    722361,
+    1033877,
+    1009245,
+    463235,
+    723715,
+    479929,
+    1009068,
+    696717,
+    687083,
+    575524,
+    715003,
+    714979,
+    743480,
+    816709,
+    812233,
+    1025012,
+    492251,
+    1025099,
+    1009211,
+    1033198,
+    480280,
+    504234,
+    576448,
+    1126532,
+    760074,
+    988289,
+    773723,
+    503237,
+    1007245,
+    451220,
+    755859,
+    520273,
+    473909,
+    923259,
+    599582
+  ],
+  "selection_basis": [
+    "moderately bright, modestly extended galaxy",
+    "retained face-on disk",
+    "moderately bright, smaller elongated galaxy",
+    "retained compact smooth galaxy"
+  ],
+  "indices": [
+    703,
+    1330,
+    184,
+    1338
+  ],
+  "rows": [
+    9292,
+    12324,
+    799,
+    12341
+  ],
+  "object_ids": [
+    722361,
+    677525,
+    1033198,
+    679385
+  ],
+  "data_hashes": {
+    "manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "normalization.json": "384090aaa84cfe27218bc295fb1eed923b7854b45912094d9b078f57f564c72a",
+    "SHA256SUMS": "a4bf71c37253615d14e01341ae7a485399d2461c5c4924cb3f9a6ed4deaa65ac"
+  },
+  "limits_mjy_sr": [
+    {
+      "low": -0.015,
+      "high": 0.3381254911422713,
+      "stretch": 0.027050039291381705,
+      "residual": 0.10593764734268139
+    },
+    {
+      "low": -0.015,
+      "high": 2.535468448638861,
+      "stretch": 0.2028374758911089,
+      "residual": 0.7651405345916583
+    },
+    {
+      "low": -0.015,
+      "high": 0.3901371712684578,
+      "stretch": 0.031210973701476626,
+      "residual": 0.12154115138053734
+    },
+    {
+      "low": -0.015,
+      "high": 12.188702033996435,
+      "stretch": 0.9750961627197149,
+      "residual": 3.6611106101989304
+    }
+  ],
+  "display_crop_native_pixels": 21,
+  "sampling_seeds": [
+    314159,
+    314160,
+    314161
+  ],
+  "display_rule": "Shared linear MJy/sr across all columns, asinh display: low=-0.015, high=99.8th percentile of observed JWST central crop (minimum .05), stretch=max(.02,.08*high). No model-dependent display limits.",
+  "candidate_seed": 20261017,
+  "previous_selection": "paper_figures/inputs/galaxy_examples_selection_v02.json",
+  "unchanged_row_indices": [
+    1,
+    3
+  ]
+}

@@ -1,0 +1,252 @@
+{
+  "complete": true,
+  "split": "validation",
+  "units": "MJy/sr",
+  "version": "v02",
+  "object_ids": [
+    734405,
+    677525,
+    671723,
+    679385
+  ],
+  "selection": {
+    "split": "validation",
+    "rule": "Visual selection for clear morphology from NISP/JWST observations only, before inspecting predictions for this selection. Candidate pool: 60 brightest validation galaxies with ACS F814W<23 and 5<catalog FLUX_RADIUS<25. Illustrative bright galaxies, not a representative or model-performance-selected sample.",
+    "candidate_object_ids": [
+      734405,
+      996768,
+      730839,
+      679385,
+      677525,
+      739113,
+      1159722,
+      677896,
+      548998,
+      555282,
+      1106464,
+      461863,
+      475891,
+      731642,
+      498049,
+      495221,
+      1143577,
+      1026363,
+      671723,
+      766334,
+      1027621,
+      862738,
+      733079,
+      858915,
+      587648,
+      734445,
+      1109655,
+      692291,
+      921479,
+      679099,
+      499396,
+      463278,
+      518865,
+      1031375,
+      605829,
+      1159912,
+      701148,
+      1135059,
+      1005638,
+      461106,
+      578221,
+      671747,
+      998971,
+      518184,
+      482222,
+      489417,
+      458433,
+      743516,
+      742196,
+      602034,
+      778885,
+      890011,
+      1126171,
+      1168421,
+      705779,
+      603129,
+      855661,
+      725470,
+      691130,
+      841211
+    ],
+    "selection_basis": [
+      "barred spiral",
+      "more face-on disk",
+      "edge-on disk",
+      "compact smooth galaxy"
+    ],
+    "indices": [
+      733,
+      1330,
+      1294,
+      1338
+    ],
+    "rows": [
+      9388,
+      12324,
+      12273,
+      12341
+    ],
+    "object_ids": [
+      734405,
+      677525,
+      671723,
+      679385
+    ],
+    "data_hashes": {
+      "manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+      "normalization.json": "384090aaa84cfe27218bc295fb1eed923b7854b45912094d9b078f57f564c72a",
+      "SHA256SUMS": "a4bf71c37253615d14e01341ae7a485399d2461c5c4924cb3f9a6ed4deaa65ac"
+    },
+    "limits_mjy_sr": [
+      {
+        "low": -0.015,
+        "high": 3.2571526813506213,
+        "stretch": 0.2605722145080497,
+        "residual": 0.9816458044051863
+      },
+      {
+        "low": -0.015,
+        "high": 2.535468448638861,
+        "stretch": 0.2028374758911089,
+        "residual": 0.7651405345916583
+      },
+      {
+        "low": -0.015,
+        "high": 3.427751110076876,
+        "stretch": 0.27422008880615006,
+        "residual": 1.0328253330230628
+      },
+      {
+        "low": -0.015,
+        "high": 12.188702033996435,
+        "stretch": 0.9750961627197149,
+        "residual": 3.6611106101989304
+      }
+    ],
+    "display_crop_native_pixels": 21,
+    "sampling_seeds": [
+      314159,
+      314160,
+      314161
+    ],
+    "display_rule": "Shared linear MJy/sr across all columns, asinh display: low=-0.015, high=99.8th percentile of observed JWST central crop (minimum .05), stretch=max(.02,.08*high). No model-dependent display limits."
+  },
+  "checkpoint_sha256": {
+    "legacy": "be747f0cd0b02bb81ff0ab42a9ce8ea81a0e473c28c58d8406a428f758ea6b56",
+    "direct5": "a0fdbed2ee676d316ad5e9d4b466ed7c85698e3d5dcc55e7e965ddbc76a71103",
+    "diffusion": "0ca8fcda5c8f166cec304e0f5b17cc3209897bee9c66aee254156bd402b17d17",
+    "diffusion_mean3": "0ca8fcda5c8f166cec304e0f5b17cc3209897bee9c66aee254156bd402b17d17"
+  },
+  "checkpoints": {
+    "legacy": {
+      "epoch": 49,
+      "sha256": "be747f0cd0b02bb81ff0ab42a9ce8ea81a0e473c28c58d8406a428f758ea6b56",
+      "run": "residual-full50-s20261016",
+      "criterion": "validation/mae",
+      "criterion_value": 0.9645708277047638,
+      "training_complete": true,
+      "snapshot": "runs/figure5-v02/legacy-best.pt",
+      "source_hashes": {
+        "train_paired.py": "e1d0eba1481fe690061afc4dfaf276753422fe00f10f27ec750672343b8ccf29",
+        "residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+        "paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6",
+        "galaxy_visuals.py": "bef6b74cfbe071a4903f78965026d3d5dd7b0f6d76135c953b27be7096708ff0"
+      },
+      "training_wandb_id": "nifpxes6"
+    },
+    "direct5": {
+      "epoch": 49,
+      "sha256": "a0fdbed2ee676d316ad5e9d4b466ed7c85698e3d5dcc55e7e965ddbc76a71103",
+      "run": "direct5-full50-s20261016",
+      "criterion": "validation/mae",
+      "criterion_value": 0.9618127899872345,
+      "training_complete": true,
+      "snapshot": "runs/figure5-v02/direct5-best.pt",
+      "source_hashes": {
+        "train_paired.py": "e1d0eba1481fe690061afc4dfaf276753422fe00f10f27ec750672343b8ccf29",
+        "residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+        "paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6",
+        "galaxy_visuals.py": "bef6b74cfbe071a4903f78965026d3d5dd7b0f6d76135c953b27be7096708ff0"
+      },
+      "training_wandb_id": "ilaim0sg"
+    },
+    "diffusion": {
+      "epoch": 35,
+      "sha256": "0ca8fcda5c8f166cec304e0f5b17cc3209897bee9c66aee254156bd402b17d17",
+      "run": "diffusion-full50-s20261016",
+      "criterion": "generated/mae_mjy_sr",
+      "criterion_value": 0.017204299103468657,
+      "training_complete": false,
+      "snapshot": "runs/figure5-v02/diffusion-best.pt",
+      "source_hashes": {
+        "train_diffusion_full.py": "7c3587528b2dfc8b1dc1c27252f1ec494c1caf04bef7e4dae7b057f59de18286",
+        "diffusion_full_runtime.py": "0a81b28abd6fb3e308d955ecbcc493b1c754667b0397b8adea1a537111eb0796",
+        "diffusion_full_diagnostics.py": "0367469968f3aea5791612469479087d8450661bf7031c95772ee491548f3d61",
+        "diffusion_corrected.py": "aebd5ffd41eef6eb583604e07a273dd69c9f94a31dea93d8a0ec40d3cbe6ab61",
+        "diffusion_diagnostics.py": "901f6d735f1d993181eca360c30e0bc1093e0c5b7602f773d996428102edd630",
+        "diffusion/model_sr3.py": "251fc8caecae29278e8b5cd6fda3068278bd7c058bf5c37a54896b555ce6b090",
+        "paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6",
+        "train_paired.py": "e1d0eba1481fe690061afc4dfaf276753422fe00f10f27ec750672343b8ccf29",
+        "shape_diagnostics.py": "e2498c8be6ba1283b9c2fe69513862e61e924afda17986893f228e5097561482",
+        "galaxy_visuals.py": "bef6b74cfbe071a4903f78965026d3d5dd7b0f6d76135c953b27be7096708ff0"
+      },
+      "training_wandb_id": "gepl2iv2"
+    }
+  },
+  "sampling_seeds": [
+    314159,
+    314160,
+    314161
+  ],
+  "sampling_steps": 50,
+  "nisp_pixel_scale_arcsec": [
+    0.2967101149337231,
+    0.2967136249083147,
+    0.29671414152064224,
+    0.29671383849333666
+  ],
+  "data_hashes": {
+    "manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "normalization.json": "384090aaa84cfe27218bc295fb1eed923b7854b45912094d9b078f57f564c72a",
+    "SHA256SUMS": "a4bf71c37253615d14e01341ae7a485399d2461c5c4924cb3f9a6ed4deaa65ac"
+  },
+  "npz_sha256": "81c3259ab8b7f624d6e60ac973e9b565dee17827a8842c11c6dea213af198395",
+  "limits_mjy_sr": [
+    {
+      "low": -0.015,
+      "high": 3.2571526813506213,
+      "stretch": 0.2605722145080497,
+      "residual": 0.9816458044051863
+    },
+    {
+      "low": -0.015,
+      "high": 2.535468448638861,
+      "stretch": 0.2028374758911089,
+      "residual": 0.7651405345916583
+    },
+    {
+      "low": -0.015,
+      "high": 3.427751110076876,
+      "stretch": 0.27422008880615006,
+      "residual": 1.0328253330230628
+    },
+    {
+      "low": -0.015,
+      "high": 12.188702033996435,
+      "stretch": 0.9750961627197149,
+      "residual": 3.6611106101989304
+    }
+  ],
+  "wandb_url": "https://wandb.ai/AI-Astro/superNISP-corrected/runs/wh0bth5m",
+  "selection_file": "paper_figures/inputs/galaxy_examples_selection_v02.json",
+  "selection_sha256": "0ad3cac1cf74cee6c5f462e3aa7240a551892424ee6f688e7975c59997443fb2",
+  "interpolation_source_sha256": "e2498c8be6ba1283b9c2fe69513862e61e924afda17986893f228e5097561482",
+  "exporter_sha256": "f1fbbdf7a71374332d2c1b86a0a03991f266db7a57276d8a418eb8eb1c98a17f",
+  "status": "Provisional best-checkpoint visual comparison; diffusion may still be training. Examples selected from inputs, not a performance benchmark."
+}

@@ -1,0 +1,128 @@
+{
+  "split": "validation",
+  "rule": "Visual selection for clear morphology from NISP/JWST observations only, before inspecting predictions for this selection. Candidate pool: 60 brightest validation galaxies with ACS F814W<23 and 5<catalog FLUX_RADIUS<25. Illustrative bright galaxies, not a representative or model-performance-selected sample.",
+  "candidate_object_ids": [
+    734405,
+    996768,
+    730839,
+    679385,
+    677525,
+    739113,
+    1159722,
+    677896,
+    548998,
+    555282,
+    1106464,
+    461863,
+    475891,
+    731642,
+    498049,
+    495221,
+    1143577,
+    1026363,
+    671723,
+    766334,
+    1027621,
+    862738,
+    733079,
+    858915,
+    587648,
+    734445,
+    1109655,
+    692291,
+    921479,
+    679099,
+    499396,
+    463278,
+    518865,
+    1031375,
+    605829,
+    1159912,
+    701148,
+    1135059,
+    1005638,
+    461106,
+    578221,
+    671747,
+    998971,
+    518184,
+    482222,
+    489417,
+    458433,
+    743516,
+    742196,
+    602034,
+    778885,
+    890011,
+    1126171,
+    1168421,
+    705779,
+    603129,
+    855661,
+    725470,
+    691130,
+    841211
+  ],
+  "selection_basis": [
+    "barred spiral",
+    "more face-on disk",
+    "edge-on disk",
+    "compact smooth galaxy"
+  ],
+  "indices": [
+    733,
+    1330,
+    1294,
+    1338
+  ],
+  "rows": [
+    9388,
+    12324,
+    12273,
+    12341
+  ],
+  "object_ids": [
+    734405,
+    677525,
+    671723,
+    679385
+  ],
+  "data_hashes": {
+    "manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "normalization.json": "384090aaa84cfe27218bc295fb1eed923b7854b45912094d9b078f57f564c72a",
+    "SHA256SUMS": "a4bf71c37253615d14e01341ae7a485399d2461c5c4924cb3f9a6ed4deaa65ac"
+  },
+  "limits_mjy_sr": [
+    {
+      "low": -0.015,
+      "high": 3.2571526813506213,
+      "stretch": 0.2605722145080497,
+      "residual": 0.9816458044051863
+    },
+    {
+      "low": -0.015,
+      "high": 2.535468448638861,
+      "stretch": 0.2028374758911089,
+      "residual": 0.7651405345916583
+    },
+    {
+      "low": -0.015,
+      "high": 3.427751110076876,
+      "stretch": 0.27422008880615006,
+      "residual": 1.0328253330230628
+    },
+    {
+      "low": -0.015,
+      "high": 12.188702033996435,
+      "stretch": 0.9750961627197149,
+      "residual": 3.6611106101989304
+    }
+  ],
+  "display_crop_native_pixels": 21,
+  "sampling_seeds": [
+    314159,
+    314160,
+    314161
+  ],
+  "display_rule": "Shared linear MJy/sr across all columns, asinh display: low=-0.015, high=99.8th percentile of observed JWST central crop (minimum .05), stretch=max(.02,.08*high). No model-dependent display limits."
+}
