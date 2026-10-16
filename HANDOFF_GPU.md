@@ -4,6 +4,21 @@ Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
+## Methods text revision (local; not pushed)
+
+The user requested a complete Methods review, including tables, while leaving
+Introduction and Results alone. `paper/survey_enhancements.tex` now documents
+corrected WCS extraction, masks/backgrounds/normalization, the two architectures,
+a shared training/comparison table, checkpoint selection, fixed observed-shape
+measurements, matched failure populations, block-bootstrap uncertainty and the
+21-scenario residual robustness protocol with its own table. Added four missing
+software references in `paper/mybib.bib`. Training source hashes match all three
+recorded full runs. No models ran. All manuscript text outside Methods is
+byte-for-byte unchanged from before this revision. Methods-only two-column
+preview compiled with no overfull boxes; tables visually checked. Full A&A
+build remains blocked by missing `etex.sty`. See
+`paper/methods_revision_notes.md` for evidence and limitations. Not pushed.
+
 ## Paper figure notebooks started
 
 Current architecture exports: Figure 3 v05 and Figure 4 v04. The user requested
@@ -12,7 +27,11 @@ is the shared source: blue learned operations, teal NISP/conditioning, yellow
 JWST/F115W images, purple diffusion quantities/updates, gray neutral/fixed
 operations. Both upsampling variants are blue; all F115W estimates are yellow.
 Both notebooks rendered and manuscript PDFs/provenance were verified; installed
-`diffusion_architecture_v05.pdf` and `residual_architecture_v04.pdf`. Not pushed.
+`diffusion_architecture_v05.pdf` and `residual_architecture_v04.pdf`.
+Published to Overleaf at user request in commit `f16fbf5`, including both
+architecture captions, rewritten method subsections, and bibliography updates.
+Full local TeX compilation remains blocked by the previously recorded missing
+TeX dependencies; figure rendering and export provenance checks passed.
 
 Latest architecture colors: Figure 3 v04 and Figure 4 v03 use stronger blue,
 teal, purple and amber fills, matching borders and darker text/arrows. Layouts

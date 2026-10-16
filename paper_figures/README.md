@@ -148,11 +148,11 @@ Earlier combined layouts are preserved as
 [v02: smaller 12-arcsec images](exports/fig01_sample_v02.png), with corresponding
 notebook snapshots in `revisions/`; neither is the requested final layout.
 
-Architecture drafts are [Figure 3: diffusion](exports/fig03_diffusion_architecture_v04.png) and
-[Figure 4: residual architectures](exports/fig04_residual_architecture_v03.png).
+Architecture drafts are [Figure 3: diffusion](exports/fig03_diffusion_architecture_v05.png) and
+[Figure 4: residual architectures](exports/fig04_residual_architecture_v04.png).
 Each also has a PDF and an editable-text SVG with the same filename stem.
 Figure 3 v03 replaces the historical diffusion PNG in the manuscript with
-`paper/figs/diffusion_architecture_v04.pdf` and an implementation-based caption.
+`paper/figs/diffusion_architecture_v05.pdf` and an implementation-based caption.
 It separates training, the shared U-Net, and generation; the residual-block
 inset shows how NISP conditioning and timestep information enter all 14 blocks.
 The notebook checks source hashes against the full run before drawing, without
@@ -178,7 +178,7 @@ paths have been executed; the populated plotting paths await those real inputs.
 Figure 4 v02 uses the same simplified style as Figure 3: common feature
 extraction, two alternative enlargement paths, and a compact dense-block inset.
 The model, trainer and loader sources match both recorded residual full runs.
-The PDF is installed as `paper/figs/residual_architecture_v03.pdf` with label
+The PDF is installed as `paper/figs/residual_architecture_v04.pdf` with label
 `fig:resnet_model`. The caption and residual subsection explain feature reuse,
 residual additions, edge/channel weighting and pixel shuffling in plain scientific
 language; the training table matches the 50-epoch, batch-8, masked-L1 runs.
@@ -191,3 +191,12 @@ teal, purple and amber fills with darker text and matching colored borders.
 The approved layouts, labels and captions are retained. Both PDFs are installed
 in the local manuscript; earlier pale versions are preserved in exports/revisions.
 These color updates have not been pushed to Overleaf.
+
+The current architecture versions (Figure 3 v05 and Figure 4 v04) share
+`architecture_style.py`: blue for learned operations, teal for NISP inputs
+and conditioning, yellow for JWST/F115W images, purple for diffusion steps
+and timestep information, and gray for other operations. The shared palette
+is included in both export provenance records.
+
+The current architecture PDFs, captions, method subsections and bibliography
+updates were pushed to Overleaf in commit `f16fbf5` at the user’s request.
