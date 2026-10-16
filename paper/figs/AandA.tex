@@ -1,0 +1,554 @@
+% Template file for EC papers prepared for A&A 
+% prepared by John Peacock, Peter Schneider, Douglas Scott & Patrick Simon 
+%
+% You need to copy the latest version of the file euclid.sty 
+% and the two files aa.bst and aa.cls from A&A into the same directory 
+% as your LATEX source file. These files are available on the 
+% same Overleaf site from where you got this template file.  
+%
+% For producing the referee version of you paper, 
+% comment out the first of these line, and uncomment the second line 
+%
+\documentclass[longauth]{aa}
+%\documentclass[longauth,referee]{aa}
+
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{scalerel}
+
+\usepackage[table]{xcolor}
+
+\bibliographystyle{aa}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{txfonts}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[pdfencoding=auto,psdextra]{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=blue,
+    citecolor=blue
+}
+\urlstyle{tt}
+
+% suppress these aa-package warnings:
+% package hyperref warning: suppressing link with empty target
+\makeatletter
+\renewcommand*\aa@pageof{, page \thepage{} of \pageref*{LastPage}}
+\makeatother
+
+% To add links in your PDF file, use the package "hyperref"
+% with options according to your LaTeX or PDFLaTeX drivers.
+%
+\usepackage[utf8]{inputenc}
+
+\usepackage[switch, modulo]{lineno}
+              
+    % For a version without line numbering, just comment out
+    % the following line 
+\linenumbers
+    %
+
+\usepackage{euclid}
+
+
+\begin{document}
+%
+% Put the title and authors of your (Standard Project) paper here
+%
+
+\title{\Euclid\/: Deep-learning super-resolution of NISP imaging and its fidelity for galaxy shape measurement\thanks{This paper is published on
+       behalf of the Euclid Consortium}}
+
+%% please do not edit the author list once you copy it from the
+%% Publication Portal -- contact ECEB Bureau for changes
+
+\include{authors}
+   
+%
+% For a Key Project paper, please use instead:
+%
+% \title{\Euclid\/ preparation} % or another appropriate pre-phrase
+% \subtitle{Your title}
+%
+% \author{Euclid Collaboration: F.~Author, .....}
+%
+
+% \institute{$^{1}$ Dark Energy Institute\\
+% $^{2}$ Center for Large-Scale Structure\\
+% $^{3}$ Institute for Fundamental Research \\
+% $^{4}$ Institute for Astrophysics and Cosmology\\}
+
+% 
+% Put your abstract here:
+%
+\abstract{
+The constraining power of weak gravitational lensing is limited by
+systematics, and shape measurement in particular has required a
+sustained community effort to characterize and calibrate. Any learned
+method proposed for lensing must pass through the same discipline: its
+biases must be measured before its outputs can inform cosmology. We
+present a first quantitative measurement of the galaxy shape biases
+introduced by deep-learning super-resolution of \Euclid\ NISP imaging.
+We train two architectures, representing the two competing philosophies
+of image super-resolution, on 18\,190 NISP \YE-band cutouts of the
+COSMOS field paired with JWST/NIRCam F115W imaging at five times finer
+pixel sampling: a conditional diffusion model, which learns a
+generative prior, and a residual network with residual-in-residual
+dense blocks, which learns a direct mapping. On a test set of 4547
+galaxies we evaluate pixel-level fidelity and, centrally, the recovery
+of ellipticity and shear measured with adaptive moments against the
+JWST reference. The residual network outperforms the diffusion model on
+every structural metric (SSIM of 0.77 versus 0.73; RMSE of 0.110 versus
+0.136) and yields ellipticity and shear regression slopes of 0.64--0.74
+against JWST, while the diffusion model, at the compact architectural
+scale tested here, suppresses shape information below even a bilinear
+interpolation baseline. Neither model approaches lensing requirements:
+the best-performing network still exhibits multiplicative shrinkage of
+$\sim$25--35\,\% in recovered ellipticity, far from the $\sim$$10^{-3}$
+control of multiplicative bias that \Euclid\ cosmology requires. These
+measurements quantify the current gap to weak-lensing fidelity,
+identify detail-preserving architectures as the more promising path,
+and indicate that the fidelity already achieved is useful for
+applications with a higher tolerance for shape bias, such as galaxy
+morphology, deblending, and strong-lens identification.
+    }
+%
+% Provide up to five key words:
+%
+    \keywords{Gravitational lensing: weak -- Methods: data analysis -- Techniques: image processing -- Surveys}
+%    from the list in
+%     https://www.aanda.org/for-authors/latex-issues/information-files#pop}
+%
+% Add short versions of title and author list for page headings
+%
+   \titlerunning{\Euclid\/: Super-resolution of NISP imaging and its fidelity for shape measurement}
+   \authorrunning{F.~Author et al.} % TODO: replace with actual first author once authors.tex is final
+   
+   \maketitle
+%
+%-------------------------------------------------------------------
+%
+%
+%   Start the main text of your paper here
+%
+   
+\section{Introduction}
+\label{sc:intro}
+
+Weak gravitational lensing is one of the primary cosmological probes of
+Stage IV wide-field surveys \citep{Laureijs2011, Chang2013}, and its
+constraining power is now limited by systematics rather than by
+statistics. Shape measurement in particular has required a sustained,
+community-wide effort to characterize and control: successive blind
+challenges \citep{Heymans2006, Massey2007, Mandelbaum2015} and
+dedicated calibration frameworks based on image simulations and
+self-calibration \citep[e.g.,][]{Huff2017, Sheldon2017,
+EC_Congedo2024} have been devoted to measuring and removing biases in
+classical shape estimators at the level modern surveys require. For
+\Euclid, multiplicative shear biases must be controlled to
+$\sim$$10^{-3}$ \citep{Cropper2013}. Any new measurement technique,
+whatever its promise, enters weak lensing only through this same door:
+its biases must be measured, understood, and shown to be calibratable
+before its outputs can inform cosmology.
+
+Deep learning has meanwhile become integral to astronomical data
+analysis, with applications ranging from image generation and outlier
+detection to photometric redshift estimation and deblending in crowded
+fields \citep{Arcelin2021, Hemmati2022, Sampson2024, Scognamiglio2025}.
+Among these, super-resolution, the task of inferring high-resolution
+spatial information from lower-resolution inputs \citep{Anwar2019}, has
+been applied across regimes from radio interferometry to solar and
+ground-based optical imaging \citep[e.g.,][]{Dabbech_2022, Song2024,
+Sukurdeep2025}. In \Euclid, weak-lensing shapes are measured in the
+visible band with VIS \citep[$0\farcs1$ pixels;][]{DR1-TP002}, while
+the near-infrared imaging from NISP
+\citep[$0\farcs3$ pixels;][]{DR1-TP003} is coarser by a factor of
+three in sampling and is not used for shape measurement. As a result, a
+population of galaxies that is well detected in the near-infrared,
+including red and high-redshift sources for which VIS shapes are
+unavailable, is excluded from the weak-lensing sample. Near-infrared
+shape measurement has been demonstrated with pointed space-based
+imaging \citep[e.g., \textit{Spitzer}/IRAC;][]{Lee2018, Finner2023},
+and super-resolved NISP imaging could in principle extend the \Euclid\
+source sample in both density and redshift. But learned super-resolution
+is subject to the same discipline as any shape-measurement technique:
+the effort that went into characterizing classical estimators must be
+matched for learned ones, beginning with a quantitative measurement of
+the shape biases they introduce. This paper is a first step in that
+direction.
+
+We train deep-learning super-resolution models on \Euclid\ NISP images
+of the COSMOS field and evaluate them against overlapping JWST/NIRCam
+imaging of the same region, which provides a factor of five finer pixel
+sampling and an independent, higher-resolution reference for every
+galaxy in the sample (Sect.~\ref{sc:observations}). The two architectures we compare represent the two competing philosophies of image super-resolution. A conditional diffusion model \citep{sohldickstein2015, Ho2020} learns a generative prior and tests whether structure absent from the input can be plausibly synthesized. A residual network with residual-in-residual dense blocks
+\citep[in the spirit of ESRGAN;][]{Wang2018} learns a direct mapping and
+tests how much structure is genuinely recoverable from the data. The
+comparison is therefore not merely of two architectures but of two
+answers to the question of where super-resolved information should come
+from (Sect.~\ref{sc:methods}).
+
+We evaluate both models on pixel-level fidelity and, centrally, on the
+recovery of ellipticity and shear measured with adaptive moments
+(Sect.~\ref{sc:results}). The residual network outperforms the
+diffusion model on every structural metric, and the diffusion model, at
+the compact architectural scale tested here, suppresses shape
+information below even an interpolation baseline. Neither model
+approaches lensing requirements: the best-performing network exhibits
+multiplicative shrinkage of $\sim$25--35\,\% in recovered ellipticity.
+These measurements quantify the current gap to weak-lensing fidelity,
+identify detail-preserving architectures as the more promising path,
+and point to nearer-term applications in galaxy morphology, deblending,
+and strong-lens identification, where the achieved fidelity is already
+useful (Sect.~\ref{sc:discussion}).
+
+%\cite{EuclidSkyOverview}
+
+\section{\label{sc:observations}Observations}
+
+% TODO: check euclid_nisp against the official Euclid.bib key for the NISP instrument paper (Jahnke et al. 2025); the intro cites the Q1 NIR processing paper as DR1-TP003 -- make sure these are not duplicate entries for the same reference.
+The observations used in this project consist of low-resolution images from the Euclid NISP instrument \citep{euclid_nisp} and high-resolution images from the JWST NIRCam instrument \citep{jwst_nircam}.
+Both sets of images come from the COSMOS field \citep[RA $= 10^{\rm h}\,00^{\rm m}\,27\fs40$, Dec $= +2\degr\,13\arcmin\,50\farcs64$, field of view $84\farcm07 \times 84\farcm07$;][]{Scoville_2007}, with the Euclid data covered in the Q1 data release \citep{euclid_q1_data}% TODO: EC policy requires citing Q1 via the official key (Q1cite) in Euclid.bib/DR1.bib; replace euclid_q1_data if it duplicates that entry.
+ and the JWST data originating from the COSMOS-Web survey \citep{cosmos_web_overview}.
+From the Euclid release, we use co-added \YE-band images (920--1146\,nm) from NIR, which is the standard post-processing pipeline for near-infrared images.
+This pipeline outputs images at a pixel scale of $0\farcs3$ per pixel \citep{euclid_q1_data}.
+The JWST images we use are from the band F115W (1013--1282\,nm; \citealt{jwst_nircam}), with a plate scale of $0\farcs03$ per pixel.
+We use mosaic data that has been downsampled to a grid of $0\farcs06$ per pixel, which means that our models must increase the sampling by a factor of five between the Euclid and JWST images.
+
+We clip the images with enough space to fully visualize extended galaxies without including too many of their neighbors, and for this purpose have settled on an image size of 41 pixels for NISP galaxies and 205 pixels for JWST galaxies, which gives roughly the same size cutout in galactic coordinate space.
+We limit our galaxy sample to those that are brighter than 25th magnitude, below a redshift of 3, and with a flux radius less than 100px at JWST's pixel scale \citep{shooby_calibration}.
+This requires galaxies to be bright enough to be detected by Euclid NISP imaging, but compact enough to be captured by our image clip sizes.
+
+The Euclid data consists of 33 full images of $\sim$0.5 square degrees each, and the JWST data consists of 20 full images with a field of view of $\sim$10 square arcminutes each.
+Using the COSMOS2020 catalog \citep{cosmos2020_classic}, there are $\sim$40,000 candidates that reduce to 22,738 galaxy matches after filtering for coverage by both surveys, edges, and masked pixels.
+We use 80\% of the data for training and 20\% for testing (18,190 training samples and 4,547 testing samples).
+
+\section{\label{sc:methods}Methods}
+
+We evaluate two families of convolutional neural network models for producing super resolved images: a diffusion-based model \citep{Ho2020, DCNN} and a residual neural network (ResNet) \citep{ResNet}.
+Both rely on convolution as their core operation, but differ fundamentally in the way they generate / denoise the super-resolved images.
+The diffusion model learns a generative prior by recovering images from synthetic noise conditioned on the observed low-resolution image, while the ResNet learns a direct mapping of features from low to high resolution through a sequence of residual blocks.
+The diffusion model therefore tests whether a learned prior can synthesize fine-scale structure that is not directly inferrable from the input, whereas the ResNet provides a feed-forward baseline that focuses on reconstructing details that are directly supported by image data.
+
+\begin{figure*}
+    \includegraphics[width=\textwidth]{figs/DiffusionNet_chart.png}
+    \caption{Visual representation of Diffusion model design.}
+    \label{fig:diff_model}
+\end{figure*}
+
+\subsection{Pre-processing}
+
+As the goal is to super-resolve the Euclid images to the same or similar level of clarity as JWST images, we must provide the algorithm with galaxy clips matched as precisely as possible between the two surveys, or at least precisely enough that a mapping can be learned between them.
+To do this, we use the COSMOS2020 Classic catalog \citep{cosmos2020_classic} to find galaxy coordinates and transform them into WCS coordinates in each image before clipping around the correct location.
+If a match is not found in both JWST and Euclid image catalogs, the galaxy cannot be used and is discarded.
+Once the matches are found, each pair of images is clipped around the galaxy's WCS location with \texttt{astropy}'s \texttt{Cutout2D} function \citep{astropy_latest}.
+
+We determine the relative rotation between the surveys using WCS keywords, and register the JWST images to the same frame as Euclid using the \texttt{scipy.ndimage.rotate} function \citep{scipy} with a bi-cubic interpolation.
+We rotate the JWST images rather than the Euclid images to minimize the introduction of correlated noise into the lower-resolution inputs.
+Since our goal is to assess morphological reproduction, we adopt a simplified registration approach that avoids additional interpolation/resampling steps.
+A fully self-consistent registration pipeline could be implemented in future work, and may further reduce residual systematics when comparing Euclid and JWST morphology.
+
+Sub-pixel offsets between matched image clips are expected, as the astrometric solutions of the two surveys are derived independently and the pixel scales differ ($0\farcs3$ per pixel for Euclid NIR and $0\farcs06$ per pixel for JWST).
+Because the COSMOS2020 catalog coordinates are projected onto each survey's WCS independently, residual offsets at the sub-pixel level will remain even after careful alignment.
+We allow the network to learn to accommodate these offsets implicitly during training.
+As we expect the offsets to be random from pair to pair, with variations arising mostly from the independent astrometric solutions rather than any systematic pointing offsets, the network cannot learn to simply shift all outputs by a fixed amount, and instead must learn a mapping that is robust to small positional mismatches.
+Additionally, filters NISP-Y and F115W do not fully overlap, so the model will naturally learn a wavelength-dependent transformation.
+This will always be the case when training with filters on different instruments, however, so we do not characterize this transformation explicitly.
+Any future iterations of this model with different original and target filters would need to be trained specifically on data from those filters in order to be viable.
+
+As another training challenge, the two datasets have significantly different Point Spread Functions (PSFs).
+Euclid NIR's PSFs are typically broader and more symmetric, while the standard JWST PSF is sharper and more complex, including diffraction spikes.
+We at first attempted to deconvolve each image with its PSF before training the models, but found that this visibly impacted performance for the worse.
+Instead, we allow the model to learn the PSFs implicitly as part of the training process, which is in theory fairly simple, as convolution with PSF-like kernels is already an integral part of the training process for a CNN.
+Due to the complexity of the neural network architecture, it is impossible to know what specific rules each model is learning about the PSF transformation, but the fact that the final reconstructed images match the targets well in most cases indicates that the solution found is reasonable.
+
+\subsection{Diffusion model architecture}
+
+Diffusion models operate by gradually corrupting an image with noise and then learning a reverse process that reconstructs a clean signal through a sequence of denoising steps.
+This sequence is indexed by discrete time steps that control how much noise remains in the image.
+Using this framework, we implement an SR3-style conditional diffusion model, originally introduced by \citet{SR3} at Google Research, in which a UNet predicts the noise present at each given time step and also produces an estimate of the underlying clean image.
+This design allows joint supervision through noise prediction and loss functions that directly compare the reconstructed image to the reference image.
+Our implementation follows the diffusion methodology developed in \citet{Nichol2021} and \citet{Ho2020}.
+A schematic of the architecture can be found in Figure \ref{fig:diff_model}.
+
+The conditional diffusion model takes as input a low-resolution Euclid cutout, which is first resized to the target grid by bilinear interpolation.
+This provides a coarse but spatially aligned guide for the denoising process.
+The UNet backbone follows a standard encoder–decoder structure with skip connections, which ensures that the final layers can learn features directly corresponding to the original Euclid image.
+We use a compact UNet with a base width of 32 channels and three resolution levels.
+The network includes FiLM (feature-wise linear) style modulation \citep{Perez2017}, in which the timestep embedding and the conditioning image generate scale and shift parameters that adapt the feature maps during denoising.
+A cosine noise schedule is used for the forward process.
+
+Training employs three complementary loss terms that encourage both global accuracy and local structural detail.
+These include a spatially weighted noise prediction loss, an L1 loss on the reconstructed clean signal, and a perceptual loss based on early VGG features \citep{Simonyan2015}.
+The model converges consistently, so the results primarily reflect architectural capacity rather than optimization effects.
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Training Parameter} & \textbf{Value} \\
+        \hline
+        accumulation\_steps & 4 \\\hline
+        batch\_size & 8 \\\hline
+        epochs & 500 \\\hline
+        full\_inference\_steps & 1{,}000 \\\hline
+        gauss\_sigma & 0.6 \\\hline
+        grad\_clip & 1 \\\hline
+        inference\_steps & 100 \\\hline
+        init\_sigma & 1 \\\hline
+        lambda\_perceptual & 0.0001 \\\hline
+        lambda\_x0 & 0.1 \\\hline
+        learning\_rate & 0.0002 \\\hline
+        sample\_fraction & 0.1 \\\hline
+        timesteps & 1{,}000 \\\hline
+        weight\_decay & 0 \\
+        \hline
+    \end{tabular}
+    \caption{Training hyperparameters of the best-performing diffusion model.}
+    \label{tab:diff_hyperparams}
+\end{table}
+
+We carried out a sweep of fifty runs with the \texttt{Weights \& Biases} package \citep{wandb} that varied the learning rate, gradient clipping threshold, noise weighting, loss weights, training duration, and sampling settings.
+The model showed stable and consistent convergence across the entire tuning range.
+All runs reached comparable validation losses and PSNR (peak signal-to-noise ratio) values, and visual inspection of the outputs indicated that they produced broadly similar solutions.
+Final training parameters are listed in Table \ref{tab:diff_hyperparams}.
+This behavior suggests that the diffusion model is robust to a wide range of training configurations, which provides a useful baseline for assessing its intrinsic representational capacity.
+
+\subsection{Residual Network Architecture}
+
+The Deep Residual Network, unlike the Diffusion model, directly predicts high-resolution output from low-resolution feature maps.
+It is designed to combine strong representational power with an explicit focus on small-scale structure and sharp features.
+A visualization of the block structure can be found in Figure \ref{fig:resnet_model}.
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\textwidth]{figs/SuperRes_chart.png}
+    \caption{Visual representation of ResNet model design.}
+    \label{fig:resnet_model}
+\end{figure*}
+
+The network follows a residual-in-residual dense block (RRDB) design similar in spirit to ESRGAN-style architectures \citep{Wang2018}.
+An initial convolution expands the input into a feature representation with fixed width.
+This representation is processed by a sequence of RRDB, each of which applies a series of convolutions with progressive channel growth and dense skip connections.
+Within each block, the outputs of all intermediate layers are concatenated before the final projection back to the base width, and a residual connection is added from the block input.
+This design encourages efficient feature reuse, stabilizes optimization, and improves the propagation of both low and high-level feature information across the network.
+A trunk convolution after the stack of RRDB blocks combines the aggregated features, and a residual connection is added back to the initial feature map, which forms a global residual pathway through the network.
+
+To sharpen small-scale structure, we include a dedicated detail enhancement module that acts on the fused feature map.
+This module first applies a fixed high-pass filter based on a Laplacian-style kernel that enhances local contrast and edges.
+The edge-enhanced features are passed through a small convolutional sub-network and a channel-wise attention mechanism that is conceptually similar to squeeze and excitation blocks \citep{hu2019}.
+The attention branch computes a global summary for each channel through adaptive average pooling, and then predicts a set of channel weights.
+These weights rescale the feature maps, so that channels that are informative for fine structure receive higher emphasis.
+This combination of explicit edge extraction and learned channel reweighting focuses model capacity on the reconstruction of compact and anisotropic features.
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Training Parameter} & \textbf{Value} \\
+        \hline
+        batch\_size & 16 \\\hline
+        gradient\_clip\_norm & 1 \\\hline
+        l1\_weight\_stage1 & 0.8 \\\hline
+        lr\_stage1 & $5.66 \times 10^{-5}$ \\\hline
+        lr\_stage2 & $9.22 \times 10^{-5}$ \\\hline
+        mse\_weight\_stage2 & 0.1 \\\hline
+        num\_rrdb & 12 \\\hline
+        ssim\_weight\_stage2 & 0.5 \\\hline
+        weight\_decay & $1.22 \times 10^{-5}$ \\
+        \hline
+    \end{tabular}
+    \caption{Training hyperparameters of the best-performing ResNet model.}
+    \label{tab:resnet_hyperparams}
+\end{table}
+
+After the trunk convolution block and detail enhancement, spatial upsampling is performed in two stages through pixel shuffle blocks that each increase the resolution by a factor of two.
+Each block applies a convolution that expands the number of channels, followed by a pixel shuffle operation that rearranges channels into a higher resolution spatial grid.
+After two such stages, the feature map has been upsampled from the Euclid grid to an intermediate resolution.
+A final convolution block projects the features back to a single output channel (magnified about 4x), and a bilinear interpolation step adjusts the output to match the exact JWST grid size at 5x magnification.
+This combination of learned upsampling and a final interpolation ensures that the model can exploit sub-pixel information while still producing images that are exactly aligned with the target pixels.
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\textwidth]{figs/diffusion_image_grid.png}
+    \caption{Image comparisons between input Euclid images, super-resolved diffusion model outputs, and JWST images. Images super-resolved with the diffusion model tend to be more compact and blurred compared to true JWST images.}
+    \label{fig:diffusion_images}
+\end{figure*}
+
+The model is trained in two stages, each prioritizing a different learning goal.
+In the first stage, we optimize a weighted combination of pixel-wise mean absolute error (MAE) and mean squared error (MSE) between the prediction and the target image.
+This encourages accurate flux recovery and suppresses large residuals while providing a stable objective for initial convergence.
+In the second stage, we fine tune the network with an extended loss that combines the pixel-wise terms with a structural similarity component based on the SSIM metric in \texttt{scikit-image} \citep{skimage, wang2004}.
+The structural term encourages the model to reproduce local contrast and texture patterns, which helps preserve small-scale morphology and avoids over-smoothing.
+Both stages use cosine annealing schedules for the learning rate, gradient clipping for stability, the Adam optimizer, and an independent validation split for early selection of the best performing model stage.
+Similarly to the diffusion model, we carry out a sweep of fifty runs with the \texttt{Weights \& Biases} package \citep{wandb} that vary parameters such as the learning rate, number of RRDB blocks, gradient clipping threshold, loss function weights, and training duration.
+Final best model parameters are listed in Table \ref{tab:resnet_hyperparams}.
+
+\section{\label{sc:results}Results}
+
+\subsection{Diffusion model}
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\textwidth]{figs/diffusion_time.png}
+    \vspace{5px}
+    \caption{Evolution of the diffusion super-resolution output as a function of the number of reverse denoising steps. From left to right: an upsampled Euclid input, diffusion reconstructions at 10, 20, 50, and 200 sampling steps, and the high-resolution JWST target. Early steps produce only noise, intermediate steps form a smooth, low-frequency core, and longer trajectories converge to a compact and nearly isotropic morphology. At no timestep do the anisotropic or extended features present in the target image appear, indicating that the compact UNet backbone is not capable of recovering the full structural complexity of the galaxies.}
+    \label{fig:diffusion_time}
+\end{figure*}
+
+The diffusion model reconstructed the overall light distribution of each source with reasonable accuracy according to pixel-wise error metrics, achieving performance comparable to a simple bilinear baseline only on MAE and modestly improving on RMSE.
+However, it did not recover high-frequency or anisotropic features with as much success.
+Structures such as spiral arms, clumps, bars, and star–forming knots that are present in the target images were systematically absent based on visual inspection. 
+The resulting reconstructions resemble smoothed and nearly isotropic versions of the reference images (see Figure \ref{fig:diffusion_images}).
+Adjustments to the perceptual loss weight, the timestep sampling distribution, and the training duration did not alter this behavior.
+Diagnostics at intermediate time steps also show that the missing structure did not emerge during the reverse process (Figure \ref{fig:diffusion_time}).
+
+These results indicate that the limitation may arise from the expressive capacity of the chosen backbone rather than from the optimization or the choice of losses. 
+Diffusion models rely on the representation power of the denoising network, and prior studies have shown that high-fidelity generation requires substantially wider or deeper backbones or the use of attention-based mechanisms \citep{Saharia2022, Rombach2022}.
+Compact backbones are known to produce generative priors that emphasize low complexity structure, which favors smooth morphologies.
+The behavior observed here is consistent with this tendency and clarifies the architectural scale that would be needed for diffusion models to recover the full range of structure present in the targets.
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\textwidth]{figs/rrdb_image_grid.png}
+    \caption{Image comparisons between input Euclid images, super-resolved ResNet model outputs, and JWST images. These outputs more faithfully reproduce structure than results from the diffusion model.}
+    \label{fig:resnet_images}
+\end{figure*}
+
+\subsection{ResNet model}
+
+In contrast to the diffusion network, the residual network produces reconstructions that more faithfully preserve the morphology of the target JWST images (Figure \ref{fig:resnet_images}).
+It consistently performs better than a simple bilinear interpolation on both pixel-wise and structural metrics, as shown in Figure \ref{fig:pixel_comp}.
+This indicates that the RRDB structure allows the model to learn true features from the input images, rather than falling back on upsampling methods.
+Due to the high degree of accuracy, beyond fine-tuning the training hyperparameters with \texttt{W\&B} \citep{wandb}, no major structural changes were needed after the initial model was built.
+The high SSIM score, along with a visual image comparison, shows that the ResNet is able to recover sharp spatial contrast differences and a larger fraction of the target's visible structure.
+
+\subsection{Reconstruction accuracy comparison}
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\textwidth]{figs/pixel_metrics_histograms.png}
+    \caption{Summary of metrics for super-resolution images compared to JWST NIRCam. Both methods outperform a simple bilinear interpolation. The two networks perform similarly on the L1 (MAE) metric, but the ResNet outperforms the diffusion model on L2 (RMSE), PSNR (Peak Signal-to-Noise Ratio), and SSIM (Structural Similarity).}
+    \label{fig:pixel_comp}
+\end{figure*}
+
+The ResNet model reconstructs the target JWST NIRCam images more faithfully in a qualitative sense: its super-resolved outputs preserve compact sources and maintain more of the visual morphology present in the targets (Figures \ref{fig:diffusion_images} and \ref{fig:resnet_images}).
+Both super-resolution methods improve over a simple bilinear interpolation, indicating that the mapping from Euclid to JWST is learned rather than merely smoothed or upsampled.
+
+For comparison we use four metrics: (a) the Mean Absolute Error -- the average absolute difference between pixels in the target images and the super-resolution image, (b) the Root Mean Squared Error -- the root average of the squared differences between pixels in the target and SR image, (c) the difference in Peak Signal-to-Noise Ratio (PSNR) between the galaxy in the SR and target images, and (d) the structural similarity (SSIM) between the SR and target images (the latter two are calculated with \texttt{scikit-image}; \citealt{skimage}).
+When evaluated with quantitative pixel-level error metrics, as in Figure \ref{fig:pixel_comp}, the two networks perform comparably on MAE ($\mu$=0.018 for ResNet, $\mu$=0.020 for diffusion), while the ResNet achieves a noticeably lower RMSE ($\mu$=0.110 vs. $\mu$=0.136).
+The similar MAE values indicate that, on a typical pixel, both models deviate from the JWST target by a comparable amount, but the larger RMSE of the diffusion model suggests that its reconstructions contain a heavier tail of larger pixel-wise errors.
+
+The ResNet also shows stronger performance on metrics designed to capture galaxy properties and structure, PSNR ($\mu$=37.35 for ResNet, $\mu$=34.7 for diffusion), and SSIM ($\mu$=0.77 vs. $\mu$=0.73).
+This is consistent with visual examples: outputs from the diffusion model appear smoother and lose fine detail, while the ResNet model reproduces sharper features and spatial contrast differences more reliably.
+Taken together, these results indicate that the diffusion model, with the compact backbone used here, regresses toward a smoothed approximation of the target that is competitive on average pixel-wise error but fails to recover the structural detail captured by the residual network.
+
+\subsection{Shape Preservation}
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\textwidth]{figs/ellipticity_comparison.png}
+    \caption{Ellipticity and shear measured from JWST NIRCam (x-axis) compared to those calculated from super-resolved images (y-axis). Solid lines show orthogonal distance regression (ODR) fits. The ResNet model achieves slopes closest to identity on every component, while the Diffusion model produces the strongest shrinkage toward zero, falling below the bilinear baseline on all four shape parameters.}
+    \label{fig:ellipticity_comp}
+\end{figure*}
+
+To determine how well these models would work for weak lensing studies, we compare the reconstruction of ellipticity \((e_1,e_2)\) and shear \((g_1,g_2)\) metrics, calculated with \texttt{galsim}'s \texttt{FindAdaptiveMom} function \citep{galsim} in Figure \ref{fig:ellipticity_comp}.
+We use an Orthogonal Distance Regression (ODR), minimizing the geometric distance of each point to the fit line, in order to get a better estimate of the shape of each distribution.
+Both super-resolution methods recover ellipticity and shear values on similar orders of magnitude to JWST, as shown by these population-level correlations.
+However, the ResNet model more accurately reproduces the full range of anisotropy in the target distributions.
+The ODR slopes from the ResNet are consistently closest to identity across all four components (m=0.70 and 0.74 for $(e_1, e_2)$, and m=0.64 and 0.68 for $(g_1, g_2)$), indicating the smallest shrinkage of shape parameters of the three methods.
+The Diffusion model, by contrast, falls below the bilinear baseline on every component, with slopes of m=0.58 and 0.61 for $(e_1, e_2)$ and m=0.50 and 0.54 for $(g_1, g_2)$.
+This indicates that the diffusion reconstructions may actively suppress shape information that is preserved even by a simple interpolation.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{figs/ellipticity_plane_residuals.png}
+    \caption{Residuals across the 2D plane for ellipticity (top) and shear (bottom) compared to values calculated from JWST NIRCam. Left- and right-hand columns show residual distributions for ResNet and Diffusion models, respectively. ResNet displays a more compact error distribution overall, with smaller standard deviations on every component and mean residuals closer to zero than those of the Diffusion model.}
+    \label{fig:plane_residuals}
+\end{figure}
+
+The Diffusion model also shows a stronger systematic bias of all recovered shape parameters toward zero.
+This behavior is evident in the fitted slopes: predictions are uniformly shallower than the identity relation and also shallower than the bilinear baseline, indicating that the network suppresses anisotropic shape information rather than recovering it.
+This behavior is consistent with a regression toward the smoothed mean of the target distribution, which keeps average pixel-wise error competitive on MAE but is penalized by RMSE, PSNR, and SSIM.
+When combined with adaptive-moment shape measurements in the downstream pipeline, this reduces the measured ellipticity and shear compared to the true values, indicating that this may not be the best model construction for future lensing studies.
+
+In contrast, ResNet's detail-preserving reconstructions appear to retain the high-frequency and anisotropic morphology needed for adaptive moment estimators.
+As seen in the upper plots of Figure \ref{fig:ellipticity_comp}, this model recovers ellipticity and shear values with less bias than both the diffusion model and the bilinear baseline on every component.
+Because weak-lensing and lens-modeling inputs depend sensitively on accurate ellipticity and shear distributions, the combination of reduced shrinkage and improved structural fidelity in the residual network suggests that it will provide more reliable shape information for similar analyses.
+
+A 2D visualization of ellipticity and shear residuals is shown in Figure \ref{fig:plane_residuals}.
+These represent residuals between values calculated from super-resolved images vs. high-resolution JWST images (treated as ground truth, in this case).
+Similar to the fitted ellipticity and shear in the 1D plots in Figure \ref{fig:ellipticity_comp}, the ResNet model displays a tighter error distribution for both $e$ and $g$ values, with smaller standard deviations on every component and mean residuals closer to zero.
+The Diffusion model also shows a small but consistent negative offset across all four components, whereas the ResNet residuals flip sign between components and remain closer to zero in magnitude.
+The systematic offset in the Diffusion residuals is consistent with the uniform shrinkage seen in Figure \ref{fig:ellipticity_comp}.
+
+\section{\label{sc:discussion}Discussion}
+
+It is clear from these results that the diffusion model under-performs compared to the ResNet model at this architectural scale and at these data volumes.
+While reconstructing smoother and less varied morphologies yields an MAE comparable to that of the ResNet, it does so at the cost of higher RMSE, lower PSNR and SSIM, and a systematic loss of fine structure.
+A potential failure mode of this model is the possibility of de-noising and smoothing images too aggressively, which suppresses the anisotropic features that adaptive-moment shape estimators rely on.
+The uniform shrinkage of all four shape parameters in Figure \ref{fig:ellipticity_comp} supports this interpretation.
+The ResNet model preserves high-frequency features and overall galaxy parameters better, while also matching or exceeding the diffusion model on pixel-wise flux accuracy.
+However, due to the way it learns galaxy features, it could potentially introduce small-scale artifacts where no real structure exists, lowering the fidelity of the reconstruction overall.
+
+The ResNet's stronger recovery of shear and ellipticity, combined with at-least-comparable pixel-wise accuracy, makes it the more promising architecture for further investigation of super-resolution in lensing contexts.
+Precision weak lensing measurements, however, require meeting a substantially higher bar than the model comparison presented here.
+The slopes of the best fit lines in Figure \ref{fig:ellipticity_comp} indicate that even the ResNet model introduces significant bias (multiplicative shrinkage at the $\sim$25--35\,\% level) in the recovered ellipticities compared to JWST values.
+Cosmological shear is a percent-level distortion, and weak-lensing analyses in Euclid require multiplicative shape biases to be controlled at the $\sim\!10^{-3}$ level \citep{Laureijs2011}.
+Quantifying a model's shear biases as functions of galaxy size, signal-to-noise, and PSF, and demonstrating that any residual bias is either within requirements or able to be calibrated through dedicated image simulations, would therefore be a prerequisite for use in weak lensing cosmology studies.
+
+This does not preclude the current ResNet model from use on other science cases, however.
+The model already demonstrates superior reconstructions of galaxy features, so applications that have a higher tolerance for shape bias could benefit from its use.
+Studies involving galaxy morphology, deblending crowded fields, and target selection, particularly strong-lens classification, would be ideal use cases for this method.
+Another ResNet imaging classifier has already been used for detecting strong lenses in the DESI Legacy survey with promising results \citep{Huang_et_al_2021}, and other super-resolution networks have been developed for applications such as deblending and image sharpening in multiple wavelength regimes \citep{superres_1,  Reiman_Gohre_2019, Arcelin2021, Hemmati2022, superres_2}.
+However, such models would need much greater fine-tuning to enable precise cosmological analysis on their own.
+
+Since the ResNet better reconstructs shear and ellipticity measurements from JWST while also performing at least as well on pixel-wise error metrics, it is the clear candidate for future research into SR solutions compatible with weak lensing applications.
+Likewise, in training strong-lens classifiers from images, the shape and features of each galaxy are of much more consequence than precise photometry, so the current model could already provide adequate precision for this application.
+In future studies, both models could be improved based on the requirements of each science case.
+Poor image registration can sometimes lead to blurring if the model does not learn the proper offset flexibility, so this could be done more carefully in future work with a package like \texttt{drizzle} \citep{drizzle}.
+A deeper or wider U-Net, more cross-attention layers, or other structural alterations could help the Diffusion model to focus on finer details.
+For the ResNet model, more rigorous calibration checks for photometry and PSF consistency could be added, potentially even by adding a third round of training specifically to improve these metrics.
+In a strong lensing study, the current structure of the ResNet could be pre-trained on existing data and then attached directly to a deep classification network, with further fine-tuning specifically aimed at identifying lenses.
+
+Overall, these findings suggest that architectural choices that prioritize anisotropic, detail-preserving reconstructions are better aligned with the shape-recovery requirements of lensing analyses.
+
+%
+% Add the acknowledgement using the achnowledgements environment.
+% Do not use \acknowledgement{....} as this affects the formatting
+% of the references.
+%
+
+\begin{acknowledgements}
+\AckQone
+\AckEC  
+\end{acknowledgements}
+
+%
+% Here comes the reference list, generated via bibtex from
+% your bibfile my.bib and Euclid.bib. Please make sure that
+% the same paper is not referenced twice, one from your my.bib
+% file, and once from Euclid.bib.
+%
+
+\bibliography{Euclid, DR1, mybib} 
+%
+% You can have different .bib files here, e.g.
+% \bibliography{Euclid,myown}, but please use the bibentries
+% in Euclid.bib for all EC publications to ensure that these
+% references are up-to-date and in correct format.
+%
+
+
+%
+% Now you can add appendices.
+% In this example, the appendices are in one column mode.
+% If that is not requires, comment out \onecolumn
+% Note that appendices in A\&A come {\it after\/} the references.
+
+
+\label{LastPage}
+\end{document}

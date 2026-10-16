@@ -1,0 +1,440 @@
+%------------------------------------------------------------------------------
+% Style file for Euclid mission publications
+%
+% based in part on the Planck style file that was
+% generously provided to us by C.R. Lawrence
+%
+% Usage:  after specifying the \documentclass command in the La\TeX\ input file,
+%         add this command:  \usepackage{euclid}
+%
+% Please send questions/comments to:
+% Peter Schneider (peter@astro.uni-bonn.de)
+%------------------------------------------------------------------------------
+
+\ProvidesPackage{euclid}[2025/12/09 Version 2. Euclid publication package]
+\NeedsTeXFormat{LaTeX2e}
+
+% packages that we always need/want:
+
+% AMS mathematical packages:
+\RequirePackage{amsmath,amssymb}
+% Units
+\RequirePackage{siunitx}
+% correct spaces after 'newcommand' definitions
+\RequirePackage{xspace}
+
+%-----------------------------------------------------------------------
+% Deinitions for the correct spelling of space missions
+%-----------------------------------------------------------------------
+\newcommand*{\Euclid}{\textit{Euclid}\xspace}
+\newcommand*{\Planck}{\textit{Planck}\xspace}
+\newcommand*{\Herschel}{\textit{Herschel}\xspace}
+\newcommand*{\Fermi}{\textit{Fermi}\xspace}
+\newcommand*{\Chandra}{\textit{Chandra}\xspace}
+\newcommand*\XMMN{XMM-\textit{Newton}\xspace}
+\newcommand*{\WMAP}{\textit{Wilkinson} Microwave Anisotropy Probe\xspace}
+\newcommand*{\Spitzer}{\textit{Spitzer} Space Telescope\xspace}
+\newcommand*{\HST}{\textit{Hubble} Space Telescope\xspace}
+\newcommand*{\RomanST}{\textit{Roman} Space Telescope\xspace}
+
+%-----------------------------------------------------------------------
+% Deinitions/shortcuts for mathematical and physical symbols/operators
+% I just transfered them from Peters original Euclid.tex file
+%-----------------------------------------------------------------------
+\DeclareMathOperator{\logten}{log_{10}}
+\newcommand*{\Ltwo}{\ensuremath{L_2}}
+\newcommand*{\inv}{\ensuremath{^{-1}}}
+\newcommand*{\superscr}[1]{\ensuremath{^{\rm #1}}}
+\newcommand*{\expo}[1]{\ensuremath{\times 10^{#1}}}
+\newcommand*{\diff}{\ensuremath{{\rm d}}}
+
+% The following two newcommands finally define the command 'simprop'
+% for a \propto with a \sim underneath. It is from stackoverflow
+% (https://tex.stackexchange.com/questions/33538/how-to-get-an-approximately-proportional-to-symbol)
+% The definition makes sure that the symbol can also be used correctly in
+% sub- and superscripts:
+\newcommand{\simpropinn}[2]{\mathrel{\vcenter{
+  \offinterlineskip\halign{\hfil$##$\cr
+    #1\propto\cr\noalign{\kern2pt}#1\sim\cr\noalign{\kern-2pt}}}}}
+\newcommand{\simprop}{\mathpalette\simpropinn\relax}
+
+% Definition of small fonts, to be used for Capitals in sub-/superscrips:
+\newcommand{\sfont}[1]{{\scriptscriptstyle\rm #1}}
+
+% Definition of Euclid photometric bands:
+\newcommand{\IE}{\ensuremath{I_\sfont{E}}\xspace}
+\newcommand{\YE}{\ensuremath{Y_\sfont{E}}\xspace}
+\newcommand{\JE}{\ensuremath{J_\sfont{E}}\xspace}
+\newcommand{\HE}{\ensuremath{H_\sfont{E}}\xspace}
+\newcommand{\BGE}{\ensuremath{{\rm BG}_\sfont{E}}\xspace}
+\newcommand{\RGE}{\ensuremath{{\rm RG}_\sfont{E}}\xspace}
+
+
+%-----------------------------------------------------------------------
+% Definitions for mathematical expressions in parenthese/brackets ..
+% of correct size
+%-----------------------------------------------------------------------
+% parentheses
+\newcommand*{\paren}[1]{\left( #1 \right)}
+% brackets
+\newcommand*{\brackets}[1]{\left[ #1 \right]}
+% curly braces
+\newcommand*{\curly}[1]{\left\{ #1 \right\}}
+% averages
+\newcommand*{\ave}[1]{\left\langle #1 \right\rangle}
+% absolute values
+\newcommand*{\abs}[1]{\left| #1 \right|}
+% within Euclid we want vectors to be printed in mathbold:
+\renewcommand*\vec[1]{\ensuremath{\boldsymbol{#1}}}
+%\newcommand*\tens[1]{\ensuremath{\mathsf{#1}}}
+\renewcommand*\tens[1]{\ensuremath{\mathsf{#1}}}
+
+%----------------------------------------------------------------------
+% Definitions for units with siunitx
+%----------------------------------------------------------------------
+%
+% some more base units which are not defined within siunitx but wich
+% are very common in astronomy:
+\DeclareSIUnit \century{century}
+\DeclareSIUnit \parsec{pc}
+\DeclareSIUnit \year{yr}
+\DeclareSIUnit \steradian{sr}
+%
+% small 'h' Hubble constant - we define it for siunitx so that it
+% can be used easily 'as a unit':
+% solar-mass as unit
+\DeclareSIUnit \solarmass{\text{\ensuremath{{M}_{\odot}}}}
+% solar-luminosity as unit
+\DeclareSIUnit \solarluminosity{\text{\ensuremath{{L}_{\odot}}}}
+\DeclareSIUnit \h{\ensuremath{\mathnormal{h}}}
+\DeclareSIUnit \hubble{\h}
+% Definition for h_{70} Hubble constant
+\DeclareSIUnit \hseventy{\ensuremath{\mathnormal{h_{70}}}}
+% shortcut for h^{-1} Mega parsec
+\DeclareSIUnit \hMpc{\per\h\mega\parsec}
+% shortcut for micrometer
+\DeclareSIUnit \micron{\micro\meter}
+% shortcut for kilometers per second
+\DeclareSIUnit \kms{\kilo\meter\per\second}
+% shortcut for kilometers per second per Mega Parsec
+\DeclareSIUnit \kmsMpc{\kilo\meter\per\second\per\mega\parsec}
+
+% newcommand to typeset Ra-values in hours, minutes and seconds
+% (angles in degrees, minutes and seconds can be done with the
+% ang-command)
+% \newcommand*{\ra}[2][]{{% extra pair of braces to keep the \defintion local!
+%     \def\SIUnitSymbolDegree{\textsuperscript{h}}%
+%     \def\SIUnitSymbolArcminute{\textsuperscript{m}}%
+%     \def\SIUnitSymbolArcsecond{\textsuperscript{s}}%
+%     \ang[#1]{#2}}%
+% }
+% \newcommand*{\RAtwo}[2]{ ${#1}^{\rm h} {#2}^{\rm m}$ }
+% \newcommand*{\RAthree}[3]{ ${#1}^{\rm h} {#2}^{\rm m} {#3}^{\rm s}$ }
+
+\newcommand*{\ra}[2][]{{% extra pair of braces to keep the \defintion local!
+    \DeclareSIUnit \degree{\textsuperscript{h}}%
+    \DeclareSIUnit \arcminute{\textsuperscript{m}}%
+    \DeclareSIUnit \arcsecond{\textsuperscript{s}}%
+    \ang[#1]{#2}}}%
+
+
+% Euclid convention to print angle symbol over the decimal
+% point:
+\sisetup{angle-symbol-over-decimal}
+\sisetup{arc-separator = \,}
+% Euclid convention to print errors with a +/- sign:
+\sisetup{separate-uncertainty = true}
+% to print ranges of numbers with a dash
+\sisetup{range-phrase= ~\textendash~}
+
+%----------------------------------------------------------------------
+% Intuitive abbreviations for often used LaTeX-commands
+%----------------------------------------------------------------------
+%
+\newcommand*{\bea}{\begin{align}}
+\newcommand*{\eea}{\end{align}}
+\newcommand*{\be}{\begin{equation}}
+\newcommand*{\ee}{\end{equation}}
+\newcommand*{\bc}{\begin{center}}
+\newcommand*{\ec}{\end{center}}
+\newcommand*{\bfig}{\begin{figure}}
+\newcommand*{\bfigs}{\begin{figure}\sidecaption}
+\newcommand*{\efig}{\end{figure}}
+\newcommand*{\btable}{\begin{table}}
+\newcommand*{\etable}{\end{table}}
+\newcommand*{\bi}{\begin{itemize}}
+\newcommand*{\ei}{\end{itemize}}
+\newcommand*{\ben}{\begin{enumerate}}
+\newcommand*{\een}{\end{enumerate}}
+\newcommand*{\bd}{\begin{description}}
+\newcommand*{\ed}{\end{description}}
+
+%----------------------------------------------------------------------
+% Convenience abbreviations for manual unit typesetting
+% These abbreviations can be used by people who do not want
+% to use siunitx to typeset units
+%----------------------------------------------------------------------
+%
+\newcommand*{\degree}{\si{\degree}}
+\newcommand*{\arcminute}{\si{\arcminute}}
+\newcommand*{\arcsecond}{\si{\arcsecond}}
+\newcommand*{\GHz}{\si{\giga\hertz}}
+\newcommand*{\hMpc}{\si{\hMpc}}
+\newcommand*{\kms}{\si{\kilo\meter\per\second}}
+\newcommand*{\kmsMpc}{\si{\kmsMpc}}
+\newcommand*{\mHz}{\si{\mega\hertz}}
+\newcommand*{\micron}{\si{\micro\meter}}
+
+%----------------------------------------------------------------------
+% Convenient macros for writing factional angles, with the
+% arcsec, arcmin, or degree symbol on top of the decimal point.
+% Use as, e.g., 23\arcsecf45.
+%----------------------------------------------------------------------
+%
+\newcommand*{\arcsecf}{\hbox{$.\!\!^{\prime\prime}$}}
+\newcommand*{\arcminf}{\hbox{$.\!\!^{\prime}$}}
+\newcommand*{\degf}{\hbox{$.\!\!^{\circ}$}}
+
+
+% ------------------------------------------------------------
+% Macros from the ParDefDoc:
+%
+
+\newcommand*{\Macro}{{\bf Macro: }}
+\newcommand*{\tdelta}{\ensuremath{\tilde\delta}}
+\newcommand*{\vp}{\varphi}
+\newcommand*{\vt}{\vartheta}
+\newcommand*{\AJ}{\ensuremath{{\cal A}}}
+\newcommand*{\lamcomhor}{\ensuremath{\lambda_{\rm h,com}}}
+\newcommand*{\lamheq}{\ensuremath{\lambda_{\rm h,eq}}}
+\newcommand*{\PhiN}{\ensuremath{\Phi_\sfont{N}}}
+\newcommand*{\PsiN}{\ensuremath{\Psi_\sfont{N}}}
+\newcommand*{\taui}{\ensuremath{\tau_{\rm i}}}
+\newcommand*{\tconf}{\ensuremath{t_{\rm conf}}}
+\newcommand*{\aeq}{\ensuremath{a_{\rm eq}}}
+\newcommand*{\alphaf}{\ensuremath{\alpha_{\rm f}}}
+\newcommand*{\cvirm}{\ensuremath{c_{200,{\rm m}}}}
+\newcommand*{\cvircr}{\ensuremath{c_{200,{\rm cr}}}}
+\newcommand*{\Ckk}{\ensuremath{C_{\kappa\kappa}}}
+\newcommand*{\CEE}{\ensuremath{C_{EE}}}
+\newcommand*{\CBB}{\ensuremath{C_{BB}}}
+\newcommand*{\CkkT}[1]{\ensuremath{C_{\kappa\kappa}^{(#1)}}}
+\newcommand*{\CEET}[1]{\ensuremath{C_{EE}^{(#1)}}}
+\newcommand*{\CBBT}[1]{\ensuremath{C_{BB}^{(#1)}}}
+\newcommand*{\DA}{\ensuremath{D_{\rm A}}}
+\newcommand*{\Dang}{\ensuremath{D_{\rm ang}}}
+\newcommand*{\DL}{\ensuremath{D_{\rm L}}}
+\newcommand*{\Dlum}{\ensuremath{D_{\rm lum}}}
+\newcommand*{\Dprop}{\ensuremath{D_{\rm prop}}}
+\newcommand*{\delgs}{\ensuremath{\delta_{\rm g}^{\rm s}}}
+\newcommand*{\deltaD}{\ensuremath{\delta_\sfont{D}}}
+\newcommand*{\deltaK}[1]{\ensuremath{\delta^\sfont{K}_{#1}}}
+\newcommand*{\etabgamma}{\ensuremath{\eta_{\rm b/\gamma}}}
+\newcommand*{\gamt}{\ensuremath{\gamma_{\rm t}}}
+\newcommand*{\gamx}{\ensuremath{\gamma_\times}}
+\newcommand*{\xip}{\ensuremath{\xi_+}}
+\newcommand*{\xim}{\ensuremath{\xi_-}}
+\newcommand*{\xipm}{\ensuremath{\xi_\pm}}
+\newcommand*{\xipT}[1]{\ensuremath{\xi_+^{(#1)}}}
+\newcommand*{\ximT}[1]{\ensuremath{\xi_-^{(#1)}}}
+\newcommand*{\xipmT}[1]{\ensuremath{\xi_\pm^{(#1)}}}
+\newcommand*{\Tcosebi}[1]{\ensuremath{T^{\rm cos}_{#1}}}
+\newcommand*{\spinY}[2]{\ensuremath{_#1Y_{#2}}}
+\newcommand*{\GN}{\ensuremath{G_\sfont{N}}}
+\newcommand*{\hP}{\ensuremath{h_\sfont{P}}}
+\newcommand*{\kB}{\ensuremath{k_\sfont{B}}}
+\newcommand*{\mgamt}{\ensuremath{\ave{\gamma_{\rm t}}}}
+\newcommand*{\lamdrag}{\ensuremath{\lambda_{\rm drag}}}
+\newcommand*{\Mvirm}{\ensuremath{M_{200,{\rm m}}}}
+\newcommand*{\Mvircr}{\ensuremath{M_{200,{\rm cr}}}}
+\newcommand*{\Nabla}{\ensuremath{\vec\nabla}}
+\newcommand*{\Neff}{\ensuremath{N_{\rm eff}}}
+\newcommand*{\Neumass}{\ensuremath{\sum m_\nu}}
+\newcommand*{\NDD}{\ensuremath{N_\sfont{DD}}}
+\newcommand*{\NRR}{\ensuremath{N_\sfont{RR}}}
+\newcommand*{\NDR}{\ensuremath{N_\sfont{DR}}}
+\newcommand*{\Omm}{\ensuremath{\Omega_{\rm m}}}
+\newcommand*{\Omr}{\ensuremath{\Omega_{\rm r}}}
+\newcommand*{\Omb}{\ensuremath{\Omega_{\rm b}}}
+\newcommand*{\Omdm}{\ensuremath{\Omega_{\rm dm}}}
+\newcommand*{\Omcdm}{\ensuremath{\Omega_{\rm cdm}}}
+\newcommand*{\OmLa}{\ensuremath{\Omega_\Lambda}}
+\newcommand*{\Omde}{\ensuremath{\Omega_{\rm de}}}
+\newcommand*{\Omtot}{\ensuremath{\Omega_{\rm tot}}}
+\newcommand*{\Pmlin}{\ensuremath{P_{\rm m}^{\rm lin}}}
+\newcommand*{\rSSun}{\ensuremath{r_\sfont{S\odot}}}
+\newcommand*{\rhocr}{\ensuremath{\rho_{\rm cr}}}
+\newcommand*{\rvirm}{\ensuremath{r_{200,{\rm m}}}}
+\newcommand*{\rvircr}{\ensuremath{r_{200,{\rm cr}}}}
+\newcommand*{\sigmaT}{\ensuremath{\sigma_\sfont{T}}}
+\newcommand*{\Transfer}{\ensuremath{{\cal T}_{\rm tf}}}
+\newcommand*{\wde}{\ensuremath{w_{\rm de}}}
+\newcommand*{\zeq}{\ensuremath{z_{\rm eq}}}
+\newcommand*{\zrec}{\ensuremath{z_{\rm rec}}}
+\newcommand*{\hatalpha}{\ensuremath{\hat{\vec\alpha}}}
+\newcommand*{\Sigcr}{\ensuremath{\Sigma_{\rm cr}}}
+\newcommand*{\Sigcrinv}{\ensuremath{\Sigma_{\rm cr}^{-1}}}
+\newcommand*{\psidp}{\ensuremath{\psi_{\rm dp}}}
+\newcommand*{\tauF}{\ensuremath{\tau_\sfont{F}}}
+\newcommand*{\Dd}{\ensuremath{D_{\rm d}}}
+\newcommand*{\Ds}{\ensuremath{D_{\rm s}}}
+\newcommand*{\Dds}{\ensuremath{D_{\rm ds}}}
+\newcommand*{\DLens}{\ensuremath{D_\sfont{L}}}
+\newcommand*{\DSource}{\ensuremath{D_\sfont{S}}}
+\newcommand*{\DLeSo}{\ensuremath{D_\sfont{LS}}}
+\newcommand*{\Map}{\ensuremath{M_{\rm ap}}}
+\newcommand*{\mbias}[1]{\ensuremath{m^{\rm bias}_{#1}}}
+\newcommand*{\cbias}{\ensuremath{c^{\rm bias}}}
+\newcommand*{\EnT}[2]{\ensuremath{E_#1^{(#2)}}}
+\newcommand*{\BnT}[2]{\ensuremath{B_#1^{(#2)}}}
+\newcommand*{\mumg}{\ensuremath{\mu_{\rm mg}}}
+\newcommand*{\Sigmamg}{\ensuremath{\Sigma_{\rm mg}}}
+\newcommand*{\Mstellar}{\ensuremath{M_\ast}}
+\newcommand*{\Mstar}{\ensuremath{M^\ast}}
+\newcommand*{\Lstar}{\ensuremath{L^\ast}}
+\newcommand*{\nSersic}{\ensuremath{n_{\sfont{Ser}}}}
+\newcommand*{\PhiIMF}{\ensuremath{\phi_\sfont{IMF}}}
+\newcommand*{\SFR}{\ensuremath{R_{\rm sfr}}}
+\newcommand*{\sSFR}{\ensuremath{R_{\rm ssfr}}}
+\newcommand*{\SFRD}{\ensuremath{\dot \rho_\ast}}
+\newcommand*{\ha}{\ensuremath{\mathrm{H}\,\alpha}\xspace}
+\newcommand*{\hb}{\ensuremath{\mathrm{H}\,\beta}\xspace}
+\newcommand*{\ionF}[3]{[\ion{#1}{#2}]#3}
+\newcommand*{\zsp}{\ensuremath{z_{\rm sp}}}
+\newcommand*{\zph}{\ensuremath{z_{\rm ph}}}
+
+
+
+% ------------------------------------------------------------
+% Macros for acknowledgement texts
+%
+\newcommand*{\AckInstitutions}{a number of agencies and
+  institutes that have supported the development of \Euclid, in
+  particular
+  the Agenzia Spaziale Italiana,
+  the Austrian Forschungsf\"orderungsgesellschaft funded through BMIMI,
+  the Belgian Science Policy,
+  the Canadian Euclid Consortium,
+  the Deutsches Zentrum f\"ur Luft- und Raumfahrt,
+  the DTU Space and the Niels Bohr Institute in Denmark,
+  the French Centre National d'Etudes Spatiales,
+  the Funda\c{c}\~{a}o para a Ci\^{e}ncia e a Tecnologia,
+  the Hungarian Academy of Sciences,
+  the Ministerio de Ciencia, Innovaci\'{o}n y Universidades,
+  the National Aeronautics and Space Administration,
+  the National Astronomical Observatory of Japan,
+  the Netherlandse Onderzoekschool Voor Astronomie,
+  the Norwegian Space Agency,
+  the Research Council of Finland,
+  the Romanian Space Agency,
+  the Swiss Space Office (SSO) at the State Secretariat for Education, Research, and Innovation (SERI),
+  and the United Kingdom Space Agency.
+  A complete and detailed list is available on the \Euclid\ web site
+  (\url{www.euclid-ec.org/consortium/community/}).\xspace}
+\newcommand{\AckEC}{The Euclid Consortium acknowledges the European
+  Space Agency and \AckInstitutions}
+\newcommand{\AckECon}{The authors acknowledge the Euclid Consortium,
+  the European Space Agency, and \AckInstitutions}
+\newcommand{\AckECol}{The authors acknowledge the Euclid
+  Collaboration, the European Space Agency, and \AckInstitutions}
+
+\newcommand{\AckERO}{This work has made use of the Early Release
+  Observations (ERO) data from the \Euclid\/ mission of the European
+  Space Agency (ESA), 2024,
+  \url{https://doi.org/10.57780/esa-qmocze3}. }
+
+\newcommand{\AckQone}{This work has made use of the \Euclid Quick Release
+  Q1 data from the \Euclid\/ mission of the European Space Agency
+  (ESA), 2025, \url{https://doi.org/10.57780/esa-2853f3b}. }
+
+\newcommand{\AckQtwo}{This work has made use of the \Euclid Quick
+  Release Q2 data from the \Euclid\/ mission of the European Space Agency
+  (ESA), 2026, available at
+  \url{https://www.cosmos.esa.int/web/euclid/q2-data-release}. }
+
+\newcommand{\AckDRone}{This work has made use of the \Euclid Data
+  Release 1 (DR1) from the European Space Agency (ESA) mission \Euclid,
+  available at
+  \url{https://www.cosmos.esa.int/web/euclid/data-release-dr1}. }
+
+
+\newcommand{\AckDatalabs}{This research makes use of ESA Datalabs
+  (\url{datalabs.esa.int}), an initiative by ESA’s Data Science and
+  Archives Division in the Science and Operations Department,
+  Directorate of Science. }
+
+\newcommand{\AckCosmoHub}{This work has made use of CosmoHub,
+  developed by PIC (maintained by IFAE and CIEMAT) in collaboration
+  with ICE-CSIC. CosmoHub received funding from the Spanish government
+  (MCIN/AEI/10.13039/501100011033), the EU NextGeneration/PRTR
+  (PRTR-C17.I1), and the Generalitat de Catalunya.}
+
+% \makeatletter
+% \renewcommand*\maketitle{%
+%   \thispagestyle{firstpage}
+% \begingroup
+%     \if@wideboxfn
+%     \setlength\bibindent{1.4\parindent}
+%     \else
+%     \setlength\bibindent{\parindent}
+%     \fi
+%     \renewcommand*\thefootnote{\@fnsymbol\c@footnote}%
+%     \renewcommand\@makefntext[1]{%
+%     \ifaa@longfn\hsize\textwidth\fi
+%     \noindent
+%     \hb@xt@\bibindent{\hss\@makefnmark\enspace}##1}
+%   \ifaa@twocolumn
+%   \begingroup
+%   \begin{aa@strip}
+%     \nolinenumbers
+%           \aa@maketitle
+%     \end{aa@strip}
+%     \@thanks
+%   \endgroup
+%   \else
+%     \begingroup
+%       \let\thanks\footnote
+%       \aa@maketitle
+%     \endgroup
+%   \fi
+% \endgroup
+%   \setcounter{footnote}{0}%
+% }
+% \makeatother
+
+\makeatletter
+
+\renewcommand*\maketitle{%
+  \thispagestyle{firstpage}
+\begingroup
+    \if@wideboxfn
+    \setlength\bibindent{1.4\parindent}
+    \else
+    \setlength\bibindent{\parindent}
+    \fi
+    \renewcommand*\thefootnote{\@fnsymbol\c@footnote}%
+    \renewcommand\@makefntext[1]{%
+    \ifaa@longfn\hsize\textwidth\fi
+    \noindent
+    \hb@xt@\bibindent{\hss\@makefnmark\enspace}##1}
+  \ifaa@twocolumn
+  \begingroup
+   \begin{aa@strip}
+     \aa@maketitle
+   \end{aa@strip}
+    \@thanks
+  \endgroup
+  \else
+    \begingroup
+      \let\thanks\footnote
+      \aa@maketitle
+    \endgroup
+  \fi
+\endgroup
+  \let\@thanks\@empty%
+  \setcounter{footnote}{0}%
+}
+
+\addto\maketitle{\linenumbers\relax}
+
+\makeatother
