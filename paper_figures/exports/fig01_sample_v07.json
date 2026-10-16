@@ -1,0 +1,47 @@
+{
+  "status": "sample overview: real matched ~24-arcsec validation region with a large spiral galaxy",
+  "notebook": "01_sample.ipynb",
+  "notebook_source_sha256": "9ddad8d13350268a04b42323756f12a02cf0f5fa2b25e67f3228e4c4ebffbac2",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "data/ready/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "data/ready/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/inputs/sample_region_v06.npz": "89d136b1ceda5c24ffc73aed1ff44e0056ae20af1bb145d0c8a329502cf98e1a",
+    "paper_figures/inputs/sample_region_v06.json": "eba5af4743684837b3c1162bfc32c90acb914ab07a2f518fe380b4e741eb54c4",
+    "paper_figures/sample_region.py": "5b4a58c18f1903c92ae4cb8a4cebbfd054a51fba2cfb8f2be6c3ed3a9bef181c"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      2.65
+    ],
+    "layout": "three adjacent axes",
+    "footprint_annotation": "true WCS footprint with two corner connectors",
+    "scale_bar_arcsec": 5,
+    "display_reference": "v05 shared stretch retained",
+    "sample_count": 22810,
+    "split_counts": {
+      "train": 17816,
+      "test": 2876,
+      "validation": 2118
+    },
+    "zoom_block": "3:2",
+    "center_object_id": 734405,
+    "zoom_split": "validation",
+    "selection": "Illustrative large spiral; selected by catalog size/brightness and observed morphology in train/validation, without model outputs",
+    "zoom_field_arcsec": 24.33022959731128,
+    "display_low": -0.03,
+    "display_high": 0.9432567954063416,
+    "asinh_softening": 0.04,
+    "test_access": "positions/counts only; image footprint contained in validation block"
+  },
+  "versions": {
+    "matplotlib": "3.10.5",
+    "pandas": "2.3.2"
+  },
+  "exports": {
+    "fig01_sample_v07.pdf": "2ff7b5ecc280b4be445851f6717e12ceb17ad0830b295557883cf21e7ac56028",
+    "fig01_sample_v07.svg": "11d7ec760487910affaeb6b4ca66adc4a30ff86be41c0cef9a65ebf53269cd98",
+    "fig01_sample_v07.png": "ba4dbe5b6ce2e0883b4df356445212b2bb07ffc4f91e58d22462a52e59810971"
+  }
+}

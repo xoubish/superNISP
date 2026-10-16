@@ -1,0 +1,71 @@
+{
+  "signature": {
+    "block": "4:2",
+    "native_size": 164,
+    "factor": 5,
+    "center_rule": "centre of the selected validation block",
+    "catalog_sha256": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "manifest_sha256": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "extractor_sha256": "e5d47783d1e16edbbab12a937dbd15f77d31eb0423f29a05b19ab03d780b8a96"
+  },
+  "split": "validation",
+  "spatial_block": "4:2",
+  "units": "sky-subtracted MJy/sr",
+  "native_size": 164,
+  "center_ra_dec_deg": [
+    150.22512361627793,
+    2.1250289158908053
+  ],
+  "corners_ra_dec_deg": [
+    [
+      150.2167534341204,
+      2.1204035373829444
+    ],
+    [
+      150.22975213742393,
+      2.116665156452268
+    ],
+    [
+      150.23349384429605,
+      2.129654246721037
+    ],
+    [
+      150.22049505534255,
+      2.1333926427688525
+    ]
+  ],
+  "block_ra_edges_deg": [
+    150.20012190885976,
+    150.25015238607472
+  ],
+  "block_dec_edges_deg": [
+    2.1,
+    2.15
+  ],
+  "nisp_pixel_scale_arcsec": 0.2967103775914624,
+  "compass_native_pixel_vectors": {
+    "N": [
+      -0.932307582804242,
+      3.238887653278198
+    ],
+    "E": [
+      3.2387106851765566,
+      0.932132697578254
+    ]
+  },
+  "sources_sha256": {
+    "/Users/shemmati/Dropbox/superNISP/data/NISP-Y/cosmos/EUC_NIR_W-STK-IMAGE_Y-4911_20250423T231840.182094Z.fits.gz": "24bd88bc9cc39cabfd2eed076b0c5795241ff44685dbe540e7e5a9a24cbebdd5",
+    "/Users/shemmati/Dropbox/superNISP/data/JWST/cosmos/mosaic_nircam_f115w_COSMOS-Web_60mas_A4_v0_8_sci.fits": "e91c509013d0f6e16a18d7f61780a2ea9a993e7abbd0bfe161dcee204d767297"
+  },
+  "background_mjy_sr": {
+    "nisp": 0.0008456209478600075,
+    "jwst": -0.00011838944919873029
+  },
+  "valid_fractions": {
+    "nisp": 0.9985871505056514,
+    "jwst": 1.0
+  },
+  "jwst_resampling": "bilinear surface brightness; all contributors valid",
+  "limitations": "Different bands/PSFs; JWST finite/nonzero coverage proxy; display only.",
+  "npz_sha256": "8170425523222895004ee37a76706232c9fa7b6e1c1431882ce7bc15f5115d49"
+}

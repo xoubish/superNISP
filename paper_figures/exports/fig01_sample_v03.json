@@ -1,0 +1,40 @@
+{
+  "status": "sample overview: real matched ~49-arcsec validation region",
+  "notebook": "01_sample.ipynb",
+  "notebook_source_sha256": "65233ad2b118839a097d15097d666fbf175d5e3cf233bc8150b642339ee5b829",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "data/ready/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "data/ready/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/inputs/sample_region_v03.npz": "8170425523222895004ee37a76706232c9fa7b6e1c1431882ce7bc15f5115d49",
+    "paper_figures/inputs/sample_region_v03.json": "da8e45ce32a14e45f35aae0dd43864362fc8197b491b43a919f974a8fa33eceb",
+    "paper_figures/sample_region.py": "e5d47783d1e16edbbab12a937dbd15f77d31eb0423f29a05b19ab03d780b8a96"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      3.3
+    ],
+    "sample_count": 22810,
+    "split_counts": {
+      "train": 17816,
+      "test": 2876,
+      "validation": 2118
+    },
+    "zoom_block": "4:2",
+    "zoom_field_arcsec": 48.660501924999835,
+    "display_low": -0.03,
+    "display_high": 0.2673032283782959,
+    "asinh_softening": 0.04,
+    "test_access": "positions/counts only; image footprint contained in validation block"
+  },
+  "versions": {
+    "matplotlib": "3.10.5",
+    "pandas": "2.3.2"
+  },
+  "exports": {
+    "fig01_sample_v03.pdf": "a83ba439e41057f50eb2381ef5d871ec9ef719222cb36e3be46a1bbc76f864c1",
+    "fig01_sample_v03.svg": "be28bda5de34c1c9b650ea9313fc0e395acb4ced8e57ab24eaa21390facd5f0a",
+    "fig01_sample_v03.png": "e8ba67ab53d1f7dc42031f6bc009474ac46cf20cf7e3749d0de34a156ea59b7d"
+  }
+}

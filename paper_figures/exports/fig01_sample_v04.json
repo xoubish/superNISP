@@ -1,0 +1,43 @@
+{
+  "status": "sample overview: real matched ~49-arcsec training region with a large spiral galaxy",
+  "notebook": "01_sample.ipynb",
+  "notebook_source_sha256": "2d5744dd677a75d21b506bd4f0947afb9105b3bd4c0ac4c360f7f2f7d04965ea",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "data/ready/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "data/ready/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/inputs/sample_region_v04.npz": "52cb503b6a8ca023ae43a73895efee2a51ec32eb3d410ff83a0eeac064c7d2d1",
+    "paper_figures/inputs/sample_region_v04.json": "34b524690c3e02aefc286f47591d88649caf559e24993df80f6cf33668165cf6",
+    "paper_figures/sample_region.py": "5b4a58c18f1903c92ae4cb8a4cebbfd054a51fba2cfb8f2be6c3ed3a9bef181c"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      3.3
+    ],
+    "sample_count": 22810,
+    "split_counts": {
+      "train": 17816,
+      "test": 2876,
+      "validation": 2118
+    },
+    "zoom_block": "4:3",
+    "center_object_id": 804253,
+    "zoom_split": "train",
+    "selection": "Illustrative large spiral; selected by catalog size/brightness and observed morphology in train/validation, without model outputs",
+    "zoom_field_arcsec": 48.659969904922946,
+    "display_low": -0.03,
+    "display_high": 0.665736734867096,
+    "asinh_softening": 0.04,
+    "test_access": "positions/counts only; image footprint contained in training block"
+  },
+  "versions": {
+    "matplotlib": "3.10.5",
+    "pandas": "2.3.2"
+  },
+  "exports": {
+    "fig01_sample_v04.pdf": "e8a1999709f2287a14305099a3bc4c88dca456ebfb8a1d8c221d8424e64bb910",
+    "fig01_sample_v04.svg": "601dd2249567a91005ed0e405a6ea231c1e3babdc3044b917c03609974f4991d",
+    "fig01_sample_v04.png": "94bcff63521cbb7598f5aefb90f5f45e0bb561ba4f28d5e79d5d1274caf99ef5"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "signature": {
+    "block": "3:2",
+    "native_size": 164,
+    "factor": 5,
+    "center_rule": "catalog object position",
+    "center_object_id": 734405,
+    "catalog_sha256": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "manifest_sha256": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "extractor_sha256": "5b4a58c18f1903c92ae4cb8a4cebbfd054a51fba2cfb8f2be6c3ed3a9bef181c"
+  },
+  "split": "validation",
+  "spatial_block": "3:2",
+  "center_object_id": 734405,
+  "units": "sky-subtracted MJy/sr",
+  "native_size": 164,
+  "center_ra_dec_deg": [
+    150.18348142691536,
+    2.1157352635383595
+  ],
+  "corners_ra_dec_deg": [
+    [
+      150.17511141710713,
+      2.111109661641499
+    ],
+    [
+      150.18811009558922,
+      2.1073716225648247
+    ],
+    [
+      150.19185148436028,
+      2.1203608190591265
+    ],
+    [
+      150.17885271899465,
+      2.12409887142657
+    ]
+  ],
+  "block_ra_edges_deg": [
+    150.15009143164482,
+    150.20012190885976
+  ],
+  "block_dec_edges_deg": [
+    2.1,
+    2.15
+  ],
+  "nisp_pixel_scale_arcsec": 0.29671011704038147,
+  "compass_native_pixel_vectors": {
+    "N": [
+      -0.9322354046203145,
+      3.2389067645635805
+    ],
+    "E": [
+      3.2387426260565917,
+      0.9320488656462658
+    ]
+  },
+  "sources_sha256": {
+    "/Users/shemmati/Dropbox/superNISP/data/NISP-Y/cosmos/EUC_NIR_W-STK-IMAGE_Y-4911_20250423T231840.182094Z.fits.gz": "24bd88bc9cc39cabfd2eed076b0c5795241ff44685dbe540e7e5a9a24cbebdd5",
+    "/Users/shemmati/Dropbox/superNISP/data/JWST/cosmos/mosaic_nircam_f115w_COSMOS-Web_60mas_A4_v0_8_sci.fits": "e91c509013d0f6e16a18d7f61780a2ea9a993e7abbd0bfe161dcee204d767297"
+  },
+  "background_mjy_sr": {
+    "nisp": 0.0005889844152614635,
+    "jwst": -0.000715650268830359
+  },
+  "valid_fractions": {
+    "nisp": 1.0,
+    "jwst": 0.9999940511600238
+  },
+  "jwst_resampling": "bilinear surface brightness; all contributors valid",
+  "limitations": "Different bands/PSFs; JWST finite/nonzero coverage proxy; display only.",
+  "npz_sha256": "6a5671de809bb392bec262e0c961a82244998de6e461b703dbb7fd7d25da03a3"
+}

@@ -51,16 +51,20 @@ def sky(image, valid):
 
 
 def extract_region(data, mosaic_root, cache_stem, block='4:2', native_size=164,
-                   nisp_path=None, jwst_path=None, force=False):
+                   nisp_path=None, jwst_path=None, force=False, center_object_id=None):
     """Native NISP field and a five-times-finer, identical-footprint JWST field.
 
     Cached arrays can be plotted later without the large mosaics. Cache identity
     includes geometry, input catalog/manifest hashes and this extractor's hash.
-    Set force=True after changing a source mosaic at the same path.
+    An optional catalog object ID centres the field on that galaxy within the
+    specified training or validation block. Set force=True after changing a
+    source mosaic at the same path.
     """
     data, stem = Path(data), Path(cache_stem)
     signature = dict(block=block, native_size=int(native_size), factor=5,
-                     center_rule='centre of the selected validation block',
+                     center_rule=('catalog object position' if center_object_id is not None
+                                  else 'centre of the selected spatial block'),
+                     center_object_id=(int(center_object_id) if center_object_id is not None else None),
                      catalog_sha256=digest(data/'objects.csv'),
                      manifest_sha256=digest(data/'manifest.json'),
                      extractor_sha256=digest(__file__))
@@ -72,8 +76,9 @@ def extract_region(data, mosaic_root, cache_stem, block='4:2', native_size=164,
                 return dict(saved), meta
     catalog = pd.read_csv(data/'objects.csv')
     selected = catalog[catalog.spatial_block == block]
-    if selected.empty or set(selected.split) != {'validation'}:
-        raise ValueError('Choose a populated validation block.')
+    if selected.empty or selected.split.nunique() != 1 or selected.split.iloc[0] not in {'train', 'validation'}:
+        raise ValueError('Choose a populated training or validation block.')
+    region_split = selected.split.iloc[0]
     manifest = json.loads((data/'manifest.json').read_text())
     split = manifest['spatial_split']
     ra_origin, dec_origin = split['origin_deg']
@@ -85,6 +90,12 @@ def extract_region(data, mosaic_root, cache_stem, block='4:2', native_size=164,
     center = np.array([ra_edges.mean(), dec_edges.mean()])
     distance = ((selected.ra-center[0])*cosine)**2 + (selected.dec-center[1])**2
     anchor = selected.loc[distance.idxmin()]
+    if center_object_id is not None:
+        matches = selected[selected.id_classic == int(center_object_id)]
+        if len(matches) != 1:
+            raise ValueError('The centre object must belong to the selected block.')
+        anchor = matches.iloc[0]
+        center = np.array([anchor.ra, anchor.dec])
     npath = locate(mosaic_root, anchor.nisp_image, 'NISP-Y', nisp_path)
     jpath = locate(mosaic_root, anchor.jwst_image, 'JWST', jwst_path)
     print('Extracting real mosaic pixels:', npath.name, jpath.name, flush=True)
@@ -111,7 +122,7 @@ def extract_region(data, mosaic_root, cache_stem, block='4:2', native_size=164,
     corners = cw.all_pix2world([[-.5, -.5], [edge, -.5], [edge, edge], [-.5, edge]], 0)
     if not (np.all((corners[:, 0] > ra_edges[0]) & (corners[:, 0] < ra_edges[1]))
             and np.all((corners[:, 1] > dec_edges[0]) & (corners[:, 1] < dec_edges[1]))):
-        raise ValueError('Requested field crosses the validation-block boundary.')
+        raise ValueError('Requested field crosses the selected spatial-block boundary.')
     mid = (native_size-1)/2
     local = cw.all_pix2world([[mid, mid], [mid+1, mid], [mid, mid+1]], 0)
     delta = local[1:]-local[0]
@@ -154,7 +165,8 @@ def extract_region(data, mosaic_root, cache_stem, block='4:2', native_size=164,
                          if Path(r['path']).name == path.name), None)
         if expected and sources[str(path.resolve())] != expected:
             raise ValueError(f'Source checksum differs from the sample manifest: {path.name}')
-    meta = dict(signature=signature, split='validation', spatial_block=block,
+    meta = dict(signature=signature, split=region_split, spatial_block=block,
+                center_object_id=signature['center_object_id'],
                 units='sky-subtracted MJy/sr', native_size=native_size,
                 center_ra_dec_deg=local[0].tolist(), corners_ra_dec_deg=corners.tolist(),
                 block_ra_edges_deg=ra_edges.tolist(), block_dec_edges_deg=dec_edges.tolist(),

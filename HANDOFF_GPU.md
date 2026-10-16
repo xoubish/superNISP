@@ -14,19 +14,31 @@ selection, while final test performance must wait for frozen model/measurement
 choices. Previous train/validation-only v01 is archived under `revisions/`.
 
 Figure 1 review update: the user wants paired NISP/JWST observations instead
-of the accounting panel, a field four times the cutout width (~49 arcsec), no
+of the accounting panel, a closer field with less whitespace, no
 figure/panel titles, and the two original rows split into separate figures.
 `01_sample.ipynb` now contains footprint + paired field in one row;
 `01b_sample_properties.ipynb` contains magnitude/redshift in another figure.
-Final numbering remains provisional. The user will run the overview elsewhere
-where original mosaics exist: set its `MOSAIC_ROOT` or two explicit paths.
-`paper_figures/sample_region.py` extracts native 164-pixel NISP and aligned
-820-pixel JWST observations centred inside validation block 4:2, with masks,
+Final numbering remains provisional. The overview has now been rendered in the
+local mosaic workspace; other machines can set `MOSAIC_ROOT` or two explicit paths.
+`paper_figures/sample_region.py` extracts native 82-pixel NISP and aligned
+410-pixel JWST observations centred on galaxy 734405 in validation block 3:2, with masks,
 physical units, shared footprint, and cached input/source hashes. No models run.
-The larger real field has not been rendered on this GPU copy, which has only
-the original 41-pixel cutouts. Missing mosaics produce a clear waiting state
+The v07 PDF/SVG/PNG and executed notebook now show the real 24.3-arcsec field
+around a larger spiral, selected from observed images to illustrate resolution;
+source checksums match the sample manifest. Copy the local, git-ignored
+`inputs/sample_region_v06.npz` and its JSON sidecar to render on the GPU copy
+without mosaics. Metadata lookup supports both the sibling package and local
+`data/ready/` layout. Missing mosaics/cache still produce a clear waiting state
 and skip overview export. v01/v02 combined layouts and notebook snapshots are
-preserved; v03 is the pending overview. The separate properties figure is ready.
+preserved, as are the previous v03 validation field and notebook/extractor
+snapshots and the v04 training field. v05 moves the footprint legend to the
+upper right and removes the field-size text below the images. The separate
+properties figure is ready. v06 halves the image field width and uses three
+adjacent axes to reduce whitespace, retaining the v05 shared stretch and
+native NISP pixels. v07 removes the block outline and circled arrow, showing
+only the true WCS footprint with two lines to corresponding corners of the
+NISP view. It reuses the v06 image cache; v05/v06 exports and notebook snapshots
+are preserved.
 
 The user requested a figure-first paper workflow while experiments continue.
 See [paper_figures/README.md](paper_figures/README.md): nine editable notebooks,

@@ -1,0 +1,46 @@
+{
+  "status": "sample overview: real matched ~24-arcsec validation region with a large spiral galaxy",
+  "notebook": "01_sample.ipynb",
+  "notebook_source_sha256": "9abcad2ecf39b88da1181265f6e59142691b6cf375d817f05fdabf8507064a20",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "data/ready/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "data/ready/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/inputs/sample_region_v06.npz": "89d136b1ceda5c24ffc73aed1ff44e0056ae20af1bb145d0c8a329502cf98e1a",
+    "paper_figures/inputs/sample_region_v06.json": "eba5af4743684837b3c1162bfc32c90acb914ab07a2f518fe380b4e741eb54c4",
+    "paper_figures/sample_region.py": "5b4a58c18f1903c92ae4cb8a4cebbfd054a51fba2cfb8f2be6c3ed3a9bef181c"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      2.65
+    ],
+    "layout": "three adjacent axes",
+    "scale_bar_arcsec": 5,
+    "display_reference": "v05 shared stretch retained",
+    "sample_count": 22810,
+    "split_counts": {
+      "train": 17816,
+      "test": 2876,
+      "validation": 2118
+    },
+    "zoom_block": "3:2",
+    "center_object_id": 734405,
+    "zoom_split": "validation",
+    "selection": "Illustrative large spiral; selected by catalog size/brightness and observed morphology in train/validation, without model outputs",
+    "zoom_field_arcsec": 24.33022959731128,
+    "display_low": -0.03,
+    "display_high": 0.9432567954063416,
+    "asinh_softening": 0.04,
+    "test_access": "positions/counts only; image footprint contained in validation block"
+  },
+  "versions": {
+    "matplotlib": "3.10.5",
+    "pandas": "2.3.2"
+  },
+  "exports": {
+    "fig01_sample_v06.pdf": "e5840fe900368250b5a3f8f6fcd44237e4e67d3b2be4a3ec5e3f31a8b340488b",
+    "fig01_sample_v06.svg": "a8d802f8edb24c7f5ce1a723f71b96a9d8ce08a0150ec029b7296bda09025d31",
+    "fig01_sample_v06.png": "fdb741774d51de9be002d51b651e885e196204db4b8616a09be88bccec479870"
+  }
+}

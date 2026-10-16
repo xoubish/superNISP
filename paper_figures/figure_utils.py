@@ -21,7 +21,13 @@ def find_root():
 
 ROOT=find_root()
 FIGURES=ROOT/'paper_figures'
-DATA=Path(os.environ.get('SUPERNISP_DATA',str(ROOT.parent/'supernisp_nir_y_f115w_v1'))).expanduser().resolve()
+# Support both the portable GPU layout and the original mosaic workspace.
+_data_candidates = [ROOT.parent/'supernisp_nir_y_f115w_v1',
+                    ROOT/'data/ready/supernisp_nir_y_f115w_v1']
+_default_data = next((path for path in _data_candidates
+                      if (path/'manifest.json').is_file() and (path/'objects.csv').is_file()),
+                     _data_candidates[0])
+DATA=Path(os.environ.get('SUPERNISP_DATA',str(_default_data))).expanduser().resolve()
 COLORS=dict(train='#0072B2',validation='#D55E00',test='#999999',native='#626A73',
             bilinear='#E69F00',bicubic='#56B4E9',legacy='#0072B2',sr='#0072B2',
             direct5='#009E73',diffusion='#8B5DA8',jwst='#252B33')
