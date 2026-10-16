@@ -144,3 +144,4 @@ plots
 *.fits.gz
 *.csv
 .virtual_documents/
+runs/

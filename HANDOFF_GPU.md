@@ -4,6 +4,161 @@ Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
+## Validation analysis and queued completion workflow
+
+While full50 training continues, the user asked to work on the other steps.
+Implemented standalone validation analysis without changing any active training
+source (all four training source hashes were rechecked and still match).
+
+- `code/shape_diagnostics.py`: the existing signed moment definition with
+  explicit failure reasons; native/bilinear/bicubic baselines in matched angular
+  regions; common-success comparisons, round-shape control, paired spatial-block
+  bootstrap intervals and fixed property bins.
+- `code/evaluate_paired_shapes.py`: immutable checkpoint copy, verified code/data
+  hashes, full validation only, row/ID catalog joins, per-object CSV/NPZ, report,
+  plot and W&B failure table. Runs on GPU 1 in tmux with online W&B.
+- Four metric/geometry/mask/bootstrap regression checks passed. Two comparison
+  regression checks passed (IDs/reordering/unchanged baselines). Real-data
+  same-checkpoint comparison correctly returned zero change and zero lost IDs.
+- [Epoch-11 analysis od7fm46d](https://wandb.ai/AI-Astro/superNISP-corrected/runs/od7fm46d)
+  completed on all 2,118 validation objects. The immutable snapshot and detailed
+  results are in `runs/validation-shapes-full50-snapshot/`.
+- 1,527 objects pass JWST and every baseline; 43 fail SR, leaving 1,484 common
+  successes. On those same objects, component ellipticity RMSE is native
+  0.20698, bilinear 0.20074, bicubic 0.20741, SR 0.17759, round control 0.28872.
+  These are intermediate validation diagnostics, not final test/shear results.
+  All 43 SR failures on baseline/reference eligible objects have input S/N proxy
+  1.33–3.75 and ACS F814W magnitude 24.15–24.99. Failure flags retain negative
+  flux/indefinite moments; no clipping or new sample cut was applied.
+
+**A final-analysis job is queued in `supernisp-final-analysis`.** It waits for
+the existing training to exit successfully with 50 completed epochs, then:
+
+1. Evaluates `best.pt` on validation using GPU 1, into
+   `runs/validation-shapes-full50-best/` with a separate online W&B run.
+2. Uses `code/compare_shape_runs.py` to compare it with epoch 11 on identical
+   common object IDs, saving recovered/lost measurements and paired uncertainty
+   estimates into `runs/full50-shape-comparison/` with another W&B run.
+
+Follow `runs/final-analysis-console/console.log` or attach with
+`tmux attach -t supernisp-final-analysis`. Check its `exit_status` when done.
+Do not duplicate this pending job. The watcher aborts after a failed/incomplete
+training exit or a 24-hour wait. It does not touch test data or train models.
+
+Read [validation diagnostics](paper/validation_shape_diagnostics.md) for the
+measurement contract, limitations, commands and preliminary results. The tracked
+machine-readable snapshot is `paper/diagnostics/validation_epoch11_shapes.json`.
+Next: inspect the queued best-checkpoint analysis and fixed-population comparison
+when training completes, then choose one controlled architecture ablation.
+
+## Active full-split training and image monitoring
+
+The user requested a longer run and galaxy images in W&B after the pilot.
+**A 50-epoch run is now launched; inspect its status before starting anything
+else on CUDA device 0.**
+
+- W&B: [residual-full50-s20261016 / nifpxes6](https://wandb.ai/AI-Astro/superNISP-corrected/runs/nifpxes6).
+  Remote API verification confirmed state `running`, 1,120 optimizer updates,
+  and all four epoch-0 image panels. This is a startup snapshot, not completion;
+  current status is in W&B and the run directory.
+- Persistent session: `tmux attach -t supernisp-full50`.
+- Console: `runs/full50-console/console.log`; `exit_status` appears on exit.
+- Artifacts: `runs/residual-full50-s20261016/`, including per-epoch
+  `progress.json`, `last.pt`, `best.pt`, and final `status.json` on completion.
+- Uses all 17,816 train / 2,118 validation examples, 50 epochs / 111,350
+  optimizer updates, batch 8, seed 20261016, max LR 1e-4. It starts from scratch
+  with a matching 50-epoch schedule and the unchanged legacy residual model.
+  Best model selection remains validation MAE. Test data remain reserved.
+- Eight fixed evaluation galaxies appear under W&B `galaxies/full_1`,
+  `full_2`, `central_1`, and `central_2`, at initialization and every epoch.
+  Panels show NISP native sampling, bilinear NISP, SR, JWST and signed residual.
+  Per-object physical-intensity/asinh display scales stay fixed across epochs;
+  central crops, object IDs, masks and moment-check failures are visible.
+- `code/galaxy_visuals.py` is included in source snapshots and hashes.
+  Rendering preserves Python/NumPy/Torch/CUDA RNG state, so it does not alter
+  training/resume random streams. The trainer supports `--gallery-count`,
+  `--image-every`, and `--mode train`.
+
+[Visual checks sfgwa5ku](https://wandb.ai/AI-Astro/superNISP-corrected/runs/sfgwa5ku)
+passed in tmux and synced eight image files. Locally inspected panels show
+the pilot predictions and a separate set of failed-moment examples. All 20
+pilot prediction failures were reproduced; 13 have passing JWST moments.
+This does not yet diagnose their quantitative cause. The longer run retains
+the existing metric and failure-count logging.
+
+Next: inspect full-run learning curves and fixed galaxy panels, confirm best
+checkpoint selection and shape failure rates, then plan architecture comparisons.
+See [the training guide](paper/corrected_training.md) for image conventions and
+resume instructions. Older completed pilot results are recorded below.
+
+## GPU continuation — 2026-10-16
+
+The extracted sibling package is present and all 46 `SHA256SUMS` entries pass.
+No rebuild or transfer is needed. CUDA works outside the Codex execution
+sandbox: PyTorch 2.6.0+cu124, NVIDIA driver 590.48.01, two L40S GPUs.
+An in-sandbox `nvidia-smi` failure does not mean the host driver is broken.
+
+**User requirement:** run models inside tmux/screen so disconnects do not
+terminate work, and attach online W&B monitoring before running models.
+The user approved project `superNISP-corrected` under the existing account;
+it resolves to [AI-Astro/superNISP-corrected](https://wandb.ai/AI-Astro/superNISP-corrected).
+Do not fall back silently to offline monitoring or foreground training.
+
+Implemented `code/residual_baseline.py`, `code/train_paired.py`,
+`code/launch_paired.py`, `code/check_paired_training.py`, and
+`code/run_paired_pilot.py`. See [training contract and commands](paper/corrected_training.md).
+The new baseline matches the original eight-block, 64-feature model exactly.
+The trainer uses the corrected loader, masked loss, update-level OneCycleLR,
+validation-only pilot selection, provenance, and resumable epoch checkpoints.
+The direct-5x head is an explicit option but has not been trained or ranked.
+
+Integration checks passed in persistent session `supernisp-check`, tracked at
+[W&B lkg2d7mu](https://wandb.ai/AI-Astro/superNISP-corrected/runs/lkg2d7mu).
+Checks cover both loader representations, worker loading/flux round trips,
+legacy output equivalence, finite CUDA gradients for both heads, masked-pixel
+gradients, paired augmentation, fixed moment diagnostics, and exact optimizer
+update restoration from checkpoint including scheduler and RNG state.
+
+The gated initial experiment was launched in tmux session `supernisp-pilot`:
+
+```bash
+tmux attach -t supernisp-pilot
+tail -f runs/pilot-console/console.log
+```
+
+Sequence: 32 fully valid training pairs, 40 epochs / 160 updates; deliberately
+stop after epoch 2 and resume; require a training-loss decrease; then a fresh
+3-epoch pilot on 1,024 training / 256 validation objects (384 updates).
+Both experiments completed successfully; the console exit status is 0 and
+W&B finished syncing. The tmux session remains open at an idle shell.
+
+- [Overfit emr5ag36](https://wandb.ai/AI-Astro/superNISP-corrected/runs/emr5ag36):
+  all 40 epochs / 160 updates, planned resume succeeded, masked training MAE
+  1.1754255 at initialization to 0.9242856; about 22 seconds of measured
+  train/evaluation time, excluding process setup and W&B startup/sync.
+- [Pilot 9c47c2of](https://wandb.ai/AI-Astro/superNISP-corrected/runs/9c47c2of):
+  all 3 epochs / 384 updates, validation MAE 1.4428717 at initialization to
+  1.1082243, physical-intensity RMSE 0.4275776 to 0.3729545 MJy/sr.
+  Best checkpoint is epoch 3; about 71.5 seconds train/evaluation wall time,
+  peak allocated CUDA memory 0.577 GiB.
+- Prediction moment-diagnostic failures rose from 0 to 20/256; reference
+  failures remained 25/256, and paired successes fell from 231 to 218.
+  The apparent shape RMSE decrease cannot establish shape improvement with
+  this changing population. No test data were used and no scientific
+  SR-improvement percentage was measured.
+
+Checkpoints and provenance are in `runs/residual-{overfit,pilot}-s20261016/`.
+Tracked metrics, checkpoint/source hashes, and checks are in
+`paper/diagnostics/corrected_training_pilot.json`. Runs and weights are gitignored.
+
+Next: inspect pilot predictions and the 20 moment failures, add fixed matched
+interpolation/native comparison diagnostics, then choose a full-split baseline
+budget before architecture comparisons. The original startup and implementation
+checklist below describes the state before this continuation.
+
+Pre-existing local edits in `code/test_model.ipynb` and untracked
+`code/older/{losses_olddiff,model_olddiff,train_olddiff}.py` were left untouched.
+
 ## Objective and agreed order
 
 Finalize the Euclid NISP / JWST superresolution paper with a reproducible

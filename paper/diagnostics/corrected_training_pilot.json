@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-16",
+  "package_checksums": {
+    "verified": 46,
+    "failed": 0
+  },
+  "integration_checks": {
+    "loader_smoke": "passed",
+    "legacy_equivalence_and_cuda": "passed",
+    "masks_augmentation_moments": "passed",
+    "exact_resume": "passed"
+  },
+  "integration_wandb": "https://wandb.ai/AI-Astro/superNISP-corrected/runs/lkg2d7mu",
+  "overfit": {
+    "initial": {
+      "mae": 1.1754255294799805,
+      "rmse_mjy_sr": 0.12235293477818951,
+      "shape_e_rmse": 0.3018686282431222,
+      "shape_paired_successes": 28,
+      "shape_prediction_failures": 0,
+      "shape_target_failures": 4,
+      "objects": 32
+    },
+    "status": {
+      "complete": true,
+      "epoch": 40,
+      "updates": 160,
+      "best": 0.9242855906486511,
+      "checkpoint_sha256": "f24d632ef2872a6d51f64556b9c29c7ab1a13220d7a1186df12135c5f0895709",
+      "wandb_url": "https://wandb.ai/AI-Astro/superNISP-corrected/runs/emr5ag36"
+    },
+    "final": {
+      "overfit_train/mae": 0.9242855906486511,
+      "overfit_train/rmse_mjy_sr": 0.10040847942157563,
+      "overfit_train/shape_e_rmse": 0.20487563482263818,
+      "overfit_train/shape_paired_successes": 27,
+      "overfit_train/shape_prediction_failures": 2,
+      "overfit_train/shape_target_failures": 4,
+      "overfit_train/objects": 32,
+      "epoch": 40,
+      "updates": 160,
+      "train_epoch_mae": 0.9242868274450302,
+      "elapsed_seconds": 22.05884231440723,
+      "peak_cuda_gib": 0.5784063339233398
+    },
+    "source_hashes": {
+      "train_paired.py": "fc3e56aa8ab3ea9c050645e42ea96b9fb514c0274b53a1888d812b85c1781272",
+      "residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+      "paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6"
+    }
+  },
+  "pilot": {
+    "initial": {
+      "mae": 1.442871680483222,
+      "rmse_mjy_sr": 0.42757755536072656,
+      "shape_e_rmse": 0.285975318192526,
+      "shape_paired_successes": 231,
+      "shape_prediction_failures": 0,
+      "shape_target_failures": 25,
+      "objects": 256
+    },
+    "status": {
+      "complete": true,
+      "epoch": 3,
+      "updates": 384,
+      "best": 1.1082242764532566,
+      "checkpoint_sha256": "bdd533333bd73a64ff94928f924812f0428e32a8e57529c7d5cdf680cff18c1e",
+      "wandb_url": "https://wandb.ai/AI-Astro/superNISP-corrected/runs/9c47c2of"
+    },
+    "epochs": [
+      {
+        "validation/mae": 1.3282667975872755,
+        "validation/rmse_mjy_sr": 0.39207411807964593,
+        "validation/shape_e_rmse": 0.22589499243441183,
+        "validation/shape_paired_successes": 231,
+        "validation/shape_prediction_failures": 0,
+        "validation/shape_target_failures": 25,
+        "validation/objects": 256,
+        "epoch": 1,
+        "updates": 128,
+        "train_epoch_mae": 1.219790949486196,
+        "elapsed_seconds": 26.547630766406655,
+        "peak_cuda_gib": 0.5771408081054688
+      },
+      {
+        "validation/mae": 1.11823839135468,
+        "validation/rmse_mjy_sr": 0.3734108193100716,
+        "validation/shape_e_rmse": 0.22449338840168165,
+        "validation/shape_paired_successes": 226,
+        "validation/shape_prediction_failures": 9,
+        "validation/shape_target_failures": 25,
+        "validation/objects": 256,
+        "epoch": 2,
+        "updates": 256,
+        "train_epoch_mae": 1.0835789642296731,
+        "elapsed_seconds": 47.03257847391069,
+        "peak_cuda_gib": 0.5771408081054688
+      },
+      {
+        "validation/mae": 1.1082242764532566,
+        "validation/rmse_mjy_sr": 0.37295450172906836,
+        "validation/shape_e_rmse": 0.21938242262788477,
+        "validation/shape_paired_successes": 218,
+        "validation/shape_prediction_failures": 20,
+        "validation/shape_target_failures": 25,
+        "validation/objects": 256,
+        "epoch": 3,
+        "updates": 384,
+        "train_epoch_mae": 1.0311716422438622,
+        "elapsed_seconds": 71.48304720781744,
+        "peak_cuda_gib": 0.5771408081054688
+      }
+    ],
+    "source_hashes": {
+      "train_paired.py": "fc3e56aa8ab3ea9c050645e42ea96b9fb514c0274b53a1888d812b85c1781272",
+      "residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+      "paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6"
+    },
+    "best_checkpoint_sha256": "bdd533333bd73a64ff94928f924812f0428e32a8e57529c7d5cdf680cff18c1e"
+  }
+}

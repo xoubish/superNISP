@@ -2,6 +2,10 @@
 
 For the current sample, completed checks, and next training steps on `ipacgpu3`,
 start with [the GPU handoff](HANDOFF_GPU.md).
+The [corrected training guide](paper/corrected_training.md) describes the
+residual baseline, tmux/W&B launch commands, checks, and checkpoint resume.
+The [validation diagnostics](paper/validation_shape_diagnostics.md) document
+matched shape comparisons, failure accounting, and the queued final analysis.
 
 Aim: Weak lensing is a science driver of Euclid. Right now Euclid uses VIS (optical) imaging for weak lensing due to its higher resolution compared to NISP (NIR). However being able to do the accurate shape measurements in the IR, enables a larger sample size for weak lensing and hence tighter cosmology constraints (e.g., Lee et al. 2018, Finner et al. 2023). 
 Through this project, we aim to train a deep learning network to do super resolution on Euclid NISP imaging by learning from a subset that have JWST imaging at the same wavelengths.
