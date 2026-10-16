@@ -1,0 +1,44 @@
+{
+  "status": "sample draft v02: paired validation cutout within highlighted block",
+  "notebook": "revisions/01_sample_v02.ipynb",
+  "notebook_source_sha256": "1fbe5f6572e15be9fe299c4547d41543ec8ad4b71dfc15f3316b42e08bd2e3cd",
+  "helper_sha256": "2f3cbb1925f02853b28a44921d038b83006ce887600cc309ff15081398e8dbac",
+  "inputs": {
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/inputs/sample_zoom_v02.npz": "0cbcbb51e8bb65ccf7222c1a0e610008e9895bef65843cdbb37b4b59c0812dae",
+    "paper_figures/inputs/sample_zoom_v02.json": "cb1d5ad66c98c0ae288586c8951c3796e787d0cb6915621e48aa229be76a6748"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      6.0
+    ],
+    "property_splits": [
+      "train",
+      "validation"
+    ],
+    "sample_count": 22810,
+    "split_counts": {
+      "train": 17816,
+      "test": 2876,
+      "validation": 2118
+    },
+    "zoom_object_id": 742196,
+    "zoom_block": "4:2",
+    "zoom_field_arcsec": 12.165113088568685,
+    "display_low": -0.03,
+    "display_high": 1.6234282379150085,
+    "asinh_softening": 0.04,
+    "test_access": "positions and counts only; images from validation only"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig01_sample_v02.pdf": "ae39bbd887d93c1c4c2779be4cbae34cef0f3bd82c2c1ed545131b9cdee6ebbb",
+    "fig01_sample_v02.svg": "206af9c0f43c1eec15c0ad0363d62bed3fd5edef359d3f59947aaa874fa27a6d",
+    "fig01_sample_v02.png": "5265a9f1d7c8faaf5c23e56cc9e5aca2c08b834333f09482af617b7cb0d36220"
+  }
+}

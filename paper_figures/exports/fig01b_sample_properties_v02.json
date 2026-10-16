@@ -1,0 +1,86 @@
+{
+  "status": "sample properties: separate horizontal figure, train/validation/test catalog metadata only",
+  "notebook": "01b_sample_properties.ipynb",
+  "notebook_source_sha256": "50b7103be6d73f0aa0a7b2cd09719380d7fba9077d00a3acf159725cce57b271",
+  "helper_sha256": "2f3cbb1925f02853b28a44921d038b83006ce887600cc309ff15081398e8dbac",
+  "inputs": {
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      2.8
+    ],
+    "property_splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "magnitude_bins": [
+      17.0,
+      17.333333333333332,
+      17.666666666666668,
+      18.0,
+      18.333333333333332,
+      18.666666666666668,
+      19.0,
+      19.333333333333332,
+      19.666666666666668,
+      20.0,
+      20.333333333333332,
+      20.666666666666668,
+      21.0,
+      21.333333333333332,
+      21.666666666666664,
+      22.0,
+      22.333333333333332,
+      22.666666666666664,
+      23.0,
+      23.333333333333332,
+      23.666666666666664,
+      24.0,
+      24.333333333333332,
+      24.666666666666664,
+      25.0
+    ],
+    "redshift_bins": [
+      0.01,
+      0.12960000000000002,
+      0.24920000000000003,
+      0.3688,
+      0.48840000000000006,
+      0.6080000000000001,
+      0.7276,
+      0.8472000000000001,
+      0.9668000000000001,
+      1.0864,
+      1.2060000000000002,
+      1.3256000000000001,
+      1.4452,
+      1.5648000000000002,
+      1.6844000000000001,
+      1.8040000000000003,
+      1.9236000000000002,
+      2.0432,
+      2.1628,
+      2.2824,
+      2.402,
+      2.5216,
+      2.6412,
+      2.7608,
+      2.8804,
+      3.0
+    ],
+    "test_access": "catalog magnitude/redshift only; no images, predictions or performance metrics"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig01b_sample_properties_v02.pdf": "ace5a544373f813a0713f592cce8d9d1036c1f8e5672f14072b44b9d4cc05c63",
+    "fig01b_sample_properties_v02.svg": "c13ad8c86c883e4b0e45e0325cfe7a660d9e9639754e961ee8df480b965b114d",
+    "fig01b_sample_properties_v02.png": "8a8d710bf1acdd6e1f0884e58a45e9db0534265f4d8302493fef849b5964b859"
+  }
+}

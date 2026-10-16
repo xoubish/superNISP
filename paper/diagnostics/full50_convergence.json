@@ -1,0 +1,12 @@
+{
+  "best_epoch": 49,
+  "best_validation_mae": 0.9645708277047638,
+  "last_learning_rate": 4.0004061266731453e-10,
+  "improvements_to_best_percent": {
+    "30": 1.7712792535560795,
+    "40": 0.5720124404585802,
+    "45": 0.15399100184287917,
+    "48": 0.005243738457694214
+  },
+  "interpretation": "Near a plateau under the completed OneCycle schedule; not proof of absolute convergence. Simply appending epochs at the final learning rate is not a useful continuation test."
+}

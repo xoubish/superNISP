@@ -1,0 +1,32 @@
+{
+  "status": "legacy-only validation preview",
+  "notebook": "07_shape_dependence.ipynb",
+  "notebook_source_sha256": "79afdbc9d5c047469dd9dbedc950c9c09289f9ece9362cc14dc9c72f55064d33",
+  "helper_sha256": "2f3cbb1925f02853b28a44921d038b83006ce887600cc309ff15081398e8dbac",
+  "inputs": {
+    "runs/validation-shapes-full50-best/report.json": "f3c505bd043e4834326ca0644867730be5b457f8a0853bd80d6d638040c6b477",
+    "runs/validation-shapes-full50-best/provenance.json": "7706169c0a5c368fb22393fac795cd2d917b569c952131ba24b56429f759e88b"
+  },
+  "settings": {
+    "figsize": [
+      8.5,
+      5.6
+    ],
+    "properties": [
+      "nisp_weighted_snr_proxy",
+      "ACS_F814W_MAG",
+      "ez_z_phot"
+    ],
+    "bins": "predeclared saved bins",
+    "intervals": "paired spatial-block percentile intervals; conditional on this field"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_shape_dependence_v01.pdf": "43023ab146d42ce8ac845a593329cdbc4b4a20ee22f513554cfa2ca835eece94",
+    "fig07_shape_dependence_v01.svg": "f64acfa13d18160be1463a737c8d1dc4ca7ebd01b91ec8086191f2df4b09831e",
+    "fig07_shape_dependence_v01.png": "eb9570a62e616d805a7dcf6af2e61212424fe80903c25c4e718cedaae94b4ab3"
+  }
+}

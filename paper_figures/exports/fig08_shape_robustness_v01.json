@@ -1,0 +1,50 @@
+{
+  "status": "legacy-only validation robustness preview",
+  "notebook": "08_shape_robustness.ipynb",
+  "notebook_source_sha256": "854f9d5961ad7ffceff65bd3ec0b3aa493e030a5aea518761da0ce9416482104",
+  "helper_sha256": "2f3cbb1925f02853b28a44921d038b83006ce887600cc309ff15081398e8dbac",
+  "inputs": {
+    "runs/shape-robustness-best49/report.json": "872939f21b544aacf56680d15f641605cd3cde793238bd5da219d721fbdfdae4",
+    "runs/shape-robustness-best49/protocol.json": "0804ec05cbbad490039947c8a45a5820f8665a8534dabe7018e4db8e900ab15d"
+  },
+  "settings": {
+    "figsize": [
+      8.5,
+      8.0
+    ],
+    "scenarios": [
+      "fixed_nominal",
+      "weight_sigma8",
+      "weight_sigma12",
+      "aperture20",
+      "aperture30",
+      "center_xplus2",
+      "center_xminus2",
+      "center_yplus2",
+      "center_yminus2",
+      "background_sr_plus",
+      "background_sr_minus",
+      "background_jwst_plus",
+      "background_jwst_minus",
+      "background_nisp_plus",
+      "background_nisp_minus",
+      "hsm105",
+      "hsm155",
+      "hsm105_guess15",
+      "input_noise_seed0",
+      "input_noise_seed1",
+      "input_noise_seed2"
+    ],
+    "population": "global_matched",
+    "common_objects": 1098
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig08_shape_robustness_v01.pdf": "130a42873bfce2044c0d5def6136b7b7e6b9d46b0d606292e5dfa1066f7e53ba",
+    "fig08_shape_robustness_v01.svg": "41c4086243fe665354b1940a30283ab2db378cd505cfdbf91b3e4b63867a0093",
+    "fig08_shape_robustness_v01.png": "e0411e69ebbe7918ec3bbe9a83a4bc9813858f67629cd9117141e715aac24ae1"
+  }
+}

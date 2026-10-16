@@ -1,0 +1,2861 @@
+{
+  "checkpoint_epoch": 49,
+  "checkpoint_sha256": "be747f0cd0b02bb81ff0ab42a9ce8ea81a0e473c28c58d8406a428f758ea6b56",
+  "wandb_url": "https://wandb.ai/AI-Astro/superNISP-corrected/runs/56s99iwd",
+  "summary": {
+    "objects": 2118,
+    "reference_baselines_eligible": 1527,
+    "common_successes": 1523,
+    "sr_failures_on_eligible": 4,
+    "success_counts": {
+      "jwst": 1900,
+      "native": 1741,
+      "bilinear": 1739,
+      "bicubic": 1628,
+      "sr": 2045
+    },
+    "failure_reasons": {
+      "jwst": {
+        "nonfinite_input": 0,
+        "incomplete_aperture": 7,
+        "nonpositive_flux": 0,
+        "nonpositive_qxx": 81,
+        "nonpositive_qyy": 84,
+        "nonpositive_determinant": 195,
+        "nonfinite_shape": 0
+      },
+      "native": {
+        "nonfinite_input": 0,
+        "incomplete_aperture": 147,
+        "nonpositive_flux": 1,
+        "nonpositive_qxx": 120,
+        "nonpositive_qyy": 108,
+        "nonpositive_determinant": 221,
+        "nonfinite_shape": 0
+      },
+      "bilinear": {
+        "nonfinite_input": 0,
+        "incomplete_aperture": 189,
+        "nonpositive_flux": 1,
+        "nonpositive_qxx": 100,
+        "nonpositive_qyy": 94,
+        "nonpositive_determinant": 184,
+        "nonfinite_shape": 0
+      },
+      "bicubic": {
+        "nonfinite_input": 0,
+        "incomplete_aperture": 267,
+        "nonpositive_flux": 1,
+        "nonpositive_qxx": 119,
+        "nonpositive_qyy": 114,
+        "nonpositive_determinant": 223,
+        "nonfinite_shape": 0
+      },
+      "sr": {
+        "nonfinite_input": 0,
+        "incomplete_aperture": 7,
+        "nonpositive_flux": 16,
+        "nonpositive_qxx": 42,
+        "nonpositive_qyy": 42,
+        "nonpositive_determinant": 29,
+        "nonfinite_shape": 0
+      }
+    },
+    "methods": {
+      "native": {
+        "component_rmse": 0.21784821152687073,
+        "bias": [
+          0.010728410445153713,
+          -0.0032850527204573154
+        ],
+        "component_scatter": [
+          0.2194228321313858,
+          0.21597085893154144
+        ],
+        "vector_error_above_0_2_fraction": 0.40118187787261983,
+        "sr_comparison": {
+          "improvement_percent": 19.201259738161504,
+          "ci95_percent": [
+            16.532053204983697,
+            21.851661754256963
+          ],
+          "usable_bootstrap_replicates": 1000
+        }
+      },
+      "bilinear": {
+        "component_rmse": 0.21060284972190857,
+        "bias": [
+          0.010122672654688358,
+          -0.001956548308953643
+        ],
+        "component_scatter": [
+          0.2129533439874649,
+          0.20797036588191986
+        ],
+        "vector_error_above_0_2_fraction": 0.4221930400525279,
+        "sr_comparison": {
+          "improvement_percent": 16.421543759222,
+          "ci95_percent": [
+            13.931786348170196,
+            18.798850280367656
+          ],
+          "usable_bootstrap_replicates": 1000
+        }
+      },
+      "bicubic": {
+        "component_rmse": 0.21826931834220886,
+        "bias": [
+          0.01011497899889946,
+          -0.003156227758154273
+        ],
+        "component_scatter": [
+          0.22147540748119354,
+          0.2147541046142578
+        ],
+        "vector_error_above_0_2_fraction": 0.39921208141825343,
+        "sr_comparison": {
+          "improvement_percent": 19.357144680916715,
+          "ci95_percent": [
+            16.46271700846609,
+            22.08474341221173
+          ],
+          "usable_bootstrap_replicates": 1000
+        }
+      },
+      "sr": {
+        "component_rmse": 0.1760186105966568,
+        "bias": [
+          0.01492168940603733,
+          -0.0026116613298654556
+        ],
+        "component_scatter": [
+          0.17974615097045898,
+          0.17154279351234436
+        ],
+        "vector_error_above_0_2_fraction": 0.31254103742613265
+      },
+      "round_control": {
+        "component_rmse": 0.293634295463562,
+        "bias": [
+          0.008525792509317398,
+          0.00674497289583087
+        ],
+        "component_scatter": [
+          0.3013256788253784,
+          0.28552907705307007
+        ],
+        "vector_error_above_0_2_fraction": 0.721602101116218,
+        "sr_comparison": {
+          "improvement_percent": 40.055159320277866,
+          "ci95_percent": [
+            37.45363949765081,
+            42.72021314947684
+          ],
+          "usable_bootstrap_replicates": 1000
+        }
+      }
+    },
+    "bootstrap_replicates": 1000,
+    "spatial_blocks": 18
+  },
+  "bins": {
+    "nisp_weighted_snr_proxy": [
+      {
+        "objects": 626,
+        "reference_baselines_eligible": 244,
+        "common_successes": 240,
+        "sr_failures_on_eligible": 4,
+        "success_counts": {
+          "jwst": 433,
+          "native": 357,
+          "bilinear": 378,
+          "bicubic": 325,
+          "sr": 560
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 74,
+            "nonpositive_qyy": 78,
+            "nonpositive_determinant": 179,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 50,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 116,
+            "nonpositive_qyy": 105,
+            "nonpositive_determinant": 210,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 64,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 98,
+            "nonpositive_qyy": 92,
+            "nonpositive_determinant": 178,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 88,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 115,
+            "nonpositive_qyy": 111,
+            "nonpositive_determinant": 213,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 16,
+            "nonpositive_qxx": 42,
+            "nonpositive_qyy": 42,
+            "nonpositive_determinant": 29,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.38361477851867676,
+            "bias": [
+              -0.03004562295973301,
+              -0.009296989068388939
+            ],
+            "component_scatter": [
+              0.372689425945282,
+              0.3929811120033264
+            ],
+            "vector_error_above_0_2_fraction": 0.8416666666666667,
+            "sr_comparison": {
+              "improvement_percent": 19.995220625022913,
+              "ci95_percent": [
+                15.243477819513112,
+                24.514837031878898
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.35761308670043945,
+            "bias": [
+              -0.03132513165473938,
+              -0.004147704690694809
+            ],
+            "component_scatter": [
+              0.3491847813129425,
+              0.3644801676273346
+            ],
+            "vector_error_above_0_2_fraction": 0.825,
+            "sr_comparison": {
+              "improvement_percent": 14.178152696978142,
+              "ci95_percent": [
+                9.445938759328376,
+                18.351180257843282
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.3842563331127167,
+            "bias": [
+              -0.032397087663412094,
+              -0.006085680332034826
+            ],
+            "component_scatter": [
+              0.37728819251060486,
+              0.3897087275981903
+            ],
+            "vector_error_above_0_2_fraction": 0.8416666666666667,
+            "sr_comparison": {
+              "improvement_percent": 20.128796650530113,
+              "ci95_percent": [
+                15.48248043587595,
+                24.682341251999052
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.3069101572036743,
+            "bias": [
+              -0.020504672080278397,
+              -0.0017936939839273691
+            ],
+            "component_scatter": [
+              0.305431604385376,
+              0.3076938986778259
+            ],
+            "vector_error_above_0_2_fraction": 0.7875
+          },
+          "round_control": {
+            "component_rmse": 0.3740466833114624,
+            "bias": [
+              -0.02289080247282982,
+              0.02093639224767685
+            ],
+            "component_scatter": [
+              0.37136387825012207,
+              0.37543100118637085
+            ],
+            "vector_error_above_0_2_fraction": 0.85,
+            "sr_comparison": {
+              "improvement_percent": 17.948702422228035,
+              "ci95_percent": [
+                10.957947607664527,
+                23.854915612060513
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 17,
+        "range": "[-inf, 5)"
+      },
+      {
+        "objects": 547,
+        "reference_baselines_eligible": 457,
+        "common_successes": 457,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 528,
+          "native": 505,
+          "bilinear": 495,
+          "bicubic": 472,
+          "sr": 546
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 1,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 7,
+            "nonpositive_qyy": 6,
+            "nonpositive_determinant": 16,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 31,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 4,
+            "nonpositive_qyy": 3,
+            "nonpositive_determinant": 11,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 46,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 2,
+            "nonpositive_qyy": 2,
+            "nonpositive_determinant": 6,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 65,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 4,
+            "nonpositive_qyy": 3,
+            "nonpositive_determinant": 10,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 1,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.2453981339931488,
+            "bias": [
+              0.022699231281876564,
+              -0.0037558970507234335
+            ],
+            "component_scatter": [
+              0.2581818997859955,
+              0.2307666391134262
+            ],
+            "vector_error_above_0_2_fraction": 0.6323851203501094,
+            "sr_comparison": {
+              "improvement_percent": 17.30957913918726,
+              "ci95_percent": [
+                12.259918798394216,
+                21.31160672638184
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.23758698999881744,
+            "bias": [
+              0.023145724087953568,
+              -0.003487098729237914
+            ],
+            "component_scatter": [
+              0.2502332329750061,
+              0.2230035960674286
+            ],
+            "vector_error_above_0_2_fraction": 0.6301969365426696,
+            "sr_comparison": {
+              "improvement_percent": 14.590967382293984,
+              "ci95_percent": [
+                10.230585386444979,
+                18.10600448452334
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.2473922073841095,
+            "bias": [
+              0.02173483371734619,
+              -0.0044616227969527245
+            ],
+            "component_scatter": [
+              0.2616291344165802,
+              0.23122216761112213
+            ],
+            "vector_error_above_0_2_fraction": 0.6389496717724289,
+            "sr_comparison": {
+              "improvement_percent": 17.976094748831628,
+              "ci95_percent": [
+                12.966735267693622,
+                22.176622950090128
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.20292074978351593,
+            "bias": [
+              0.024121370166540146,
+              0.000689786160364747
+            ],
+            "component_scatter": [
+              0.2150162011384964,
+              0.18851891160011292
+            ],
+            "vector_error_above_0_2_fraction": 0.48358862144420134
+          },
+          "round_control": {
+            "component_rmse": 0.32119542360305786,
+            "bias": [
+              0.026436835527420044,
+              0.005900529213249683
+            ],
+            "component_scatter": [
+              0.3368750512599945,
+              0.30350369215011597
+            ],
+            "vector_error_above_0_2_fraction": 0.8030634573304157,
+            "sr_comparison": {
+              "improvement_percent": 36.823274906216916,
+              "ci95_percent": [
+                33.38525811122485,
+                40.35960088943175
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 18,
+        "range": "[5, 10)"
+      },
+      {
+        "objects": 439,
+        "reference_baselines_eligible": 387,
+        "common_successes": 387,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 437,
+          "native": 406,
+          "bilinear": 400,
+          "bicubic": 388,
+          "sr": 437
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 33,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 39,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 51,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.13452406227588654,
+            "bias": [
+              0.018317457288503647,
+              0.00564930122345686
+            ],
+            "component_scatter": [
+              0.12938880920410156,
+              0.1381468027830124
+            ],
+            "vector_error_above_0_2_fraction": 0.2713178294573643,
+            "sr_comparison": {
+              "improvement_percent": 17.361987036204006,
+              "ci95_percent": [
+                11.625489810609533,
+                22.844003800864876
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.1412968784570694,
+            "bias": [
+              0.016308346763253212,
+              0.006491037085652351
+            ],
+            "component_scatter": [
+              0.13626901805400848,
+              0.14509405195713043
+            ],
+            "vector_error_above_0_2_fraction": 0.30749354005167956,
+            "sr_comparison": {
+              "improvement_percent": 21.323094156854584,
+              "ci95_percent": [
+                15.957781271613614,
+                26.801836568017524
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.13314656913280487,
+            "bias": [
+              0.018499864265322685,
+              0.005024899262934923
+            ],
+            "component_scatter": [
+              0.12793713808059692,
+              0.13682331144809723
+            ],
+            "vector_error_above_0_2_fraction": 0.26098191214470284,
+            "sr_comparison": {
+              "improvement_percent": 16.507039763007793,
+              "ci95_percent": [
+                10.822952368679287,
+                21.796738322025295
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.1111680120229721,
+            "bias": [
+              0.025735877454280853,
+              -0.0014811248984187841
+            ],
+            "component_scatter": [
+              0.10604532063007355,
+              0.11316592246294022
+            ],
+            "vector_error_above_0_2_fraction": 0.1524547803617571
+          },
+          "round_control": {
+            "component_rmse": 0.27326062321662903,
+            "bias": [
+              0.002554498380050063,
+              0.009475537575781345
+            ],
+            "component_scatter": [
+              0.2797466516494751,
+              0.26643621921539307
+            ],
+            "vector_error_above_0_2_fraction": 0.7260981912144703,
+            "sr_comparison": {
+              "improvement_percent": 59.317954151468435,
+              "ci95_percent": [
+                55.43375707655589,
+                63.76041724652178
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 17,
+        "range": "[10, 20)"
+      },
+      {
+        "objects": 371,
+        "reference_baselines_eligible": 322,
+        "common_successes": 322,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 369,
+          "native": 345,
+          "bilinear": 340,
+          "bicubic": 324,
+          "sr": 369
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 26,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 31,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 47,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.07907344400882721,
+            "bias": [
+              0.01515987329185009,
+              -0.007194394711405039
+            ],
+            "component_scatter": [
+              0.08100473880767822,
+              0.07524541765451431
+            ],
+            "vector_error_above_0_2_fraction": 0.040372670807453416,
+            "sr_comparison": {
+              "improvement_percent": 32.34163989304496,
+              "ci95_percent": [
+                27.163674952469073,
+                37.56081200065402
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.09158353507518768,
+            "bias": [
+              0.015147550031542778,
+              -0.00586737459525466
+            ],
+            "component_scatter": [
+              0.09370508044958115,
+              0.08792368322610855
+            ],
+            "vector_error_above_0_2_fraction": 0.09627329192546584,
+            "sr_comparison": {
+              "improvement_percent": 41.58360948554579,
+              "ci95_percent": [
+                36.21679190293895,
+                46.56805165958365
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.076778344810009,
+            "bias": [
+              0.015269788913428783,
+              -0.007268018089234829
+            ],
+            "component_scatter": [
+              0.07855257391929626,
+              0.07302965223789215
+            ],
+            "vector_error_above_0_2_fraction": 0.034161490683229816,
+            "sr_comparison": {
+              "improvement_percent": 30.319160137078892,
+              "ci95_percent": [
+                25.177972987007625,
+                35.46784294130081
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.053499795496463776,
+            "bias": [
+              0.015636390075087547,
+              -0.008124321699142456
+            ],
+            "component_scatter": [
+              0.05314617231488228,
+              0.05088653042912483
+            ],
+            "vector_error_above_0_2_fraction": 0.021739130434782608
+          },
+          "round_control": {
+            "component_rmse": 0.22968870401382446,
+            "bias": [
+              0.0137783233076334,
+              0.0027363800909370184
+            ],
+            "component_scatter": [
+              0.23507507145404816,
+              0.22373239696025848
+            ],
+            "vector_error_above_0_2_fraction": 0.5683229813664596,
+            "sr_comparison": {
+              "improvement_percent": 76.70769412620146,
+              "ci95_percent": [
+                73.6007999850155,
+                79.28858478886234
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 18,
+        "range": "[20, 50)"
+      },
+      {
+        "objects": 135,
+        "reference_baselines_eligible": 117,
+        "common_successes": 117,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 133,
+          "native": 128,
+          "bilinear": 126,
+          "bicubic": 119,
+          "sr": 133
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 7,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 9,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 16,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.06008545681834221,
+            "bias": [
+              0.010311471298336983,
+              -0.007906801998615265
+            ],
+            "component_scatter": [
+              0.061597034335136414,
+              0.05707438290119171
+            ],
+            "vector_error_above_0_2_fraction": 0.017094017094017096,
+            "sr_comparison": {
+              "improvement_percent": 63.01516386533703,
+              "ci95_percent": [
+                57.39677400191165,
+                67.93391772056745
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.07360372692346573,
+            "bias": [
+              0.00998649001121521,
+              -0.008662485517561436
+            ],
+            "component_scatter": [
+              0.07518219947814941,
+              0.07076643407344818
+            ],
+            "vector_error_above_0_2_fraction": 0.05982905982905983,
+            "sr_comparison": {
+              "improvement_percent": 69.80790420010274,
+              "ci95_percent": [
+                65.01385780228689,
+                73.89336334843397
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.05793138965964317,
+            "bias": [
+              0.010010842233896255,
+              -0.0077926767989993095
+            ],
+            "component_scatter": [
+              0.0590556338429451,
+              0.055349625647068024
+            ],
+            "vector_error_above_0_2_fraction": 0.017094017094017096,
+            "sr_comparison": {
+              "improvement_percent": 61.63995396004036,
+              "ci95_percent": [
+                55.964273413576436,
+                66.69201262110714
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.022222507745027542,
+            "bias": [
+              0.013920238241553307,
+              -0.0057528214529156685
+            ],
+            "component_scatter": [
+              0.018934914842247963,
+              0.020056938752532005
+            ],
+            "vector_error_above_0_2_fraction": 0.0
+          },
+          "round_control": {
+            "component_rmse": 0.20050111413002014,
+            "bias": [
+              0.008305365219712257,
+              -0.017066970467567444
+            ],
+            "component_scatter": [
+              0.20332585275173187,
+              0.19672241806983948
+            ],
+            "vector_error_above_0_2_fraction": 0.5470085470085471,
+            "sr_comparison": {
+              "improvement_percent": 88.91651657824865,
+              "ci95_percent": [
+                86.6756261134004,
+                90.74475123578573
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 17,
+        "range": "[50, inf)"
+      }
+    ],
+    "ACS_F814W_MAG": [
+      {
+        "objects": 363,
+        "reference_baselines_eligible": 308,
+        "common_successes": 308,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 361,
+          "native": 331,
+          "bilinear": 326,
+          "bicubic": 310,
+          "sr": 361
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 32,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 37,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 53,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.06864868104457855,
+            "bias": [
+              0.009950676001608372,
+              -0.006493168417364359
+            ],
+            "component_scatter": [
+              0.0694878101348877,
+              0.06674990057945251
+            ],
+            "vector_error_above_0_2_fraction": 0.025974025974025976,
+            "sr_comparison": {
+              "improvement_percent": 48.417619306545454,
+              "ci95_percent": [
+                42.48376562228276,
+                53.34597929073505
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.08131180703639984,
+            "bias": [
+              0.009899863973259926,
+              -0.0072972774505615234
+            ],
+            "component_scatter": [
+              0.08262716978788376,
+              0.07902350276708603
+            ],
+            "vector_error_above_0_2_fraction": 0.07467532467532467,
+            "sr_comparison": {
+              "improvement_percent": 56.45082148820276,
+              "ci95_percent": [
+                51.17099894281487,
+                60.488466822805755
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.06558156758546829,
+            "bias": [
+              0.009678773581981659,
+              -0.00691006937995553
+            ],
+            "component_scatter": [
+              0.06661933660507202,
+              0.06342177093029022
+            ],
+            "vector_error_above_0_2_fraction": 0.01948051948051948,
+            "sr_comparison": {
+              "improvement_percent": 46.0052186899902,
+              "ci95_percent": [
+                40.437788094053424,
+                50.51733921091913
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.035410623997449875,
+            "bias": [
+              0.0111756706610322,
+              -0.0056233941577374935
+            ],
+            "component_scatter": [
+              0.03492619842290878,
+              0.033637285232543945
+            ],
+            "vector_error_above_0_2_fraction": 0.003246753246753247
+          },
+          "round_control": {
+            "component_rmse": 0.2189297378063202,
+            "bias": [
+              0.009979785420000553,
+              -0.013910351321101189
+            ],
+            "component_scatter": [
+              0.2202010601758957,
+              0.21697667241096497
+            ],
+            "vector_error_above_0_2_fraction": 0.5681818181818182,
+            "sr_comparison": {
+              "improvement_percent": 83.82557602623338,
+              "ci95_percent": [
+                81.31457121485883,
+                85.59574773061264
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 18,
+        "range": "[-inf, 22)"
+      },
+      {
+        "objects": 377,
+        "reference_baselines_eligible": 326,
+        "common_successes": 326,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 373,
+          "native": 348,
+          "bilinear": 345,
+          "bicubic": 330,
+          "sr": 373
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 4,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 29,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 32,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 47,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 4,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.11056341230869293,
+            "bias": [
+              0.00922371819615364,
+              -0.006205115467309952
+            ],
+            "component_scatter": [
+              0.11475356668233871,
+              0.10562469810247421
+            ],
+            "vector_error_above_0_2_fraction": 0.18098159509202455,
+            "sr_comparison": {
+              "improvement_percent": 20.057535359852075,
+              "ci95_percent": [
+                15.73527501600938,
+                23.97370044706321
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.12071158736944199,
+            "bias": [
+              0.006528874859213829,
+              -0.004714803770184517
+            ],
+            "component_scatter": [
+              0.12562920153141022,
+              0.11530402302742004
+            ],
+            "vector_error_above_0_2_fraction": 0.22085889570552147,
+            "sr_comparison": {
+              "improvement_percent": 26.7782665144598,
+              "ci95_percent": [
+                22.144005144766172,
+                30.911530805247235
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.10880707949399948,
+            "bias": [
+              0.00947512872517109,
+              -0.006786098703742027
+            ],
+            "component_scatter": [
+              0.1129235029220581,
+              0.10387691110372543
+            ],
+            "vector_error_above_0_2_fraction": 0.16257668711656442,
+            "sr_comparison": {
+              "improvement_percent": 18.767126917791956,
+              "ci95_percent": [
+                14.241274056365707,
+                22.72150675956145
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.08838711678981781,
+            "bias": [
+              0.016558490693569183,
+              -0.01230633445084095
+            ],
+            "component_scatter": [
+              0.09168794751167297,
+              0.0824151262640953
+            ],
+            "vector_error_above_0_2_fraction": 0.0950920245398773
+          },
+          "round_control": {
+            "component_rmse": 0.2664853036403656,
+            "bias": [
+              -0.020013926550745964,
+              0.007884914055466652
+            ],
+            "component_scatter": [
+              0.2836364209651947,
+              0.2472173571586609
+            ],
+            "vector_error_above_0_2_fraction": 0.6840490797546013,
+            "sr_comparison": {
+              "improvement_percent": 66.83227345658793,
+              "ci95_percent": [
+                62.79352055745766,
+                70.47835000637394
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 17,
+        "range": "[22, 23)"
+      },
+      {
+        "objects": 584,
+        "reference_baselines_eligible": 494,
+        "common_successes": 494,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 569,
+          "native": 536,
+          "bilinear": 529,
+          "bicubic": 503,
+          "sr": 583
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 1,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 3,
+            "nonpositive_qyy": 2,
+            "nonpositive_determinant": 14,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 35,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 4,
+            "nonpositive_qyy": 3,
+            "nonpositive_determinant": 14,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 48,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 2,
+            "nonpositive_qyy": 3,
+            "nonpositive_determinant": 8,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 70,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 4,
+            "nonpositive_qyy": 3,
+            "nonpositive_determinant": 13,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 1,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.2119176983833313,
+            "bias": [
+              0.012260597199201584,
+              -0.005073450971394777
+            ],
+            "component_scatter": [
+              0.22276879847049713,
+              0.20004048943519592
+            ],
+            "vector_error_above_0_2_fraction": 0.49190283400809715,
+            "sr_comparison": {
+              "improvement_percent": 22.526276309005855,
+              "ci95_percent": [
+                17.629981245056836,
+                27.426348304869542
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.20423050224781036,
+            "bias": [
+              0.013494930230081081,
+              -0.0029111451003700495
+            ],
+            "component_scatter": [
+              0.21303690969944,
+              0.19453765451908112
+            ],
+            "vector_error_above_0_2_fraction": 0.5020242914979757,
+            "sr_comparison": {
+              "improvement_percent": 19.610180511331176,
+              "ci95_percent": [
+                15.326646034006883,
+                23.71513100710748
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.21257008612155914,
+            "bias": [
+              0.011276542209088802,
+              -0.004801467526704073
+            ],
+            "component_scatter": [
+              0.22508566081523895,
+              0.19889278709888458
+            ],
+            "vector_error_above_0_2_fraction": 0.5,
+            "sr_comparison": {
+              "improvement_percent": 22.764046864087405,
+              "ci95_percent": [
+                17.586806253407566,
+                27.611604379097223
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.16418053209781647,
+            "bias": [
+              0.018008342012763023,
+              -0.0020503532141447067
+            ],
+            "component_scatter": [
+              0.16495975852012634,
+              0.16238921880722046
+            ],
+            "vector_error_above_0_2_fraction": 0.3623481781376518
+          },
+          "round_control": {
+            "component_rmse": 0.2956942319869995,
+            "bias": [
+              0.02268177457153797,
+              0.011458410881459713
+            ],
+            "component_scatter": [
+              0.3027733564376831,
+              0.28731998801231384
+            ],
+            "vector_error_above_0_2_fraction": 0.742914979757085,
+            "sr_comparison": {
+              "improvement_percent": 44.47624798273549,
+              "ci95_percent": [
+                41.587451754540986,
+                47.38705477341199
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 18,
+        "range": "[23, 24)"
+      },
+      {
+        "objects": 794,
+        "reference_baselines_eligible": 399,
+        "common_successes": 395,
+        "sr_failures_on_eligible": 4,
+        "success_counts": {
+          "jwst": 597,
+          "native": 526,
+          "bilinear": 539,
+          "bicubic": 485,
+          "sr": 728
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 78,
+            "nonpositive_qyy": 82,
+            "nonpositive_determinant": 181,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 51,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 116,
+            "nonpositive_qyy": 105,
+            "nonpositive_determinant": 207,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 72,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 98,
+            "nonpositive_qyy": 91,
+            "nonpositive_determinant": 176,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 97,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 115,
+            "nonpositive_qyy": 111,
+            "nonpositive_determinant": 210,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 16,
+            "nonpositive_qxx": 42,
+            "nonpositive_qyy": 42,
+            "nonpositive_determinant": 29,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.33623602986335754,
+            "bias": [
+              0.010660492815077305,
+              0.0038630750495940447
+            ],
+            "component_scatter": [
+              0.33005383610725403,
+              0.3421188294887543
+            ],
+            "vector_error_above_0_2_fraction": 0.7620253164556962,
+            "sr_comparison": {
+              "improvement_percent": 16.766149253218053,
+              "ci95_percent": [
+                12.165913650822448,
+                21.2943894882817
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.31885501742362976,
+            "bias": [
+              0.009044957347214222,
+              0.005678144283592701
+            ],
+            "component_scatter": [
+              0.315780907869339,
+              0.32172250747680664
+            ],
+            "vector_error_above_0_2_fraction": 0.759493670886076,
+            "sr_comparison": {
+              "improvement_percent": 12.229013200206861,
+              "ci95_percent": [
+                7.662900385314353,
+                16.519996322254425
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.33772093057632446,
+            "bias": [
+              0.009530484676361084,
+              0.004824203904718161
+            ],
+            "component_scatter": [
+              0.33433276414871216,
+              0.3409081697463989
+            ],
+            "vector_error_above_0_2_fraction": 0.7645569620253164,
+            "sr_comparison": {
+              "improvement_percent": 17.132114146498324,
+              "ci95_percent": [
+                12.540334879741708,
+                21.506285776930085
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.2798621952533722,
+            "bias": [
+              0.012631461024284363,
+              0.007035913877189159
+            ],
+            "component_scatter": [
+              0.2874387204647064,
+              0.27169036865234375
+            ],
+            "vector_error_above_0_2_fraction": 0.6708860759493671
+          },
+          "round_control": {
+            "component_rmse": 0.35652539134025574,
+            "bias": [
+              0.013242408633232117,
+              0.01601528376340866
+            ],
+            "component_scatter": [
+              0.36095234751701355,
+              0.35142892599105835
+            ],
+            "vector_error_above_0_2_fraction": 0.8455696202531645,
+            "sr_comparison": {
+              "improvement_percent": 21.502871309863814,
+              "ci95_percent": [
+                15.840782562732212,
+                26.29222801968732
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 17,
+        "range": "[24, 25)"
+      }
+    ],
+    "ez_z_phot": [
+      {
+        "objects": 579,
+        "reference_baselines_eligible": 404,
+        "common_successes": 402,
+        "sr_failures_on_eligible": 2,
+        "success_counts": {
+          "jwst": 497,
+          "native": 468,
+          "bilinear": 471,
+          "bicubic": 440,
+          "sr": 550
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 34,
+            "nonpositive_qyy": 39,
+            "nonpositive_determinant": 72,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 40,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 38,
+            "nonpositive_qyy": 28,
+            "nonpositive_determinant": 73,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 47,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 31,
+            "nonpositive_qyy": 24,
+            "nonpositive_determinant": 63,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 67,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 39,
+            "nonpositive_qyy": 30,
+            "nonpositive_determinant": 75,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 8,
+            "nonpositive_qxx": 16,
+            "nonpositive_qyy": 18,
+            "nonpositive_determinant": 14,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.2109711915254593,
+            "bias": [
+              0.003238243516534567,
+              -0.016997501254081726
+            ],
+            "component_scatter": [
+              0.2110539823770523,
+              0.21017727255821228
+            ],
+            "vector_error_above_0_2_fraction": 0.34577114427860695,
+            "sr_comparison": {
+              "improvement_percent": 22.155945771295837,
+              "ci95_percent": [
+                15.3259903716642,
+                28.06003356885157
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.20353838801383972,
+            "bias": [
+              0.004111506976187229,
+              -0.01458763051778078
+            ],
+            "component_scatter": [
+              0.202400341629982,
+              0.20410826802253723
+            ],
+            "vector_error_above_0_2_fraction": 0.3681592039800995,
+            "sr_comparison": {
+              "improvement_percent": 19.313240936714593,
+              "ci95_percent": [
+                13.162452169900874,
+                24.656310785492792
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.20964467525482178,
+            "bias": [
+              0.0028981524519622326,
+              -0.016879936680197716
+            ],
+            "component_scatter": [
+              0.2092762589454651,
+              0.20931293070316315
+            ],
+            "vector_error_above_0_2_fraction": 0.3407960199004975,
+            "sr_comparison": {
+              "improvement_percent": 21.6633913843015,
+              "ci95_percent": [
+                14.57451446892855,
+                27.56999749016456
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.16422852873802185,
+            "bias": [
+              0.005066193640232086,
+              -0.013017016462981701
+            ],
+            "component_scatter": [
+              0.16458110511302948,
+              0.1632787138223648
+            ],
+            "vector_error_above_0_2_fraction": 0.26119402985074625
+          },
+          "round_control": {
+            "component_rmse": 0.2951338291168213,
+            "bias": [
+              0.00609183544293046,
+              0.0004154157650191337
+            ],
+            "component_scatter": [
+              0.29983386397361755,
+              0.29029348492622375
+            ],
+            "vector_error_above_0_2_fraction": 0.7288557213930348,
+            "sr_comparison": {
+              "improvement_percent": 44.35455629418337,
+              "ci95_percent": [
+                37.655867107187866,
+                50.45681473134457
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 18,
+        "range": "[0, 0.5)"
+      },
+      {
+        "objects": 812,
+        "reference_baselines_eligible": 609,
+        "common_successes": 608,
+        "sr_failures_on_eligible": 1,
+        "success_counts": {
+          "jwst": 742,
+          "native": 677,
+          "bilinear": 680,
+          "bicubic": 640,
+          "sr": 791
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 3,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 26,
+            "nonpositive_qyy": 24,
+            "nonpositive_determinant": 61,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 61,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 34,
+            "nonpositive_qyy": 40,
+            "nonpositive_determinant": 70,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 75,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 25,
+            "nonpositive_qyy": 35,
+            "nonpositive_determinant": 55,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 104,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 31,
+            "nonpositive_qyy": 41,
+            "nonpositive_determinant": 71,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 3,
+            "nonpositive_flux": 4,
+            "nonpositive_qxx": 11,
+            "nonpositive_qyy": 14,
+            "nonpositive_determinant": 4,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.20467837154865265,
+            "bias": [
+              -0.0054521202109754086,
+              0.0056341285817325115
+            ],
+            "component_scatter": [
+              0.20130425691604614,
+              0.2078499048948288
+            ],
+            "vector_error_above_0_2_fraction": 0.35855263157894735,
+            "sr_comparison": {
+              "improvement_percent": 17.25929733782682,
+              "ci95_percent": [
+                12.462441922701794,
+                21.74658898402508
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.20009323954582214,
+            "bias": [
+              -0.0063413167372345924,
+              0.006704922765493393
+            ],
+            "component_scatter": [
+              0.19569094479084015,
+              0.2041923701763153
+            ],
+            "vector_error_above_0_2_fraction": 0.38651315789473684,
+            "sr_comparison": {
+              "improvement_percent": 15.363296030765493,
+              "ci95_percent": [
+                11.263182181390299,
+                19.31451772092458
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.20497852563858032,
+            "bias": [
+              -0.006056976038962603,
+              0.005958158988505602
+            ],
+            "component_scatter": [
+              0.20413582026958466,
+              0.20564225316047668
+            ],
+            "vector_error_above_0_2_fraction": 0.3519736842105263,
+            "sr_comparison": {
+              "improvement_percent": 17.380456177418292,
+              "ci95_percent": [
+                12.568545835721835,
+                21.775137002489338
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.16935232281684875,
+            "bias": [
+              0.009350675158202648,
+              0.0007035782909952104
+            ],
+            "component_scatter": [
+              0.16578248143196106,
+              0.17259395122528076
+            ],
+            "vector_error_above_0_2_fraction": 0.2845394736842105
+          },
+          "round_control": {
+            "component_rmse": 0.29398980736732483,
+            "bias": [
+              -0.01697852648794651,
+              0.007614742964506149
+            ],
+            "component_scatter": [
+              0.29094305634498596,
+              0.29642173647880554
+            ],
+            "vector_error_above_0_2_fraction": 0.7203947368421053,
+            "sr_comparison": {
+              "improvement_percent": 42.395172018582294,
+              "ci95_percent": [
+                39.10302579722336,
+                45.941525329243106
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 18,
+        "range": "[0.5, 1)"
+      },
+      {
+        "objects": 584,
+        "reference_baselines_eligible": 443,
+        "common_successes": 443,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 555,
+          "native": 497,
+          "bilinear": 489,
+          "bicubic": 457,
+          "sr": 572
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 6,
+            "nonpositive_qyy": 11,
+            "nonpositive_determinant": 26,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 36,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 28,
+            "nonpositive_qyy": 21,
+            "nonpositive_determinant": 47,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 53,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 26,
+            "nonpositive_qyy": 18,
+            "nonpositive_determinant": 39,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 77,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 29,
+            "nonpositive_qyy": 22,
+            "nonpositive_determinant": 47,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 2,
+            "nonpositive_qxx": 8,
+            "nonpositive_qyy": 5,
+            "nonpositive_determinant": 7,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.2261536568403244,
+            "bias": [
+              0.04515519738197327,
+              -0.006463881116360426
+            ],
+            "component_scatter": [
+              0.2340923398733139,
+              0.21309852600097656
+            ],
+            "vector_error_above_0_2_fraction": 0.4650112866817156,
+            "sr_comparison": {
+              "improvement_percent": 20.234303216431005,
+              "ci95_percent": [
+                14.141776428854156,
+                25.50999591407008
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.2165166288614273,
+            "bias": [
+              0.04370561242103577,
+              -0.005246198270469904
+            ],
+            "component_scatter": [
+              0.22866234183311462,
+              0.19883348047733307
+            ],
+            "vector_error_above_0_2_fraction": 0.4762979683972912,
+            "sr_comparison": {
+              "improvement_percent": 16.683978903228002,
+              "ci95_percent": [
+                10.66216924915399,
+                21.86280718533815
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.2276214063167572,
+            "bias": [
+              0.044278986752033234,
+              -0.006718521937727928
+            ],
+            "component_scatter": [
+              0.23771169781684875,
+              0.21239210665225983
+            ],
+            "vector_error_above_0_2_fraction": 0.46952595936794583,
+            "sr_comparison": {
+              "improvement_percent": 20.74864877639323,
+              "ci95_percent": [
+                14.505580700438758,
+                26.169391015029035
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.1803930401802063,
+            "bias": [
+              0.03607051447033882,
+              0.0012573420535773039
+            ],
+            "component_scatter": [
+              0.1940370798110962,
+              0.16164860129356384
+            ],
+            "vector_error_above_0_2_fraction": 0.3656884875846501
+          },
+          "round_control": {
+            "component_rmse": 0.2836799919605255,
+            "bias": [
+              0.0487467385828495,
+              0.007012453395873308
+            ],
+            "component_scatter": [
+              0.30456775426864624,
+              0.25644049048423767
+            ],
+            "vector_error_above_0_2_fraction": 0.7020316027088036,
+            "sr_comparison": {
+              "improvement_percent": 36.409671005169706,
+              "ci95_percent": [
+                30.8749069236549,
+                41.643507418312275
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 18,
+        "range": "[1, 2)"
+      },
+      {
+        "objects": 143,
+        "reference_baselines_eligible": 71,
+        "common_successes": 70,
+        "sr_failures_on_eligible": 1,
+        "success_counts": {
+          "jwst": 106,
+          "native": 99,
+          "bilinear": 99,
+          "bicubic": 91,
+          "sr": 132
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 15,
+            "nonpositive_qyy": 10,
+            "nonpositive_determinant": 36,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 10,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 20,
+            "nonpositive_qyy": 19,
+            "nonpositive_determinant": 31,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 14,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 18,
+            "nonpositive_qyy": 17,
+            "nonpositive_determinant": 27,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 19,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 20,
+            "nonpositive_qyy": 21,
+            "nonpositive_determinant": 30,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 2,
+            "nonpositive_qxx": 7,
+            "nonpositive_qyy": 5,
+            "nonpositive_determinant": 4,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.29897940158843994,
+            "bias": [
+              -0.023589489981532097,
+              0.01811160147190094
+            ],
+            "component_scatter": [
+              0.2857770621776581,
+              0.31020045280456543
+            ],
+            "vector_error_above_0_2_fraction": 0.6857142857142857,
+            "sr_comparison": {
+              "improvement_percent": 15.285069383390326,
+              "ci95_percent": [
+                4.554469533355899,
+                27.246023285325926
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.2875061631202698,
+            "bias": [
+              -0.02488667331635952,
+              0.01616964302957058
+            ],
+            "component_scatter": [
+              0.2774243950843811,
+              0.2957608997821808
+            ],
+            "vector_error_above_0_2_fraction": 0.7,
+            "sr_comparison": {
+              "improvement_percent": 11.904430199066951,
+              "ci95_percent": [
+                2.8012011759853186,
+                22.87522393321541
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.3021681308746338,
+            "bias": [
+              -0.02418418601155281,
+              0.019036367535591125
+            ],
+            "component_scatter": [
+              0.2915697991847992,
+              0.3108873665332794
+            ],
+            "vector_error_above_0_2_fraction": 0.7,
+            "sr_comparison": {
+              "improvement_percent": 16.179051748284856,
+              "ci95_percent": [
+                5.537255894182715,
+                28.03639568267721
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.2532801926136017,
+            "bias": [
+              -0.013933422043919563,
+              0.003864317201077938
+            ],
+            "component_scatter": [
+              0.25672614574432373,
+              0.2493678480386734
+            ],
+            "vector_error_above_0_2_fraction": 0.5142857142857142
+          },
+          "round_control": {
+            "component_rmse": 0.34015482664108276,
+            "bias": [
+              -0.010514265857636929,
+              0.0338473804295063
+            ],
+            "component_scatter": [
+              0.34733620285987854,
+              0.33092594146728516
+            ],
+            "vector_error_above_0_2_fraction": 0.8142857142857143,
+            "sr_comparison": {
+              "improvement_percent": 25.539732857928133,
+              "ci95_percent": [
+                19.63736605841957,
+                32.363700292720296
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 16,
+        "range": "[2, 3)"
+      }
+    ],
+    "FLUX_RADIUS": [
+      {
+        "objects": 1996,
+        "reference_baselines_eligible": 1449,
+        "common_successes": 1445,
+        "sr_failures_on_eligible": 4,
+        "success_counts": {
+          "jwst": 1796,
+          "native": 1653,
+          "bilinear": 1649,
+          "bicubic": 1543,
+          "sr": 1931
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 7,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 72,
+            "nonpositive_qyy": 74,
+            "nonpositive_determinant": 183,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 137,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 108,
+            "nonpositive_qyy": 96,
+            "nonpositive_determinant": 201,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 178,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 89,
+            "nonpositive_qyy": 83,
+            "nonpositive_determinant": 167,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 253,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 107,
+            "nonpositive_qyy": 102,
+            "nonpositive_determinant": 202,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 7,
+            "nonpositive_flux": 14,
+            "nonpositive_qxx": 36,
+            "nonpositive_qyy": 37,
+            "nonpositive_determinant": 28,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.2166370004415512,
+            "bias": [
+              0.011404945515096188,
+              -0.0014052889309823513
+            ],
+            "component_scatter": [
+              0.21697364747524261,
+              0.21599429845809937
+            ],
+            "vector_error_above_0_2_fraction": 0.39307958477508653,
+            "sr_comparison": {
+              "improvement_percent": 19.15834099300584,
+              "ci95_percent": [
+                16.280048657012568,
+                21.912635112746514
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.20958471298217773,
+            "bias": [
+              0.010568604804575443,
+              -0.000284064095467329
+            ],
+            "component_scatter": [
+              0.21130941808223724,
+              0.20757673680782318
+            ],
+            "vector_error_above_0_2_fraction": 0.4166089965397924,
+            "sr_comparison": {
+              "improvement_percent": 16.438111020610602,
+              "ci95_percent": [
+                13.890247496525845,
+                18.80811224066698
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.2168557047843933,
+            "bias": [
+              0.010681449435651302,
+              -0.0013553652679547668
+            ],
+            "component_scatter": [
+              0.21856901049613953,
+              0.21485905349254608
+            ],
+            "vector_error_above_0_2_fraction": 0.3923875432525952,
+            "sr_comparison": {
+              "improvement_percent": 19.239871805971852,
+              "ci95_percent": [
+                16.229289039564783,
+                22.03973435121031
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.17513294517993927,
+            "bias": [
+              0.015640990808606148,
+              -0.0006480163428932428
+            ],
+            "component_scatter": [
+              0.17927326261997223,
+              0.17017392814159393
+            ],
+            "vector_error_above_0_2_fraction": 0.3058823529411765
+          },
+          "round_control": {
+            "component_rmse": 0.2928462624549866,
+            "bias": [
+              0.010263265110552311,
+              0.007357018068432808
+            ],
+            "component_scatter": [
+              0.30117371678352356,
+              0.28399431705474854
+            ],
+            "vector_error_above_0_2_fraction": 0.7238754325259515,
+            "sr_comparison": {
+              "improvement_percent": 40.19628466084352,
+              "ci95_percent": [
+                37.468570961868714,
+                43.009150745316155
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 18,
+        "range": "[4, 8)"
+      },
+      {
+        "objects": 92,
+        "reference_baselines_eligible": 63,
+        "common_successes": 63,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 79,
+          "native": 70,
+          "bilinear": 71,
+          "bicubic": 69,
+          "sr": 85
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 7,
+            "nonpositive_qyy": 10,
+            "nonpositive_determinant": 7,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 4,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 9,
+            "nonpositive_qyy": 10,
+            "nonpositive_determinant": 15,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 5,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 9,
+            "nonpositive_qyy": 9,
+            "nonpositive_determinant": 13,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 7,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 9,
+            "nonpositive_qyy": 10,
+            "nonpositive_determinant": 15,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 6,
+            "nonpositive_qyy": 5,
+            "nonpositive_determinant": 1,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.23691828548908234,
+            "bias": [
+              -0.01632087118923664,
+              -0.023730725049972534
+            ],
+            "component_scatter": [
+              0.27026158571243286,
+              0.19593295454978943
+            ],
+            "vector_error_above_0_2_fraction": 0.5238095238095238,
+            "sr_comparison": {
+              "improvement_percent": 21.40185015494691,
+              "ci95_percent": [
+                6.570455916239926,
+                40.453173148119554
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.22286410629749298,
+            "bias": [
+              -0.01117345504462719,
+              -0.015873538330197334
+            ],
+            "component_scatter": [
+              0.24797719717025757,
+              0.1935647577047348
+            ],
+            "vector_error_above_0_2_fraction": 0.49206349206349204,
+            "sr_comparison": {
+              "improvement_percent": 16.44532081336134,
+              "ci95_percent": [
+                3.552903932309389,
+                33.642908282538386
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.24184103310108185,
+            "bias": [
+              -0.01540676224976778,
+              -0.022146770730614662
+            ],
+            "component_scatter": [
+              0.2808667719364166,
+              0.19328780472278595
+            ],
+            "vector_error_above_0_2_fraction": 0.5079365079365079,
+            "sr_comparison": {
+              "improvement_percent": 23.00173934453532,
+              "ci95_percent": [
+                7.22652897631343,
+                43.3623250576745
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.1862133890390396,
+            "bias": [
+              0.0002282857894897461,
+              -0.028915980830788612
+            ],
+            "component_scatter": [
+              0.18968388438224792,
+              0.18037372827529907
+            ],
+            "vector_error_above_0_2_fraction": 0.38095238095238093
+          },
+          "round_control": {
+            "component_rmse": 0.30127838253974915,
+            "bias": [
+              -0.03349342942237854,
+              0.022224372252821922
+            ],
+            "component_scatter": [
+              0.29939931631088257,
+              0.3004690110683441
+            ],
+            "vector_error_above_0_2_fraction": 0.6507936507936508,
+            "sr_comparison": {
+              "improvement_percent": 38.19225014776107,
+              "ci95_percent": [
+                27.859687662840013,
+                52.067392360411645
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 16,
+        "range": "[8, 16)"
+      },
+      {
+        "objects": 23,
+        "reference_baselines_eligible": 12,
+        "common_successes": 12,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 20,
+          "native": 14,
+          "bilinear": 15,
+          "bicubic": 13,
+          "sr": 22
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 2,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 3,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 4,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 2,
+            "nonpositive_qyy": 2,
+            "nonpositive_determinant": 4,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 4,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 1,
+            "nonpositive_qyy": 2,
+            "nonpositive_determinant": 3,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 5,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 2,
+            "nonpositive_qyy": 2,
+            "nonpositive_determinant": 4,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 1,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.24558775126934052,
+            "bias": [
+              0.01513951737433672,
+              -0.08544992655515671
+            ],
+            "component_scatter": [
+              0.18398702144622803,
+              0.2815040946006775
+            ],
+            "vector_error_above_0_2_fraction": 0.6666666666666666,
+            "sr_comparison": {
+              "improvement_percent": 8.581409692244735,
+              "ci95_percent": [
+                -5.529575860728574,
+                17.529391962701368
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.2517775893211365,
+            "bias": [
+              0.01094325166195631,
+              -0.0933799222111702
+            ],
+            "component_scatter": [
+              0.18620023131370544,
+              0.2885720431804657
+            ],
+            "vector_error_above_0_2_fraction": 0.6666666666666666,
+            "sr_comparison": {
+              "improvement_percent": 10.828894349057217,
+              "ci95_percent": [
+                -10.897082898171796,
+                21.499395417921065
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.24529749155044556,
+            "bias": [
+              0.019742781296372414,
+              -0.08965005725622177
+            ],
+            "component_scatter": [
+              0.18431608378887177,
+              0.27918168902397156
+            ],
+            "vector_error_above_0_2_fraction": 0.5833333333333334,
+            "sr_comparison": {
+              "improvement_percent": 8.473234373545857,
+              "ci95_percent": [
+                -2.48186755893031,
+                16.595874200296336
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.22451286017894745,
+            "bias": [
+              -0.026311079040169716,
+              -0.09772360324859619
+            ],
+            "component_scatter": [
+              0.17335014045238495,
+              0.24600733816623688
+            ],
+            "vector_error_above_0_2_fraction": 0.75
+          },
+          "round_control": {
+            "component_rmse": 0.345994770526886,
+            "bias": [
+              -0.054097454994916916,
+              -0.0912192165851593
+            ],
+            "component_scatter": [
+              0.30412784218788147,
+              0.36835241317749023
+            ],
+            "vector_error_above_0_2_fraction": 0.75,
+            "sr_comparison": {
+              "improvement_percent": 35.11090938251583,
+              "ci95_percent": [
+                2.749646300136869,
+                48.08344682652158
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 7,
+        "range": "[16, 32)"
+      },
+      {
+        "objects": 7,
+        "reference_baselines_eligible": 3,
+        "common_successes": 3,
+        "sr_failures_on_eligible": 0,
+        "success_counts": {
+          "jwst": 5,
+          "native": 4,
+          "bilinear": 4,
+          "bicubic": 3,
+          "sr": 7
+        },
+        "failure_reasons": {
+          "jwst": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 2,
+            "nonfinite_shape": 0
+          },
+          "native": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 1,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 1,
+            "nonfinite_shape": 0
+          },
+          "bilinear": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 1,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 1,
+            "nonfinite_shape": 0
+          },
+          "bicubic": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 2,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 1,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 2,
+            "nonfinite_shape": 0
+          },
+          "sr": {
+            "nonfinite_input": 0,
+            "incomplete_aperture": 0,
+            "nonpositive_flux": 0,
+            "nonpositive_qxx": 0,
+            "nonpositive_qyy": 0,
+            "nonpositive_determinant": 0,
+            "nonfinite_shape": 0
+          }
+        },
+        "methods": {
+          "native": {
+            "component_rmse": 0.25960803031921387,
+            "bias": [
+              0.23525460064411163,
+              -0.1506861448287964
+            ],
+            "component_scatter": [
+              0.17681634426116943,
+              0.15961706638336182
+            ],
+            "vector_error_above_0_2_fraction": 0.6666666666666666,
+            "sr_comparison": {
+              "improvement_percent": 38.44323269429457,
+              "ci95_percent": [
+                -65.72305919462534,
+                57.39425927445306
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bilinear": {
+            "component_rmse": 0.2502985894680023,
+            "bias": [
+              0.23926769196987152,
+              -0.1495864987373352
+            ],
+            "component_scatter": [
+              0.1512870341539383,
+              0.15094983577728271
+            ],
+            "vector_error_above_0_2_fraction": 0.6666666666666666,
+            "sr_comparison": {
+              "improvement_percent": 36.15373084195785,
+              "ci95_percent": [
+                -70.57742016123298,
+                59.7591517618792
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "bicubic": {
+            "component_rmse": 0.25697916746139526,
+            "bias": [
+              0.2347082495689392,
+              -0.12579484283924103
+            ],
+            "component_scatter": [
+              0.18500232696533203,
+              0.16412928700447083
+            ],
+            "vector_error_above_0_2_fraction": 0.6666666666666666,
+            "sr_comparison": {
+              "improvement_percent": 37.813515115177346,
+              "ci95_percent": [
+                -57.96590229866645,
+                56.88686566507586
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          },
+          "sr": {
+            "component_rmse": 0.15980631113052368,
+            "bias": [
+              0.14194734394550323,
+              -0.01559591293334961
+            ],
+            "component_scatter": [
+              0.13533930480480194,
+              0.11120746284723282
+            ],
+            "vector_error_above_0_2_fraction": 0.3333333333333333
+          },
+          "round_control": {
+            "component_rmse": 0.2817281484603882,
+            "bias": [
+              0.30454328656196594,
+              -0.22126798331737518
+            ],
+            "component_scatter": [
+              0.10272391140460968,
+              0.08051816374063492
+            ],
+            "vector_error_above_0_2_fraction": 1.0,
+            "sr_comparison": {
+              "improvement_percent": 43.276413094024605,
+              "ci95_percent": [
+                -20.60541394063513,
+                71.47856266178214
+              ],
+              "usable_bootstrap_replicates": 1000
+            }
+          }
+        },
+        "bootstrap_replicates": 1000,
+        "spatial_blocks": 3,
+        "range": "[32, 500)"
+      }
+    ]
+  },
+  "contract": {
+    "split": "validation",
+    "sigma_target_pixels": 10,
+    "aperture_radius_target_pixels": 25,
+    "intensity": "signed, sky-subtracted MJy/sr",
+    "native_pixel_step": 5,
+    "common_population": "JWST and all four methods pass; baseline eligibility excludes SR",
+    "bootstrap": "paired resampling of saved spatial blocks, percentile 95% interval",
+    "bootstrap_replicates": 1000,
+    "seed": 20261016,
+    "snr": "Gaussian-weighted native flux / quadrature RMS; ignores correlated noise",
+    "catalog_radius_units": "original catalog units; not claimed to be angular size",
+    "limitations": [
+      "Validation diagnostic of an intermediate checkpoint, not a final test result.",
+      "Cross-band Y/F115W reference; no PSF correction or shear calibration.",
+      "Common-success population may change between checkpoints; compare common IDs across runs.",
+      "Block bootstrap is conditional on this field and these moment/selection choices.",
+      "Native aperture uses pixel-center quadrature at the same angular radius.",
+      "Bicubic support requires all 16 stencil pixels, even zero-weight neighbors."
+    ]
+  }
+}

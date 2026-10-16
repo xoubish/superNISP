@@ -1,0 +1,84 @@
+{
+  "status": "sample properties: separate horizontal figure, train/validation metadata only",
+  "notebook": "revisions/01b_sample_properties_v01.ipynb",
+  "notebook_source_sha256": "80960cc9e8c48d85e49b0a40c441a362024b1131b9fc30d9da1db2ac47193487",
+  "helper_sha256": "2f3cbb1925f02853b28a44921d038b83006ce887600cc309ff15081398e8dbac",
+  "inputs": {
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      2.8
+    ],
+    "property_splits": [
+      "train",
+      "validation"
+    ],
+    "magnitude_bins": [
+      17.0,
+      17.333333333333332,
+      17.666666666666668,
+      18.0,
+      18.333333333333332,
+      18.666666666666668,
+      19.0,
+      19.333333333333332,
+      19.666666666666668,
+      20.0,
+      20.333333333333332,
+      20.666666666666668,
+      21.0,
+      21.333333333333332,
+      21.666666666666664,
+      22.0,
+      22.333333333333332,
+      22.666666666666664,
+      23.0,
+      23.333333333333332,
+      23.666666666666664,
+      24.0,
+      24.333333333333332,
+      24.666666666666664,
+      25.0
+    ],
+    "redshift_bins": [
+      0.01,
+      0.12960000000000002,
+      0.24920000000000003,
+      0.3688,
+      0.48840000000000006,
+      0.6080000000000001,
+      0.7276,
+      0.8472000000000001,
+      0.9668000000000001,
+      1.0864,
+      1.2060000000000002,
+      1.3256000000000001,
+      1.4452,
+      1.5648000000000002,
+      1.6844000000000001,
+      1.8040000000000003,
+      1.9236000000000002,
+      2.0432,
+      2.1628,
+      2.2824,
+      2.402,
+      2.5216,
+      2.6412,
+      2.7608,
+      2.8804,
+      3.0
+    ]
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig01b_sample_properties_v01.pdf": "dee5f3c9362f265ef50c43bc10a09228d1ab4728961c79f2c7e66b2c85cdcc5b",
+    "fig01b_sample_properties_v01.svg": "8ee6296c66d55ab411e899af7c705e07075e6aa15d628708fb329e64097a106b",
+    "fig01b_sample_properties_v01.png": "9a412d3c1ffc892e14384feff97ac51b1a2a796277f114958217c017ab276985"
+  }
+}

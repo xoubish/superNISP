@@ -1,0 +1,32 @@
+{
+  "status": "implementation-verified vector schematic draft",
+  "notebook": "03_residual_architecture.ipynb",
+  "notebook_source_sha256": "f4e7e9992128bee21ddf1e142c892973bc9060d19d11e8c8590f8156595b925b",
+  "helper_sha256": "2f3cbb1925f02853b28a44921d038b83006ce887600cc309ff15081398e8dbac",
+  "inputs": {
+    "code/residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+    "runs/residual-full50-s20261016/provenance.json": "643dda6d61e2dc5060f31ec47c51d919d6753842fd2fb120804b998491590631"
+  },
+  "settings": {
+    "figsize": [
+      9.0,
+      6.0
+    ],
+    "blocks": 8,
+    "features": 64,
+    "growth": 32,
+    "parameters": {
+      "legacy": 2332177,
+      "direct5": 2959953
+    }
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig03_residual_architecture_v01.pdf": "6fe152510997faa5e2f3d0113a7f9f2470f980ca827b6994feb6bc4d0028284e",
+    "fig03_residual_architecture_v01.svg": "7b54fc014da0837d34115a417ef1b9089dbc47747c7c75776a65f260439630bc",
+    "fig03_residual_architecture_v01.png": "1bd96539c4143543899d092ce19a8a7a2c9c477ece9c1dc062b0d2dd7c380a5e"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "status": "sample metadata layout draft",
+  "notebook": "revisions/01_sample_v01.ipynb",
+  "notebook_source_sha256": "336d2dd68016f4fdcd63ffd4d3faa87d2e77a20189f8c85f33c4154ce6d39df8",
+  "helper_sha256": "2f3cbb1925f02853b28a44921d038b83006ce887600cc309ff15081398e8dbac",
+  "inputs": {
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      6.0
+    ],
+    "property_splits": [
+      "train",
+      "validation"
+    ],
+    "sample_count": 22810,
+    "split_counts": {
+      "train": 17816,
+      "test": 2876,
+      "validation": 2118
+    },
+    "test_access": "positions and counts only; no images or evaluation"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig01_sample_v01.pdf": "0c5fed9affc71696a8d5b31fd7eec80a01e72686dfcfaf5122c52b5d2be6c732",
+    "fig01_sample_v01.svg": "7aecc50fae9b02e6adfc06d850fab3cf71bb904f29f709e4789ac3bb0d19e213",
+    "fig01_sample_v01.png": "ac6728783699e769bac56c3878c71d641db661eb2926e3fccc4358edde73b569"
+  }
+}

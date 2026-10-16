@@ -4,6 +4,226 @@ Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
+## Paper figure notebooks started
+
+Sample properties v02 now includes test magnitude/redshift histograms, explicitly
+requested by the user, in dashed gray with split counts and the original bins.
+Only catalog metadata is used; test images/predictions remain reserved. The
+notebook documents that validation supports development and checkpoint/model
+selection, while final test performance must wait for frozen model/measurement
+choices. Previous train/validation-only v01 is archived under `revisions/`.
+
+Figure 1 review update: the user wants paired NISP/JWST observations instead
+of the accounting panel, a field four times the cutout width (~49 arcsec), no
+figure/panel titles, and the two original rows split into separate figures.
+`01_sample.ipynb` now contains footprint + paired field in one row;
+`01b_sample_properties.ipynb` contains magnitude/redshift in another figure.
+Final numbering remains provisional. The user will run the overview elsewhere
+where original mosaics exist: set its `MOSAIC_ROOT` or two explicit paths.
+`paper_figures/sample_region.py` extracts native 164-pixel NISP and aligned
+820-pixel JWST observations centred inside validation block 4:2, with masks,
+physical units, shared footprint, and cached input/source hashes. No models run.
+The larger real field has not been rendered on this GPU copy, which has only
+the original 41-pixel cutouts. Missing mosaics produce a clear waiting state
+and skip overview export. v01/v02 combined layouts and notebook snapshots are
+preserved; v03 is the pending overview. The separate properties figure is ready.
+
+The user requested a figure-first paper workflow while experiments continue.
+See [paper_figures/README.md](paper_figures/README.md): nine editable notebooks,
+one per proposed figure, with captions/review notes and PDF/SVG/PNG exports plus
+input/source hashes. The plot code lives in each notebook; do not regenerate
+notebooks over later manual edits. Manuscript text has not been changed.
+
+Figures 1–3 show the sample metadata and the current diffusion/residual
+architectures. Figures 4–5 wait for completed, matched prediction and benchmark
+exports; their contracts are in `paper_figures/inputs/README.md`. Figures 6–8
+are explicitly labeled previews from the frozen legacy epoch-49 validation
+analyses, not final model comparisons or calibrated-shear results. Test images
+remain unopened; test catalog positions/counts and magnitude/redshift appear
+in the sample description figures.
+
+These notebooks use metadata, observed images and cached diagnostics: no model imports,
+checkpoint loading, inference, training, or W&B calls. Future model prediction
+exports must still run in tmux with online W&B initialized first. Keep active
+pipeline source hashes unchanged. Latest status inspected during this work:
+direct-5x training completed epoch 50 / 111,350 updates and its pipeline entered
+robustness; full diffusion remains in the full50 stage. Read live status files
+before making scheduling decisions.
+
+## Full corrected diffusion run launched on GPU 1
+
+The user authorized full diffusion training on the other GPU. New persistent
+session: `supernisp-diffusion-full50`; console `runs/diffusion-full50-console/`;
+pipeline status/protocol/snapshots `runs/diffusion-full50-pipeline/`.
+Read [full diffusion protocol](paper/full_diffusion_training.md).
+
+Fresh weights, all 17,816 training objects, 50 epochs, batch 8 and 111,350
+updates. The validated diffusion core is unchanged. Monitor 256 fixed
+validation galaxies with 50-step NISP-only generation each epoch, select by
+physical MAE, then evaluate all 2,118 validation galaxies with three seeds and
+their linear-intensity mean image. Eight fixed galaxy/residual panels appear
+in online W&B; the training link is saved under
+`runs/diffusion-full50-s20261016/wandb_url.txt`. Test data remain untouched.
+
+Full diffusion W&B: [gepl2iv2](https://wandb.ai/AI-Astro/superNISP-corrected/runs/gepl2iv2).
+The batch-8 preflight passed two regression checks and finite GPU
+forward/backward/sampling at 3.13 GiB peak tensor allocation. Saved training
+rows exactly match the baseline. Initial galaxy panels have been rendered.
+
+The diffusion wrapper automatically yields GPU 1 at batch boundaries during
+the already queued direct-5x analyses, then resumes. Active direct-5x code and
+commands were not modified. Do not duplicate either run or edit its queued
+sources. Final diffusion comparison is queued after training, with common
+object IDs, failures and spatial-block intervals against the frozen residual
+and the completed direct-5x result when available. Equal update counts do not
+match representation, loss, capacity, validation-selection population or compute.
+
+## Corrected diffusion pilot completed; direct-5x continues
+
+The user authorized repairing and piloting diffusion. Historical diffusion
+files are preserved; new code is `diffusion_corrected.py`,
+`diffusion_diagnostics.py`, `test_diffusion_corrected.py`,
+`check_diffusion_corrected.py`, `train_diffusion_corrected.py` and
+`run_diffusion_pilot.py` under `code/`. No active direct-5x source was changed.
+Read [corrected diffusion protocol](paper/corrected_diffusion_pilot.md).
+
+Five mathematical/integration regressions and actual-pair CUDA checks passed
+in tmux with [W&B gokjvp87](https://wandb.ai/AI-Astro/superNISP-corrected/runs/gokjvp87).
+The new path has valid jump-aware DDIM, exact zero-terminal signal and stable
+v prediction, no clamp, saved train-only asinh scaling with inverse physical
+metrics, NISP-mask conditioning, masked loss, and NISP-only model selection.
+It requires fresh weights; it is not a sampler-only historical-checkpoint fix.
+
+GPU 1 completed tmux `supernisp-diffusion-pilot`: 32-pair overfit/resume check
+(40 epochs / 320 updates, require >=10% generated MAE reduction), then a fresh
+512-train / 64-validation pilot (5 epochs / 640 updates), with 50-step sampling
+and three final noise seeds at the best checkpoint. All models initialize only
+after online W&B; fixed galaxy/residual and repeated-sample images are logged.
+Inspect `runs/diffusion-pilot-pipeline/status.json` and
+`runs/diffusion-pilot-console/console.log`; the latter directory receives the
+overall exit status. All three diffusion check/pilot/assessment console exit
+statuses are 0; sessions now contain idle shells. Do not relaunch completed jobs.
+Full diffusion training was subsequently authorized and launched above.
+Test data remain untouched.
+
+[Pilot 6rqj99e8](https://wandb.ai/AI-Astro/superNISP-corrected/runs/6rqj99e8)
+completed five epochs / 640 updates; best epoch 5. Generated validation MAE
+fell 71.52% from random initialization, to 0.0203956 MJy/sr. The overfit/resume
+gate passed with 73.38% reduction. Seven regression tests plus actual-pair CUDA
+checks passed; the best checkpoint reproduced its fixed-seed selection metric.
+
+[Assessment d28ha2le](https://wandb.ai/AI-Astro/superNISP-corrected/runs/d28ha2le)
+uses the same 36 validation objects for three diffusion samples and baselines:
+shape component RMSE 0.214–0.226 diffusion, 0.18772 native, 0.18615 bilinear,
+0.15956 frozen full50 residual. Diffusion fails on 7/12/11 of all 64 objects
+across the three seeds; common-population sample scatter is 0.15711. This pilot
+learns but does not establish a shape gain; 640 updates cannot fairly rank it
+against a 111,350-update residual model. Image panels expose variable/noisy
+structure. Tracked report: `paper/diagnostics/diffusion_corrected_pilot.json`.
+Next possible diffusion check: mean generated images in linear intensity before
+shape measurement, with fixed IDs/failures; now queued at the end of the newly
+authorized full run. No completed full-diffusion result exists yet.
+
+## Direct-5x comparison launched
+
+The user authorized the controlled head comparison. It is running in persistent
+tmux session `supernisp-direct5`; inspect `runs/direct5-comparison/status.json`
+and `runs/direct5-console/console.log` before launching anything on GPU 0.
+The sequence is overfit learning check, short pilot, fresh full 50-epoch run,
+best-checkpoint fixed-shape analysis/comparison, then the same 21 robustness
+scenarios and paired architecture comparisons, including HSM. Every model
+process requires online W&B before constructing a model. Full-run galaxy images
+are logged at initialization and every epoch. Test data remain untouched.
+
+Read [direct-5x experiment protocol](paper/direct5_head_comparison.md).
+The exact protocol, commands and source snapshots are saved in
+`runs/direct5-comparison/`. All queued source hashes are checked before each
+stage: do not edit them during this pipeline. Full training is under
+`runs/direct5-full50-s20261016/`; its W&B URL appears in `wandb_url.txt` once
+the learning checks pass and training starts. Overall exit status appears in
+`runs/direct5-console/exit_status`. Do not duplicate the active job.
+
+Startup verified: both learning gates passed (overfit MAE reduced 22.10%;
+pilot validation MAE reduced 24.65% from initialization). Full training is now
+running: [W&B ilaim0sg](https://wandb.ai/AI-Astro/superNISP-corrected/runs/ilaim0sg).
+Training/validation selections and fixed galaxy-gallery selection exactly match
+the baseline. Source/data hashes match; only `head` and output directory differ
+in the full-run configuration. Direct5 has 2,959,953 parameters versus legacy
+2,332,177. These are startup checks, not evidence of architecture improvement.
+
+## Epoch-49 robustness and convergence completed
+
+The user authorized the next observed-shape robustness step and asked whether
+more training was needed. The 50-epoch run plateaued under its completed
+OneCycle schedule: validation MAE improved 0.572% from epoch 40 to best 49,
+0.154% from 45 to 49, and only 0.00524% from 48 to 49. Epoch 50 was slightly
+worse. Its final LR is ~4e-10. Keep epoch 49 as the frozen baseline; this is
+practical convergence under that schedule, not proof that another schedule
+cannot improve it. Any continuation needs a separate recorded schedule/budget.
+
+[Robustness run lb3m3r9k](https://wandb.ai/AI-Astro/superNISP-corrected/runs/lb3m3r9k)
+completed 21 predeclared scenarios on all 2,118 validation objects in tmux
+session `supernisp-robustness`, exit status 0. Four regression checks passed;
+the prior nominal per-object results were reproduced. New code:
+`robust_shape_measurements.py`, `run_shape_robustness.py`,
+`test_shape_robustness.py` under `code/`. Training code is unchanged.
+
+Independent GalSim 2.7.1 adaptive moments find 12.20% lower SR component RMSE
+than native (conditional block interval 9.02–15.10%) and 16.45% lower than
+bilinear on 1,351 objects shared with the nominal comparison. The direction
+of improvement survives weight/aperture/centering/background perturbations,
+HSM crop/initial-guess variations and three input-noise trials, including on
+the same 1,098 galaxies measurable in all scenarios. Background changes and
+HSM initialization materially affect effect sizes and/or measurement success;
+retain those limitations. These remain conditional validation results.
+
+Results: `runs/shape-robustness-best49/`; console: `runs/robustness-console/`.
+Read [robustness and convergence](paper/shape_robustness_and_convergence.md).
+Tracked JSON: `paper/diagnostics/shape_robustness_best49.json` and
+`paper/diagnostics/full50_convergence.json`. No test images were used.
+
+Next: controlled direct-5x head comparison with the same trunk and 50-epoch
+update budget, retaining fixed moments as reference and HSM as cross-check.
+That comparison is now launched as described above. No continuation training
+was started for the legacy baseline.
+
+## Full run and queued analysis completed
+
+Both `runs/full50-console/exit_status` and
+`runs/final-analysis-console/exit_status` are 0. All 50 training epochs and
+111,350 updates completed. Best validation MAE is 0.9645708 at **epoch 49**.
+The final validation analysis and fixed-population comparison also completed:
+
+- [Best-checkpoint analysis 56s99iwd](https://wandb.ai/AI-Astro/superNISP-corrected/runs/56s99iwd).
+- [Epoch-11 versus best-49 comparison su0iypr0](https://wandb.ai/AI-Astro/superNISP-corrected/runs/su0iypr0).
+- On the identical 1,484 common objects, SR component RMSE decreased a further
+  6.80% from epoch 11 (conditional 95% spatial-block interval 5.04–8.59%).
+- Among the fixed 1,527 reference/baseline eligible objects, SR failures fell
+  from 43 to 4: 39 recovered measurements, none lost. This remains a validation
+  diagnostic, not final test evaluation or calibrated shear.
+- Tracked final reports: `paper/diagnostics/validation_best49_shapes.json` and
+  `paper/diagnostics/full50_shape_comparison.json`.
+
+The active/queued descriptions below are historical. The sessions now contain
+idle shells; do not relaunch the completed baseline or queued analysis.
+
+## Agreed paper scope — observed-shape recovery
+
+The user explicitly agreed to **improved observed-shape recovery** as the
+paper target. Establish whether NISP-to-F115W SR improves agreement with
+observed JWST shapes, for which galaxies, with matched measurement populations,
+failure rates and spatial uncertainty estimates. Do not present this as
+calibrated gravitational shear or a demonstrated weak-lensing cosmology gain.
+Keep the Y/F115W band difference and instrumental PSFs explicit.
+
+Next priority after the current baseline: independent adaptive-moment
+cross-check and sensitivity to weight/aperture, centering, background and
+neighbors on validation data. Freeze a reproducible measurement/selection
+contract before final test evaluation. The fixed-moment diagnostic remains
+useful but its RMSE improvement alone does not certify unbiased ellipticity.
+Known-shear calibration is future work for a separate weak-lensing claim;
+it is not required to finish the agreed observed-shape-recovery study.
+
 ## Validation analysis and queued completion workflow
 
 While full50 training continues, the user asked to work on the other steps.

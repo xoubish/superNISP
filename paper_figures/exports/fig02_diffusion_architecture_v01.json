@@ -1,0 +1,31 @@
+{
+  "status": "implementation-verified vector schematic draft",
+  "notebook": "02_diffusion_architecture.ipynb",
+  "notebook_source_sha256": "4ae709aac2545938fa8672f69508dc74a1653715c2bd9706ed953acce651a357",
+  "helper_sha256": "2f3cbb1925f02853b28a44921d038b83006ce887600cc309ff15081398e8dbac",
+  "inputs": {
+    "code/diffusion_corrected.py": "aebd5ffd41eef6eb583604e07a273dd69c9f94a31dea93d8a0ec40d3cbe6ab61",
+    "code/diffusion/model_sr3.py": "251fc8caecae29278e8b5cd6fda3068278bd7c058bf5c37a54896b555ce6b090",
+    "code/train_diffusion_full.py": "7c3587528b2dfc8b1dc1c27252f1ec494c1caf04bef7e4dae7b057f59de18286",
+    "runs/diffusion-full50-s20261016/provenance.json": "ae932c1969740add67ecb9cd5c87c88149f1d64122d77c67b31de94a326b1401"
+  },
+  "settings": {
+    "figsize": [
+      9.0,
+      6.7
+    ],
+    "parameters": 4910593,
+    "prediction": "v",
+    "conditioning": "NISP intensity and validity mask",
+    "inference_steps": 50
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig02_diffusion_architecture_v01.pdf": "8cb20b4dc9f88411f08ff61cf2fce55415f7472f7151b600bea50ed73db6e9c0",
+    "fig02_diffusion_architecture_v01.svg": "e1e1f58ea68e0c8ac567446f9c1c79f825634eb3f9f4c2af64cef1383c0a7c84",
+    "fig02_diffusion_architecture_v01.png": "d81abb5aafd3db43bd939b2e53e6a3757f550e9e4f8f3bf52b0d071a62f89ad2"
+  }
+}
