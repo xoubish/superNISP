@@ -4,7 +4,7 @@ No model is executed by the notebooks. Create these artifacts in a separate
 persistent, online-W&B export/benchmark job after the runs and choices are ready.
 They are intentionally absent during initial layout work.
 
-## Figure 4: `galaxy_examples.npz` and `galaxy_examples.json`
+## Figure 5: `galaxy_examples.npz` and `galaxy_examples.json`
 
 NPZ arrays, all sharing the first axis and ordering:
 
@@ -21,7 +21,7 @@ matching NPZ order, `checkpoint_sha256` keyed by the four prediction names,
 `data_hashes` and `npz_sha256`. Use fixed shared per-object display scales and
 symmetric residual limits; retain negative pixels and invalid support.
 
-## Figure 5: `model_benchmark.json`
+## Figure 6: `model_benchmark.json`
 
 Top-level: `complete: true`, `split: "validation"`, `units: "MJy/sr"`,
 `object_ids` (unique, common to every method), `population_rule`, `data_hashes`,

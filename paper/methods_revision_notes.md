@@ -5,7 +5,8 @@ implementation and recorded full-run configurations. Text before Methods and
 from Results onward was compared byte-for-byte with the pre-edit manuscript and
 is unchanged. The four missing software bibliography entries used by Methods
 were added to `mybib.bib`. No training, inference, or model construction ran.
-These Methods edits have not been pushed to Overleaf.
+These Methods edits were published to Overleaf in commit `8bc9420`, together
+with the change to a full-content `main.tex`.
 
 ## Evidence used
 

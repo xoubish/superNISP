@@ -24,7 +24,6 @@ PAPER = ROOT / 'paper'
 CHECKOUT = ROOT / '.overleaf/project'
 URL = 'https://git@git.overleaf.com/6ad2883f967dc592692b8809'
 EXTENSIONS = {'.tex', '.bib', '.cls', '.sty', '.bst', '.pdf', '.png', '.jpg', '.jpeg', '.eps', '.svg'}
-ENTRYPOINT = '% Main document for the Overleaf project.\n\\input{survey_enhancements.tex}\n'
 STATE = ROOT / '.overleaf/publish.json'
 CREDENTIALS = ROOT / '.overleaf/credentials'
 NETWORK_ENV = None
@@ -110,17 +109,25 @@ def sha(path):
     return result.hexdigest()
 
 
-def bundle():
+def publication_files():
+    """Publish the complete manuscript as main.tex, retaining its original copy."""
     files = manuscript_files(PAPER)
     if 'main.tex' in files:
-        raise RuntimeError('A local main.tex now exists; review the generated entry point before exporting.')
+        raise RuntimeError('A local main.tex now exists; reconcile it with survey_enhancements.tex before exporting.')
+    if 'survey_enhancements.tex' not in files:
+        raise RuntimeError('Missing manuscript source: paper/survey_enhancements.tex')
+    files['main.tex'] = files['survey_enhancements.tex']
+    return files
+
+
+def bundle():
+    files = publication_files()
     path = ROOT / '.overleaf/superNISP-paper.zip'
     path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(path, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
         for name, source in sorted(files.items()):
             archive.write(source, name)
-        archive.writestr('main.tex', ENTRYPOINT)
-    print(f'Prepared {len(files)+1} manuscript files: {path}', flush=True)
+    print(f'Prepared {len(files)} manuscript files: {path}', flush=True)
     return files
 
 
@@ -173,8 +180,7 @@ def publish():
         target = CHECKOUT / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-    (CHECKOUT / 'main.tex').write_text(ENTRYPOINT)
-    subprocess.run(['git', '-C', str(CHECKOUT), 'add', '--', 'main.tex', *sorted(files)], check=True)
+    subprocess.run(['git', '-C', str(CHECKOUT), 'add', '--', *sorted(files)], check=True)
     if git('diff', '--cached', '--name-only'):
         subprocess.run(['git', '-C', str(CHECKOUT), 'commit', '-m',
                         'Sync superNISP manuscript and publication figures'], check=True)
@@ -193,7 +199,7 @@ def compare():
         ['git', '-C', str(CHECKOUT), 'remote', 'get-url', 'origin'], text=True).strip()
     if remote != URL:
         raise RuntimeError('The existing checkout points to a different remote; inspect it before continuing.')
-    local_files, remote_files = manuscript_files(PAPER), manuscript_files(CHECKOUT)
+    local_files, remote_files = publication_files(), manuscript_files(CHECKOUT)
     rows = []
     for name in sorted(local_files.keys() | remote_files.keys()):
         local_sha = sha(local_files[name]) if name in local_files else None

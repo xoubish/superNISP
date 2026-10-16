@@ -3,7 +3,7 @@
 One notebook per proposed figure. Start with the figure, agree on its content
 and visual choices, then refine the caption and manuscript text. Figure 2 contains the sample distributions; the diffusion and residual
 architectures follow as Figures 3 and 4. The architecture notebooks are now `03_diffusion_architecture.ipynb` and
-`04_residual_architecture.ipynb`; result notebook filenames retain their original prefixes.
+`04_residual_architecture.ipynb`; all active notebook filenames now follow the Figure 1–9 sequence.
 
 The approved sample overview v07 is now included as the manuscript's first
 figure in `paper/survey_enhancements.tex`, with label `fig:sample_overview` and
@@ -20,11 +20,11 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v05 rendered |
 | 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
 | 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
-| 5 | [04_galaxy_examples.ipynb](04_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Wait for completed predictions |
-| 6 | [05_model_comparison.ipynb](05_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
-| 7 | [06_observed_shapes.ipynb](06_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
-| 8 | [07_shape_dependence.ipynb](07_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
-| 9 | [08_shape_robustness.ipynb](08_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Frozen legacy validation preview |
+| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Wait for completed predictions |
+| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
+| 7 | [07_observed_shapes.ipynb](07_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
+| 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
+| 9 | [09_shape_robustness.ipynb](09_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Frozen legacy validation preview |
 
 Figures 8–9 may move to an appendix or be combined. Diffusion sample variability
 and the individual-versus-mean-image comparison can become an additional figure
@@ -167,9 +167,9 @@ methods/results prose still needs revision. These changes await an Overleaf push
 `paper/figs/` and updating the manuscript's figure reference/caption.
 
 The legacy-only validation previews are
-[Figure 7: observed shapes](exports/fig06_observed_shapes_v01.png),
-[Figure 8: property dependence](exports/fig07_shape_dependence_v01.png), and
-[Figure 9: measurement robustness](exports/fig08_shape_robustness_v01.png).
+[Figure 7: observed shapes](exports/fig07_observed_shapes_v01.png),
+[Figure 8: property dependence](exports/fig08_shape_dependence_v01.png), and
+[Figure 9: measurement robustness](exports/fig09_shape_robustness_v01.png).
 Their input analyses are frozen; rerunning these notebooks will not silently
 switch to newer model results. Figures 5–6 intentionally have no exported plot
 until their required prediction/benchmark bundles are available. Their waiting
@@ -200,3 +200,8 @@ is included in both export provenance records.
 
 The current architecture PDFs, captions, method subsections and bibliography
 updates were pushed to Overleaf in commit `f16fbf5` at the user’s request.
+
+The result notebooks, headings, and current export stems are numbered 5–9.
+Earlier notebook names are archived in `revisions/*_before_renumber.ipynb`;
+old export files are retained as historical versions. The manuscript uses
+automatic LaTeX figure numbering and has no duplicate counter assignments.

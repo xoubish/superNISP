@@ -21,9 +21,12 @@ written into a file, the remote URL or command arguments. This explicit mode
 also handles servers that reject a push without prompting for credentials. This
 command prepares a ZIP, clones the blank project, copies the manuscript,
 bibliographies, class/style files and figures, commits in the isolated checkout,
-and pushes to Overleaf. It supplies `main.tex` as a small entry point for
-`survey_enhancements.tex`, so the blank project's default main-file setting
-continues to work. The research repository is not committed or pushed.
+and pushes to Overleaf. It copies the full contents of the local
+`paper/survey_enhancements.tex` into Overleaf's `main.tex`, so the project's
+default main-file setting continues to work. The original filename is retained
+as an identical copy; each publish refreshes both from the same local source.
+Continue making local manuscript edits in `paper/survey_enhancements.tex`.
+The research repository is not committed or pushed.
 
 Subsequent `publish` commands update local manuscript files on Overleaf provided
 there are no new remote edits to reconcile. The helper stops if collaborators

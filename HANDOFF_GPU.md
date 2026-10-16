@@ -4,7 +4,29 @@ Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
-## Methods text revision (local; not pushed)
+## Overleaf full main.tex
+
+At the user's request, `scripts/overleaf.py` now copies the complete local
+`paper/survey_enhancements.tex` to Overleaf's `main.tex`, retaining an identical
+copy under the original filename. Bundle and status comparisons use the same
+mapping; every publish refreshes both copies. The local manuscript remains
+`paper/survey_enhancements.tex`. Published successfully in commit `8bc9420`,
+including the pending Methods revision and software references. Verified exact
+main.tex/source byte equality and unique ZIP entries. No one-line wrapper remains.
+
+## Figure notebook numbering corrected
+
+All active `paper_figures/` notebooks now have unique prefixes 01–09.
+Residual architecture remains Figure 4; galaxy examples, model comparison,
+observed shapes, property dependence and robustness are Figures 5–9.
+Renamed notebook headings, export stems and README/input-contract references;
+refreshed notebook outputs and the three saved-diagnostic previews. Earlier
+notebook versions are archived as `revisions/*_before_renumber.ipynb`, with
+historical exports retained. No models ran. Current links and export provenance
+checks passed. Manuscript LaTeX already numbers figures automatically and has
+no duplicate Figure 4; historical Results figures remain for later revision.
+
+## Methods text revision (published in 8bc9420)
 
 The user requested a complete Methods review, including tables, while leaving
 Introduction and Results alone. `paper/survey_enhancements.tex` now documents
@@ -17,7 +39,7 @@ recorded full runs. No models ran. All manuscript text outside Methods is
 byte-for-byte unchanged from before this revision. Methods-only two-column
 preview compiled with no overfull boxes; tables visually checked. Full A&A
 build remains blocked by missing `etex.sty`. See
-`paper/methods_revision_notes.md` for evidence and limitations. Not pushed.
+`paper/methods_revision_notes.md` for evidence and limitations. Published in `8bc9420`.
 
 ## Paper figure notebooks started
 
