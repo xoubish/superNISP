@@ -6,6 +6,16 @@ the old paper results or claim a trained model is ready.
 
 ## Paper figure notebooks started
 
+Figure 2 parent comparison is prepared in `paper_figures/02_sample_properties.ipynb`
+as v04, with `parent_sample.py` selecting galaxy-class COSMOS2020 objects in the
+geometric NISP/JWST mosaic overlap before science/quality/buffer cuts. Light-gray
+filled histograms sit behind the three colored splits; axes extend beyond the
+sample cuts. Full catalog absent here: user will run on their other machine,
+setting `COSMOS_CATALOG` in the notebook. No parent plot has been rendered here.
+On successful execution the notebook installs v04 into the manuscript and updates
+its caption. Until then the manuscript retains the real v03 export. The v03
+executed notebook is archived. Do not use pre-cut candidates as the full parent.
+
 The user subsequently approved adding the latest overview v07 to the paper.
 It shows a 24.3-arcsec validation field centred on COSMOS2020 734405 in block
 3:2, with 5-arcsec scale bars. This supersedes the earlier requested 49-arcsec
@@ -18,8 +28,14 @@ compilation was attempted: latexmk lacks Perl Time::HiRes, and direct pdflatex
 stops at missing etex.sty before processing manuscript content. The asset hash,
 figure ordering, unique label and whitespace checks pass.
 
-Sample properties v02 now includes test magnitude/redshift histograms, explicitly
-requested by the user, in dashed gray with split counts and the original bins.
+Sample properties is now Figure 2, with notebook `02_sample_properties.ipynb`
+and export `fig02_sample_properties_v03`. It uses one legend in the left panel
+and teal/orange/dashed-purple training/validation/test curves. The PDF is
+included second in the manuscript as `paper/figs/sample_properties_v03.pdf`,
+label `fig:sample_properties`; later manuscript figures shift automatically.
+The v02 notebook is archived under `revisions/`.
+The histograms include test magnitude/redshift distributions, explicitly
+requested by the user, with split counts and the original bins.
 Only catalog metadata is used; test images/predictions remain reserved. The
 notebook documents that validation supports development and checkpoint/model
 selection, while final test performance must wait for frozen model/measurement
@@ -29,8 +45,8 @@ Figure 1 review update: the user wants paired NISP/JWST observations instead
 of the accounting panel, a closer field with less whitespace, no
 figure/panel titles, and the two original rows split into separate figures.
 `01_sample.ipynb` now contains footprint + paired field in one row;
-`01b_sample_properties.ipynb` contains magnitude/redshift in another figure.
-Final numbering remains provisional. The overview has now been rendered in the
+`02_sample_properties.ipynb` contains magnitude/redshift as Figure 2.
+The overview has now been rendered in the
 local mosaic workspace; other machines can set `MOSAIC_ROOT` or two explicit paths.
 `paper_figures/sample_region.py` extracts native 82-pixel NISP and aligned
 410-pixel JWST observations centred on galaxy 734405 in validation block 3:2, with masks,

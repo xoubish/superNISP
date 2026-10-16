@@ -230,20 +230,25 @@ Training data are used to fit model weights and normalization scales; validation
 The test sample is reserved for final evaluation after these choices are fixed.
 This spatial separation reduces overlap between neighbouring cutouts across splits, although all three subsets sample the same COSMOS field.
 Figure~\ref{fig:sample_overview} shows the spatial distribution and an illustrative pair of observed images.
+Figure~\ref{fig:sample_properties} shows the magnitude and redshift distributions of the three subsets.
 
 \begin{figure*}[t]
     \centering
     % Frozen export from paper_figures/01_sample.ipynb, version v07.
     \includegraphics[width=\textwidth]{figs/sample_overview_v07.pdf}
     \caption{Matched \Euclid\ NISP and JWST sample in COSMOS.
-    (a) Positions of accepted galaxies in the training (blue), validation (orange), and reserved-test (gray) subsets, assigned using disjoint $3\arcmin$ sky blocks with $10\arcsec$ boundary buffers.
-    (b) Observed NISP \YE-band and JWST/NIRCam F115W images of the same $24\farcs3\times24\farcs3$ field, centred on COSMOS2020 galaxy 734405 in the validation subset.
-    The polygon in (a) marks the image footprint; connecting lines link its corners to the enlarged NISP view.
-    Both images use a common inverse-hyperbolic-sine stretch in sky-subtracted surface brightness (MJy\,sr$^{-1}$).
-    NISP retains its native sampling, while JWST is bilinearly sampled onto a WCS-aligned grid five times finer, preserving the angular footprint.
-    Scale bars indicate $5\arcsec$, and arrows show north and east.
-    The field was selected to illustrate a resolved spiral galaxy; these are observed images, not model predictions.}
+    (a) Galaxy positions in the training (blue), validation (orange), and test (gray) subsets, defined by $3\arcmin$ sky blocks with $10\arcsec$ boundary buffers.
+    (b) NISP \YE-band and JWST/NIRCam F115W views of a $24\farcs3\times24\farcs3$ field around an example galaxy, marked in (a).
+    Both images use the same surface-brightness stretch. Scale bars indicate $5\arcsec$; arrows show north and east.}
     \label{fig:sample_overview}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figs/sample_properties_v03.pdf}
+    \caption{ACS F814W magnitude (a) and photometric-redshift (b) distributions of the training (teal), validation (orange), and test (dashed purple) samples.
+    Each histogram is normalized to unit integral, with common bins across subsets.}
+    \label{fig:sample_properties}
 \end{figure*}
 
 \section{\label{sc:methods}Methods}

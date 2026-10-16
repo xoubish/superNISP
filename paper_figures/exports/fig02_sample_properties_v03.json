@@ -1,0 +1,92 @@
+{
+  "status": "sample properties: separate horizontal figure, train/validation/test catalog metadata only",
+  "notebook": "02_sample_properties.ipynb",
+  "notebook_source_sha256": "95ccd148d0f9638bec92daa59892114e38ca35132e91aa47a5779be3550a982b",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      2.8
+    ],
+    "property_splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "colors": {
+      "train": "#009E73",
+      "validation": "#E69F00",
+      "test": "#8856A7"
+    },
+    "legend": "left panel only",
+    "magnitude_bins": [
+      17.0,
+      17.333333333333332,
+      17.666666666666668,
+      18.0,
+      18.333333333333332,
+      18.666666666666668,
+      19.0,
+      19.333333333333332,
+      19.666666666666668,
+      20.0,
+      20.333333333333332,
+      20.666666666666668,
+      21.0,
+      21.333333333333332,
+      21.666666666666664,
+      22.0,
+      22.333333333333332,
+      22.666666666666664,
+      23.0,
+      23.333333333333332,
+      23.666666666666664,
+      24.0,
+      24.333333333333332,
+      24.666666666666664,
+      25.0
+    ],
+    "redshift_bins": [
+      0.01,
+      0.12960000000000002,
+      0.24920000000000003,
+      0.3688,
+      0.48840000000000006,
+      0.6080000000000001,
+      0.7276,
+      0.8472000000000001,
+      0.9668000000000001,
+      1.0864,
+      1.2060000000000002,
+      1.3256000000000001,
+      1.4452,
+      1.5648000000000002,
+      1.6844000000000001,
+      1.8040000000000003,
+      1.9236000000000002,
+      2.0432,
+      2.1628,
+      2.2824,
+      2.402,
+      2.5216,
+      2.6412,
+      2.7608,
+      2.8804,
+      3.0
+    ],
+    "test_access": "catalog magnitude/redshift only; no images, predictions or performance metrics"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig02_sample_properties_v03.pdf": "b5deae78ec1f9c136ee0efeb3f629944319af14518b5f32ef70b2bde35c74e75",
+    "fig02_sample_properties_v03.svg": "43e42cdb9f2bc7d171afee7eb25e93a72d526854a4aa903c06675047151f5c40",
+    "fig02_sample_properties_v03.png": "5c3bc537ca63669115c5cb073cb27a19e9c00898139ab461bb418126bdc89dce"
+  }
+}

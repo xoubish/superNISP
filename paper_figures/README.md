@@ -1,9 +1,9 @@
 # Paper figures workspace
 
 One notebook per proposed figure. Start with the figure, agree on its content
-and visual choices, then refine the caption and manuscript text. Numbering is
-provisional; Figures 2 and 3 retain the current paper's diffusion-then-residual
-architecture order. The manuscript and its existing figures are not replaced.
+and visual choices, then refine the caption and manuscript text. Figure 2 contains the sample distributions; the diffusion and residual
+architectures follow as Figures 3 and 4. Existing architecture/result notebook
+filenames retain their original prefixes.
 
 The approved sample overview v07 is now included as the manuscript's first
 figure in `paper/survey_enhancements.tex`, with label `fig:sample_overview` and
@@ -17,22 +17,21 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | Figure | Notebook | Proposed content | Initial state |
 | --- | --- | --- | --- |
 | 1 | [01_sample.ipynb](01_sample.ipynb) | Footprint/splits and matched ~24-arcsec NISP/JWST field | True image footprint with connector lines; v07 |
-| 1b | [01b_sample_properties.ipynb](01b_sample_properties.ipynb) | Magnitude and redshift distributions | Separate horizontal figure; rendered |
-| 2 | [02_diffusion_architecture.ipynb](02_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
-| 3 | [03_residual_architecture.ipynb](03_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
-| 4 | [04_galaxy_examples.ipynb](04_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Wait for completed predictions |
-| 5 | [05_model_comparison.ipynb](05_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
-| 6 | [06_observed_shapes.ipynb](06_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
-| 7 | [07_shape_dependence.ipynb](07_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
-| 8 | [08_shape_robustness.ipynb](08_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Frozen legacy validation preview |
+| 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Separate horizontal figure; rendered |
+| 3 | [02_diffusion_architecture.ipynb](02_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
+| 4 | [03_residual_architecture.ipynb](03_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
+| 5 | [04_galaxy_examples.ipynb](04_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Wait for completed predictions |
+| 6 | [05_model_comparison.ipynb](05_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
+| 7 | [06_observed_shapes.ipynb](06_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
+| 8 | [07_shape_dependence.ipynb](07_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
+| 9 | [08_shape_robustness.ipynb](08_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Frozen legacy validation preview |
 
-Figures 7–8 may move to an appendix or be combined. Diffusion sample variability
+Figures 8–9 may move to an appendix or be combined. Diffusion sample variability
 and the individual-versus-mean-image comparison can become an additional figure
 after the full run finishes; their place in the story is not fixed yet.
 
 The sample overview and property distributions are now **two separate figures**,
-each in one row, without figure/panel titles. `1b` is a working filename; final
-numbering is deferred so existing architecture notebook names remain stable.
+each in one row, without figure/panel titles, numbered Figures 1 and 2.
 The zoomed overview field is cached in `inputs/sample_region_v06.npz`, with
 source checksums and extraction metadata in the accompanying JSON. To rebuild,
 set `MOSAIC_ROOT` in `01_sample.ipynb` on the machine holding the original mosaics.
@@ -73,11 +72,11 @@ recorded source hashes without importing the models.
   selected COSMOS subset, not a NISP-complete galaxy sample.
 - Results previews are explicitly labeled **validation / legacy baseline**.
   They do not automatically add an unfinished model or claim a final result.
-- Figure 4 waits for one aligned, physical-intensity prediction bundle from a
+- Figure 5 waits for one aligned, physical-intensity prediction bundle from a
   separate tmux/W&B export job after model choices are ready. It does not crop
   screenshots or rerun models inside the notebook. Its proposed selection is
   based on input properties, with exact IDs saved before comparing outputs.
-- Figure 5 requires per-object metrics on the same validation objects and a
+- Figure 6 requires per-object metrics on the same validation objects and a
   controlled inference timing benchmark. Differently normalized training losses
   and differently sized validation subsets must not be ranked as comparable
   reconstruction metrics. Tiny debugging pilots stay out of the main comparison.
@@ -91,9 +90,26 @@ placeholder results are substituted when those artifacts are missing.
 
 ## Rendered drafts and current sample revision
 
-The current [sample properties figure](exports/fig01b_sample_properties_v02.png)
-shows train, validation and test distributions without titles. Test is dashed
-gray; each histogram has unit integral and shares the original bin edges.
+Figure 2's notebook is now prepared for **v04**, adding a light-gray parent
+histogram. Set `COSMOS_CATALOG` in `02_sample_properties.ipynb` (or environment
+variable `SUPERNISP_COSMOS_CATALOG`) to the full COSMOS2020 Classic FITS catalog
+on the other machine, then run all cells. The parent uses `lp_type == 0` within
+the geometric intersection of the NISP and JWST mosaic unions, using saved
+source WCS headers. It precedes the sample magnitude/redshift/size, buffer and
+pixel-quality cuts; internal mosaic gaps and masked pixels are not excluded.
+`candidates.csv` already has science cuts and is deliberately not substituted.
+Axes extend to magnitude 30 and redshift 6; density normalization includes all
+valid measurements, including tails outside these ranges. Explicit sentinel
+codes and missing/out-of-range counts are recorded for review. A single legend
+serves both panels. The catalog checksum is streamed and saved with provenance.
+After successful export, `UPDATE_PAPER=True` installs the v04 PDF and updates
+the Figure 2 caption. **The full catalog is absent on this GPU copy, so v04 has
+not yet been rendered; the manuscript still uses the verified v03 below.**
+The executed v03 notebook is preserved in `revisions/02_sample_properties_v03.ipynb`.
+
+The current [sample properties figure](exports/fig02_sample_properties_v03.png)
+shows train (teal), validation (orange), and test (dashed purple) distributions
+without titles, with one legend in the left panel; each histogram has unit integral and shares the original bin edges.
 Its notebook explains training versus validation versus final test evaluation.
 The current [overview](exports/fig01_sample_v07.png) is exported as
 `fig01_sample_v07` (PDF/SVG/PNG). It shows real NISP Y and JWST F115W observations
@@ -131,15 +147,15 @@ Earlier combined layouts are preserved as
 [v02: smaller 12-arcsec images](exports/fig01_sample_v02.png), with corresponding
 notebook snapshots in `revisions/`; neither is the requested final layout.
 
-Architecture drafts are [Figure 2: diffusion](exports/fig02_diffusion_architecture_v01.png) and
-[Figure 3: residual architectures](exports/fig03_residual_architecture_v01.png).
+Architecture drafts are [Figure 3: diffusion](exports/fig02_diffusion_architecture_v01.png) and
+[Figure 4: residual architectures](exports/fig03_residual_architecture_v01.png).
 Each also has a PDF and an editable-text SVG with the same filename stem.
 
 The legacy-only validation previews are
-[Figure 6: observed shapes](exports/fig06_observed_shapes_v01.png),
-[Figure 7: property dependence](exports/fig07_shape_dependence_v01.png), and
-[Figure 8: measurement robustness](exports/fig08_shape_robustness_v01.png).
+[Figure 7: observed shapes](exports/fig06_observed_shapes_v01.png),
+[Figure 8: property dependence](exports/fig07_shape_dependence_v01.png), and
+[Figure 9: measurement robustness](exports/fig08_shape_robustness_v01.png).
 Their input analyses are frozen; rerunning these notebooks will not silently
-switch to newer model results. Figures 4–5 intentionally have no exported plot
+switch to newer model results. Figures 5–6 intentionally have no exported plot
 until their required prediction/benchmark bundles are available. Their waiting
 paths have been executed; the populated plotting paths await those real inputs.
