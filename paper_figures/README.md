@@ -2,8 +2,8 @@
 
 One notebook per proposed figure. Start with the figure, agree on its content
 and visual choices, then refine the caption and manuscript text. Figure 2 contains the sample distributions; the diffusion and residual
-architectures follow as Figures 3 and 4. The diffusion notebook is now `03_diffusion_architecture.ipynb`; remaining
-architecture/result notebook filenames retain their original prefixes.
+architectures follow as Figures 3 and 4. The architecture notebooks are now `03_diffusion_architecture.ipynb` and
+`04_residual_architecture.ipynb`; result notebook filenames retain their original prefixes.
 
 The approved sample overview v07 is now included as the manuscript's first
 figure in `paper/survey_enhancements.tex`, with label `fig:sample_overview` and
@@ -19,7 +19,7 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | 1 | [01_sample.ipynb](01_sample.ipynb) | Footprint/splits and matched ~24-arcsec NISP/JWST field | True image footprint with connector lines; v07 |
 | 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v05 rendered |
 | 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
-| 4 | [03_residual_architecture.ipynb](03_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
+| 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
 | 5 | [04_galaxy_examples.ipynb](04_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Wait for completed predictions |
 | 6 | [05_model_comparison.ipynb](05_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
 | 7 | [06_observed_shapes.ipynb](06_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
@@ -148,11 +148,11 @@ Earlier combined layouts are preserved as
 [v02: smaller 12-arcsec images](exports/fig01_sample_v02.png), with corresponding
 notebook snapshots in `revisions/`; neither is the requested final layout.
 
-Architecture drafts are [Figure 3: diffusion](exports/fig03_diffusion_architecture_v03.png) and
-[Figure 4: residual architectures](exports/fig03_residual_architecture_v01.png).
+Architecture drafts are [Figure 3: diffusion](exports/fig03_diffusion_architecture_v04.png) and
+[Figure 4: residual architectures](exports/fig04_residual_architecture_v03.png).
 Each also has a PDF and an editable-text SVG with the same filename stem.
 Figure 3 v03 replaces the historical diffusion PNG in the manuscript with
-`paper/figs/diffusion_architecture_v03.pdf` and an implementation-based caption.
+`paper/figs/diffusion_architecture_v04.pdf` and an implementation-based caption.
 It separates training, the shared U-Net, and generation; the residual-block
 inset shows how NISP conditioning and timestep information enter all 14 blocks.
 The notebook checks source hashes against the full run before drawing, without
@@ -174,3 +174,20 @@ Their input analyses are frozen; rerunning these notebooks will not silently
 switch to newer model results. Figures 5–6 intentionally have no exported plot
 until their required prediction/benchmark bundles are available. Their waiting
 paths have been executed; the populated plotting paths await those real inputs.
+
+Figure 4 v02 uses the same simplified style as Figure 3: common feature
+extraction, two alternative enlargement paths, and a compact dense-block inset.
+The model, trainer and loader sources match both recorded residual full runs.
+The PDF is installed as `paper/figs/residual_architecture_v03.pdf` with label
+`fig:resnet_model`. The caption and residual subsection explain feature reuse,
+residual additions, edge/channel weighting and pixel shuffling in plain scientific
+language; the training table matches the 50-epoch, batch-8, masked-L1 runs.
+The original detailed notebook is preserved in `revisions/03_residual_architecture_v01.ipynb`.
+Historical results figures/text remain for later review. Figure 4 has not been
+pushed to Overleaf.
+
+Latest architecture palette: Figure 3 v04 and Figure 4 v03 use stronger blue,
+teal, purple and amber fills with darker text and matching colored borders.
+The approved layouts, labels and captions are retained. Both PDFs are installed
+in the local manuscript; earlier pale versions are preserved in exports/revisions.
+These color updates have not been pushed to Overleaf.

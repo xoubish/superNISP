@@ -1,0 +1,56 @@
+{
+  "status": "Figure 4: simplified schematic verified against both residual full runs",
+  "notebook": "04_residual_architecture.ipynb",
+  "notebook_source_sha256": "566559ea0fa3735d625733050bc956f02f8f8ee01002447cb7ae678bf4a27f52",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/architecture_style.py": "147fc21378587fda11606ca1e9432a02b0194778152cb3325bca6856dfea5407",
+    "code/residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+    "code/train_paired.py": "e1d0eba1481fe690061afc4dfaf276753422fe00f10f27ec750672343b8ccf29",
+    "code/paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6",
+    "runs/residual-full50-s20261016/provenance.json": "643dda6d61e2dc5060f31ec47c51d919d6753842fd2fb120804b998491590631",
+    "runs/direct5-full50-s20261016/provenance.json": "dbbb94658b0d67697b0635e6f5cd1229dcd90e38a13d30feb5b7dfbc35cdef2c"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      4.8
+    ],
+    "colors": {
+      "learned": "#72B6F2",
+      "nisp_condition": "#55CFB0",
+      "jwst_image": "#F3BE57",
+      "diffusion": "#B39AE8",
+      "neutral": "#E2E8F0",
+      "ink": "#192C3B"
+    },
+    "borders": {
+      "#72B6F2": "#2872B2",
+      "#55CFB0": "#087B64",
+      "#F3BE57": "#A97416",
+      "#B39AE8": "#7755AF",
+      "#E2E8F0": "#718198"
+    },
+    "blocks": 8,
+    "features": 64,
+    "growth": 32,
+    "parameters": {
+      "two_stage": 2332177,
+      "direct5": 2959953
+    },
+    "two_stage": "PixelShuffle 2x, PixelShuffle 2x, reconstruction at 164x164, bilinear resize to 205x205",
+    "direct5": "PixelShuffle 5x, reconstruction at 205x205",
+    "representation": "signed linear normalization with training-only scales",
+    "loss": "mean absolute error over valid target pixels, averaged per object",
+    "display": "simplified common architecture and alternative output paths; no overall title"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig04_residual_architecture_v04.pdf": "f91bc323e9b6341cdcaba3326d801e02755fe8f051cc95ecb5a5138caf3225f4",
+    "fig04_residual_architecture_v04.svg": "b0ad0c996ba53db16234316751525ca41d559453f763e4299f1137cb4f6a7978",
+    "fig04_residual_architecture_v04.png": "fd256179704d01efd148d44cf9c81c8b97b642e7018df775cbb11e652bbcc653"
+  }
+}

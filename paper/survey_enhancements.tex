@@ -264,7 +264,7 @@ The diffusion model therefore tests whether a learned prior can synthesize fine-
 
 \begin{figure*}
     \centering
-    \includegraphics[width=\textwidth]{figs/diffusion_architecture_v03.pdf}
+    \includegraphics[width=\textwidth]{figs/diffusion_architecture_v04.pdf}
     \caption{Diffusion model for reconstructing F115W images from NISP observations.
     (a) Training uses JWST targets with added noise; errors are measured only over valid target pixels.
     (b) The U-Net combines image features at several spatial scales, with the number of feature maps indicated in each stage. The NISP image, its validity mask, and the noise level guide the updates within each block through learned rescalings and offsets (FiLM).
@@ -368,59 +368,84 @@ Selection uses image error; recovery of the observed galaxy shapes is assessed s
     \end{tabular}
 \end{table}
 
-\subsection{Residual Network Architecture}
+\subsection{Residual network architecture}
+\label{sc:residual_model}
 
-The Deep Residual Network, unlike the Diffusion model, directly predicts high-resolution output from low-resolution feature maps.
-It is designed to combine strong representational power with an explicit focus on small-scale structure and sharp features.
-A visualization of the block structure can be found in Figure \ref{fig:resnet_model}.
+The residual network produces an F115W estimate from the NISP image in a single pass.
+Its layers first extract features on the original $41\times41$ grid, then enlarge these features and combine them into a $205\times205$ output image.
+We compare two variants with the same feature-extraction structure and different enlargement paths (Fig.~\ref{fig:resnet_model}).
+Each variant is trained separately.
 
 \begin{figure*}
     \centering
-    \includegraphics[width=\textwidth]{figs/SuperRes_chart.png}
-    \caption{Visual representation of ResNet model design.}
+    \includegraphics[width=\textwidth]{figs/residual_architecture_v03.pdf}
+    \caption{Residual network for reconstructing F115W images from NISP observations.
+    (a) Both variants extract features using eight residual dense blocks, followed by edge filtering and learned weighting of the feature maps.
+    (b) Two separately trained variants use different enlargement paths. The first enlarges twice by $2\times$, predicts an image on a $164\times164$ grid, then resizes it to $205\times205$; the second enlarges directly by $5\times$ and predicts on the target grid.
+    (c) Within each dense block, convolutions reuse earlier features and add a learned correction to the input. Plus symbols denote this addition.}
     \label{fig:resnet_model}
 \end{figure*}
 
-The network follows a residual-in-residual dense block (RRDB) design similar in spirit to ESRGAN-style architectures \citep{Wang2018}.
-An initial convolution expands the input into a feature representation with fixed width.
-This representation is processed by a sequence of RRDB, each of which applies a series of convolutions with progressive channel growth and dense skip connections.
-Within each block, the outputs of all intermediate layers are concatenated before the final projection back to the base width, and a residual connection is added from the block input.
-This design encourages efficient feature reuse, stabilizes optimization, and improves the propagation of both low and high-level feature information across the network.
-A trunk convolution after the stack of RRDB blocks combines the aggregated features, and a residual connection is added back to the initial feature map, which forms a global residual pathway through the network.
+The feature-extraction part combines residual learning \citep{ResNet} with the reuse of intermediate features found in image super-resolution networks \citep{Wang2018}.
+An initial convolution produces 64 feature maps, which pass through eight residual dense blocks.
+Within each block, successive convolutions receive the block input together with the features produced by earlier layers.
+This reuse of earlier information is what the term \emph{dense} describes.
+The first four convolutions each produce 32 additional feature maps; a fifth combines the accumulated information into 64 maps.
+The block then adds this learned correction to its input, forming the residual connection.
+After all eight blocks, another convolution combines the features, and a longer connection adds back the maps from the initial layer.
 
-To sharpen small-scale structure, we include a dedicated detail enhancement module that acts on the fused feature map.
-This module first applies a fixed high-pass filter based on a Laplacian-style kernel that enhances local contrast and edges.
-The edge-enhanced features are passed through a small convolutional sub-network and a channel-wise attention mechanism that is conceptually similar to squeeze and excitation blocks \citep{hu2019}.
-The attention branch computes a global summary for each channel through adaptive average pooling, and then predicts a set of channel weights.
-These weights rescale the feature maps, so that channels that are informative for fine structure receive higher emphasis.
-This combination of explicit edge extraction and learned channel reweighting focuses model capacity on the reconstruction of compact and anisotropic features.
+An additional module emphasizes spatial changes in these feature maps.
+It applies a fixed edge-detection filter to each map, adds the filter response to the original features, and processes the result with learned convolutions.
+The network also assigns a weight to each feature map using its average response across the image, following the channel-weighting approach of \citet{hu2019}.
+These learned weights adjust the contribution of each map before enlargement.
+The module operates on internal features; its effect on the reconstructed galaxy shapes is evaluated with the rest of the network.
+
+The two enlargement paths use \emph{pixel shuffling}: a convolution predicts additional feature maps, whose values are rearranged into neighbouring positions on a finer grid \citep{Shi2016PixelShuffle}.
+The first variant doubles the grid size twice, from 41 to 82 and then 164 pixels on a side.
+Two final convolutions combine the features into an image, which is resized by bilinear interpolation to the required $205\times205$ grid.
+The direct-$5\times$ variant instead enlarges the features in one step from 41 to 205 pixels, then predicts the image on that grid.
+This comparison tests whether reconstructing directly at the target sampling improves image and shape recovery.
+The direct variant also has more parameters (Table~\ref{tab:resnet_hyperparams}), so the comparison includes a change in model capacity.
+
+Both variants take the NISP intensity image as their sole network input, with invalid input pixels set to zero.
+Input and target intensities are divided by fixed scale factors determined from the training sample; this linear scaling retains negative values from background subtraction.
+The output is converted back to surface brightness for evaluation, without clipping its range.
+We train each model from the start using the mean absolute difference between its prediction and the JWST target.
+The loss is averaged over valid target pixels within each cutout, then across the batch.
+Matched rotations and reflections are applied to each image pair and its masks during training.
+
+Both models use the training settings in Table~\ref{tab:resnet_hyperparams}, including the same 50-epoch budget and maximum learning rate.
+After every epoch, we evaluate the mean absolute image error on all 2118 validation galaxies and retain the saved network with the lowest value.
+The same criterion is used for both enlargement paths; shape recovery is assessed separately on the resulting predictions.
+The test sample remains reserved until the model and measurement choices are fixed.
 
 \begin{table}[t]
-    \caption{Training hyperparameters of the best-performing ResNet model.}
+    \caption{Architecture and training settings for the residual models.}
     \label{tab:resnet_hyperparams}
     \centering
     \begin{tabular}{l l}
         \hline\hline
-        Training parameter & Value \\
+        Parameter & Value \\
         \hline
-        Batch size & 16 \\
-        Gradient clipping norm & 1 \\
-        L1 loss weight (stage 1) & 0.8 \\
-        Learning rate (stage 1) & $5.66 \times 10^{-5}$ \\
-        Learning rate (stage 2) & $9.22 \times 10^{-5}$ \\
-        MSE loss weight (stage 2) & 0.1 \\
-        Number of RRDBs & 12 \\
-        SSIM loss weight (stage 2) & 0.5 \\
-        Weight decay & $1.22 \times 10^{-5}$ \\
+        Residual dense blocks & 8 \\
+        Feature maps & 64 \\
+        Parameters (two-stage) & 2\,332\,177 \\
+        Parameters (direct $5\times$) & 2\,959\,953 \\
+        Training galaxies & 17\,816 \\
+        Batch size & 8 \\
+        Training budget & 50 epochs \\
+        Optimizer & Adam \\
+        Maximum learning rate & $10^{-4}$ \\
+        Learning-rate schedule & OneCycle (rise, then decay) \\
+        Loss & Mean absolute error \\
+        Validation galaxies & 2118 \\
         \hline
     \end{tabular}
 \end{table}
 
-After the trunk convolution block and detail enhancement, spatial upsampling is performed in two stages through pixel shuffle blocks that each increase the resolution by a factor of two.
-Each block applies a convolution that expands the number of channels, followed by a pixel shuffle operation that rearranges channels into a higher resolution spatial grid.
-After two such stages, the feature map has been upsampled from the Euclid grid to an intermediate resolution.
-A final convolution block projects the features back to a single output channel (magnified about 4x), and a bilinear interpolation step adjusts the output to match the exact JWST grid size at 5x magnification.
-This combination of learned upsampling and a final interpolation ensures that the model can exploit sub-pixel information while still producing images that are exactly aligned with the target pixels.
+\section{\label{sc:results}Results}
+
+\subsection{Diffusion model}
 
 \begin{figure*}
     \centering
@@ -428,19 +453,6 @@ This combination of learned upsampling and a final interpolation ensures that th
     \caption{Image comparisons between input Euclid images, super-resolved diffusion model outputs, and JWST images. Images super-resolved with the diffusion model tend to be more compact and blurred compared to true JWST images.}
     \label{fig:diffusion_images}
 \end{figure*}
-
-The model is trained in two stages, each prioritizing a different learning goal.
-In the first stage, we optimize a weighted combination of pixel-wise mean absolute error (MAE) and mean squared error (MSE) between the prediction and the target image.
-This encourages accurate flux recovery and suppresses large residuals while providing a stable objective for initial convergence.
-In the second stage, we fine tune the network with an extended loss that combines the pixel-wise terms with a structural similarity component based on the SSIM metric in \texttt{scikit-image} \citep{skimage, wang2004}.
-The structural term encourages the model to reproduce local contrast and texture patterns, which helps preserve small-scale morphology and avoids over-smoothing.
-Both stages use cosine annealing schedules for the learning rate, gradient clipping for stability, the Adam optimizer, and an independent validation split for early selection of the best performing model stage.
-Similarly to the diffusion model, we carry out a sweep of fifty runs with the \texttt{Weights \& Biases} package \citep{wandb} that vary parameters such as the learning rate, number of RRDB blocks, gradient clipping threshold, loss function weights, and training duration.
-Final best model parameters are listed in Table \ref{tab:resnet_hyperparams}.
-
-\section{\label{sc:results}Results}
-
-\subsection{Diffusion model}
 
 \begin{figure*}
     \centering

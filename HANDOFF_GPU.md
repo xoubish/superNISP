@@ -6,6 +6,36 @@ the old paper results or claim a trained model is ready.
 
 ## Paper figure notebooks started
 
+Current architecture exports: Figure 3 v05 and Figure 4 v04. The user requested
+consistent color meanings across both diagrams. `paper_figures/architecture_style.py`
+is the shared source: blue learned operations, teal NISP/conditioning, yellow
+JWST/F115W images, purple diffusion quantities/updates, gray neutral/fixed
+operations. Both upsampling variants are blue; all F115W estimates are yellow.
+Both notebooks rendered and manuscript PDFs/provenance were verified; installed
+`diffusion_architecture_v05.pdf` and `residual_architecture_v04.pdf`. Not pushed.
+
+Latest architecture colors: Figure 3 v04 and Figure 4 v03 use stronger blue,
+teal, purple and amber fills, matching borders and darker text/arrows. Layouts
+and scientific content are unchanged. Both notebooks executed successfully;
+PDF/SVG/PNG exports and source provenance were refreshed, and the PDFs are
+installed in the manuscript as `diffusion_architecture_v04.pdf` and
+`residual_architecture_v03.pdf`. Prior pale versions are archived. Not pushed.
+
+Figure 4 now has a simplified ResNet schematic in
+`paper_figures/04_residual_architecture.ipynb`, exported as
+`fig04_residual_architecture_v02` (PDF/SVG/PNG). It shows the common eight-block
+architecture, separate two-stage and direct-5x output paths, and a compact dense
+block inset. Model/trainer/loader hashes match both recorded full runs; no model
+ran. Installed `paper/figs/residual_architecture_v02.pdf` under `fig:resnet_model`.
+Rewrote its caption and residual subsection in plain scientific language; corrected
+the old RRDB, two-stage-training, SSIM-loss, hyperparameter and sweep descriptions.
+Training table now reflects 50 epochs, batch 8, Adam/OneCycle max LR 1e-4, masked
+L1 and full-validation checkpoint selection. Added ESRGAN and pixel-shuffle
+citations. The existing diffusion-example figure was preserved and moved under
+the diffusion-results heading without changing figure order. Source/export hashes,
+notebook execution, citation keys, labels and training settings were checked.
+Not pushed to Overleaf. Historical results remain for later revision.
+
 The simplified Figure 3 v03 is approved for inclusion in the paper. Its caption
 now uses plain scientific language. The diffusion subsection and training table
 have been rewritten against the current implementation: velocity prediction is

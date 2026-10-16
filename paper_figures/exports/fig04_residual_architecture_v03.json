@@ -1,0 +1,53 @@
+{
+  "status": "Figure 4: simplified schematic verified against both residual full runs",
+  "notebook": "04_residual_architecture.ipynb",
+  "notebook_source_sha256": "74fc64ccd5da8ece089bad3ea7812d7e379c74ca7e327122780ca3d37bc29ff5",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "code/residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+    "code/train_paired.py": "e1d0eba1481fe690061afc4dfaf276753422fe00f10f27ec750672343b8ccf29",
+    "code/paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6",
+    "runs/residual-full50-s20261016/provenance.json": "643dda6d61e2dc5060f31ec47c51d919d6753842fd2fb120804b998491590631",
+    "runs/direct5-full50-s20261016/provenance.json": "dbbb94658b0d67697b0635e6f5cd1229dcd90e38a13d30feb5b7dfbc35cdef2c"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      4.8
+    ],
+    "colors": {
+      "features": "#72B6F2",
+      "condition": "#55CFB0",
+      "neutral": "#E2E8F0",
+      "ink": "#192C3B",
+      "borders": {
+        "#72B6F2": "#2872B2",
+        "#55CFB0": "#087B64",
+        "#B39AE8": "#7755AF",
+        "#F3BE57": "#A97416",
+        "#E2E8F0": "#718198"
+      }
+    },
+    "blocks": 8,
+    "features": 64,
+    "growth": 32,
+    "parameters": {
+      "two_stage": 2332177,
+      "direct5": 2959953
+    },
+    "two_stage": "PixelShuffle 2x, PixelShuffle 2x, reconstruction at 164x164, bilinear resize to 205x205",
+    "direct5": "PixelShuffle 5x, reconstruction at 205x205",
+    "representation": "signed linear normalization with training-only scales",
+    "loss": "mean absolute error over valid target pixels, averaged per object",
+    "display": "simplified common architecture and alternative output paths; no overall title"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig04_residual_architecture_v03.pdf": "b94682689f79d69ef616118f9dbb7b5bbefa5bd2d1324ec68234a914bedae287",
+    "fig04_residual_architecture_v03.svg": "d4c2ad872dc1786497562aec9ad4e164217e2abb4bdbf7b117ca37f57b8aaaa8",
+    "fig04_residual_architecture_v03.png": "8e2e365de71212f3006c7dcfd39441ed1f41f2f244bbee1b2c8ae207f1aad9e5"
+  }
+}

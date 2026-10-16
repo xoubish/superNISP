@@ -1,0 +1,59 @@
+{
+  "status": "Figure 3 review draft: source-verified training, architecture and generation",
+  "notebook": "03_diffusion_architecture.ipynb",
+  "notebook_source_sha256": "04e2c26b6e040c4364820b4c3192c80558ccedfa21267268a70615eee8e916f0",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "code/diffusion_corrected.py": "aebd5ffd41eef6eb583604e07a273dd69c9f94a31dea93d8a0ec40d3cbe6ab61",
+    "code/diffusion/model_sr3.py": "251fc8caecae29278e8b5cd6fda3068278bd7c058bf5c37a54896b555ce6b090",
+    "code/train_diffusion_full.py": "7c3587528b2dfc8b1dc1c27252f1ec494c1caf04bef7e4dae7b057f59de18286",
+    "runs/diffusion-full50-s20261016/provenance.json": "ae932c1969740add67ecb9cd5c87c88149f1d64122d77c67b31de94a326b1401"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      5.6
+    ],
+    "display": "simplified labels; channel counts only; equations in implementation notes",
+    "parameters": 4910593,
+    "prediction": "v",
+    "timesteps": 1000,
+    "conditioning": "NISP intensity and validity mask; FiLM in every residual block",
+    "encoder_shapes": [
+      "208x208x32",
+      "104x104x64",
+      "52x52x128"
+    ],
+    "bottleneck_shape": "26x26x128",
+    "residual_blocks": 14,
+    "timestep_embedding": 256,
+    "inference_steps": 50,
+    "ddim_eta": 0,
+    "loss": "valid-pixel velocity MSE + 0.1 reconstructed-target L1 in model coordinates",
+    "padding": "reflect 205 to 208; output cropped to 205",
+    "colors": {
+      "features": "#72B6F2",
+      "condition": "#55CFB0",
+      "time": "#B39AE8",
+      "target": "#F3BE57",
+      "neutral": "#E2E8F0",
+      "ink": "#192C3B",
+      "borders": {
+        "#72B6F2": "#2872B2",
+        "#55CFB0": "#087B64",
+        "#B39AE8": "#7755AF",
+        "#F3BE57": "#A97416",
+        "#E2E8F0": "#718198"
+      }
+    }
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig03_diffusion_architecture_v04.pdf": "c1710237f11085d685379d73acd532901ebc299cfff276468e041d55e2820d99",
+    "fig03_diffusion_architecture_v04.svg": "24d067552a1c7bf5aafd0c739861eccc21b8489ba599307dbbe4ae527a95621c",
+    "fig03_diffusion_architecture_v04.png": "daea2e40922aab67703ca708dc3703d95fee7feb9a1b4d3d94d277ad1418f176"
+  }
+}

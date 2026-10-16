@@ -1,0 +1,60 @@
+{
+  "status": "Figure 3 review draft: source-verified training, architecture and generation",
+  "notebook": "03_diffusion_architecture.ipynb",
+  "notebook_source_sha256": "0235a1b341f4e64b2b3afdb800ec80ad0132760e1949c45a8db773af3b8a69f3",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/architecture_style.py": "147fc21378587fda11606ca1e9432a02b0194778152cb3325bca6856dfea5407",
+    "code/diffusion_corrected.py": "aebd5ffd41eef6eb583604e07a273dd69c9f94a31dea93d8a0ec40d3cbe6ab61",
+    "code/diffusion/model_sr3.py": "251fc8caecae29278e8b5cd6fda3068278bd7c058bf5c37a54896b555ce6b090",
+    "code/train_diffusion_full.py": "7c3587528b2dfc8b1dc1c27252f1ec494c1caf04bef7e4dae7b057f59de18286",
+    "runs/diffusion-full50-s20261016/provenance.json": "ae932c1969740add67ecb9cd5c87c88149f1d64122d77c67b31de94a326b1401"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      5.6
+    ],
+    "display": "simplified labels; channel counts only; equations in implementation notes",
+    "parameters": 4910593,
+    "prediction": "v",
+    "timesteps": 1000,
+    "conditioning": "NISP intensity and validity mask; FiLM in every residual block",
+    "encoder_shapes": [
+      "208x208x32",
+      "104x104x64",
+      "52x52x128"
+    ],
+    "bottleneck_shape": "26x26x128",
+    "residual_blocks": 14,
+    "timestep_embedding": 256,
+    "inference_steps": 50,
+    "ddim_eta": 0,
+    "loss": "valid-pixel velocity MSE + 0.1 reconstructed-target L1 in model coordinates",
+    "padding": "reflect 205 to 208; output cropped to 205",
+    "colors": {
+      "learned": "#72B6F2",
+      "nisp_condition": "#55CFB0",
+      "jwst_image": "#F3BE57",
+      "diffusion": "#B39AE8",
+      "neutral": "#E2E8F0",
+      "ink": "#192C3B"
+    },
+    "borders": {
+      "#72B6F2": "#2872B2",
+      "#55CFB0": "#087B64",
+      "#F3BE57": "#A97416",
+      "#B39AE8": "#7755AF",
+      "#E2E8F0": "#718198"
+    }
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig03_diffusion_architecture_v05.pdf": "5bb463c4c4b07b19fb5328cffb29be99f3137b77fc4d872e2d724dfeb4af6299",
+    "fig03_diffusion_architecture_v05.svg": "d74a5946507a5d846ac09de41dc9cc74473c090c779ed837179695fde4426226",
+    "fig03_diffusion_architecture_v05.png": "84cb1564b8db4acc76d35ca39b8c5afb7300569ca13ee85aa05cad50b2a75a4e"
+  }
+}
