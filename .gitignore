@@ -145,3 +145,4 @@ plots
 *.csv
 .virtual_documents/
 runs/
+.overleaf/

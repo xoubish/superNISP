@@ -6,6 +6,18 @@ the old paper results or claim a trained model is ready.
 
 ## Paper figure notebooks started
 
+The user subsequently approved adding the latest overview v07 to the paper.
+It shows a 24.3-arcsec validation field centred on COSMOS2020 734405 in block
+3:2, with 5-arcsec scale bars. This supersedes the earlier requested 49-arcsec
+layout described below. The exact v07 PDF is copied to
+`paper/figs/sample_overview_v07.pdf` and included first in
+`paper/survey_enhancements.tex`, label `fig:sample_overview`, with a caption
+and an updated adjoining paragraph describing the corrected sample and splits.
+The rest of the historical manuscript still requires revision. Full local
+compilation was attempted: latexmk lacks Perl Time::HiRes, and direct pdflatex
+stops at missing etex.sty before processing manuscript content. The asset hash,
+figure ordering, unique label and whitespace checks pass.
+
 Sample properties v02 now includes test magnitude/redshift histograms, explicitly
 requested by the user, in dashed gray with split counts and the original bins.
 Only catalog metadata is used; test images/predictions remain reserved. The
@@ -44,7 +56,7 @@ The user requested a figure-first paper workflow while experiments continue.
 See [paper_figures/README.md](paper_figures/README.md): nine editable notebooks,
 one per proposed figure, with captions/review notes and PDF/SVG/PNG exports plus
 input/source hashes. The plot code lives in each notebook; do not regenerate
-notebooks over later manual edits. Manuscript text has not been changed.
+notebooks over later manual edits. Manuscript integration is recorded above.
 
 Figures 1–3 show the sample metadata and the current diffusion/residual
 architectures. Figures 4–5 wait for completed, matched prediction and benchmark

@@ -223,9 +223,28 @@ We limit our galaxy sample to those that are brighter than 25th magnitude, below
 This requires galaxies to be bright enough to be detected by Euclid NISP imaging, but compact enough to be captured by our image clip sizes.
 
 The Euclid data consists of 33 full images of $\sim$0.5 square degrees each, and the JWST data consists of 20 full images with a field of view of $\sim$10 square arcminutes each.
-Using the COSMOS2020 catalog \citep{cosmos2020_classic}, there are $\sim$40,000 candidates that reduce to 22,738 galaxy matches after filtering for coverage by both surveys, edges, and masked pixels.
-We use 80\% of the data for training and 20\% for testing (18\,190 training samples and 4547 testing samples).
-The split is performed at the level of individual galaxies. Because training and test galaxies are drawn from the same contiguous field, a test galaxy can appear off-centre as a neighbour within a training cutout; the central galaxy of each test cutout, on which all metrics in this paper are evaluated, is however never itself a training target. A spatially disjoint split, which would remove this residual overlap entirely, is a natural refinement for future work.
+Starting from 39\,024 coverage candidates identified using the COSMOS2020 Classic catalog \citep{cosmos2020_classic}, the corrected extraction retains 22\,810 paired galaxies after coverage, pixel-quality, and spatial-buffer cuts.
+We assign disjoint $3\arcmin$ sky blocks to training, validation, and test subsets, excluding galaxy centres within $10\arcsec$ of block boundaries.
+The resulting samples contain 17\,816 training, 2\,118 validation, and 2\,876 test galaxies.
+Training data are used to fit model weights and normalization scales; validation data support checkpoint selection and model and measurement-protocol development.
+The test sample is reserved for final evaluation after these choices are fixed.
+This spatial separation reduces overlap between neighbouring cutouts across splits, although all three subsets sample the same COSMOS field.
+Figure~\ref{fig:sample_overview} shows the spatial distribution and an illustrative pair of observed images.
+
+\begin{figure*}[t]
+    \centering
+    % Frozen export from paper_figures/01_sample.ipynb, version v07.
+    \includegraphics[width=\textwidth]{figs/sample_overview_v07.pdf}
+    \caption{Matched \Euclid\ NISP and JWST sample in COSMOS.
+    (a) Positions of accepted galaxies in the training (blue), validation (orange), and reserved-test (gray) subsets, assigned using disjoint $3\arcmin$ sky blocks with $10\arcsec$ boundary buffers.
+    (b) Observed NISP \YE-band and JWST/NIRCam F115W images of the same $24\farcs3\times24\farcs3$ field, centred on COSMOS2020 galaxy 734405 in the validation subset.
+    The polygon in (a) marks the image footprint; connecting lines link its corners to the enlarged NISP view.
+    Both images use a common inverse-hyperbolic-sine stretch in sky-subtracted surface brightness (MJy\,sr$^{-1}$).
+    NISP retains its native sampling, while JWST is bilinearly sampled onto a WCS-aligned grid five times finer, preserving the angular footprint.
+    Scale bars indicate $5\arcsec$, and arrows show north and east.
+    The field was selected to illustrate a resolved spiral galaxy; these are observed images, not model predictions.}
+    \label{fig:sample_overview}
+\end{figure*}
 
 \section{\label{sc:methods}Methods}
 

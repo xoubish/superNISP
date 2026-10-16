@@ -5,6 +5,15 @@ and visual choices, then refine the caption and manuscript text. Numbering is
 provisional; Figures 2 and 3 retain the current paper's diffusion-then-residual
 architecture order. The manuscript and its existing figures are not replaced.
 
+The approved sample overview v07 is now included as the manuscript's first
+figure in `paper/survey_enhancements.tex`, with label `fig:sample_overview` and
+a caption in Observations. Its frozen PDF is `paper/figs/sample_overview_v07.pdf`.
+This version shows the 24.3-arcsec field around COSMOS2020 734405 with 5-arcsec
+scale bars. The adjoining sample/split paragraph was updated; the remaining
+historical manuscript text and results still require revision. Local full-PDF
+verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
+`Time::HiRes` dependency); the included PDF and figure ordering were checked.
+
 | Figure | Notebook | Proposed content | Initial state |
 | --- | --- | --- | --- |
 | 1 | [01_sample.ipynb](01_sample.ipynb) | Footprint/splits and matched ~24-arcsec NISP/JWST field | True image footprint with connector lines; v07 |
