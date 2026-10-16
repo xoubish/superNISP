@@ -1,0 +1,50 @@
+{
+  "status": "Figure 3 review draft: source-verified training, architecture and generation",
+  "notebook": "03_diffusion_architecture.ipynb",
+  "notebook_source_sha256": "f4c6aaa34494db636093083ba380b8ca4ac3b538c74013225be84dc18f99806e",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "code/diffusion_corrected.py": "aebd5ffd41eef6eb583604e07a273dd69c9f94a31dea93d8a0ec40d3cbe6ab61",
+    "code/diffusion/model_sr3.py": "251fc8caecae29278e8b5cd6fda3068278bd7c058bf5c37a54896b555ce6b090",
+    "code/train_diffusion_full.py": "7c3587528b2dfc8b1dc1c27252f1ec494c1caf04bef7e4dae7b057f59de18286",
+    "runs/diffusion-full50-s20261016/provenance.json": "ae932c1969740add67ecb9cd5c87c88149f1d64122d77c67b31de94a326b1401"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      5.6
+    ],
+    "display": "simplified labels; channel counts only; equations in implementation notes",
+    "parameters": 4910593,
+    "prediction": "v",
+    "timesteps": 1000,
+    "conditioning": "NISP intensity and validity mask; FiLM in every residual block",
+    "encoder_shapes": [
+      "208x208x32",
+      "104x104x64",
+      "52x52x128"
+    ],
+    "bottleneck_shape": "26x26x128",
+    "residual_blocks": 14,
+    "timestep_embedding": 256,
+    "inference_steps": 50,
+    "ddim_eta": 0,
+    "loss": "valid-pixel velocity MSE + 0.1 reconstructed-target L1 in model coordinates",
+    "padding": "reflect 205 to 208; output cropped to 205",
+    "colors": {
+      "features": "#E8EFF7",
+      "condition": "#E4F2EC",
+      "time": "#EEE8F5",
+      "target": "#F7EEDB"
+    }
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig03_diffusion_architecture_v03.pdf": "797344f6bf34716f385263c7dd72639771f9003eb9d39eb7f41cc3fc7000f704",
+    "fig03_diffusion_architecture_v03.svg": "7ca577ab842feabfda37a2372a13d31d8767a07a3b289909d0520c897907f972",
+    "fig03_diffusion_architecture_v03.png": "1ef97d97359a9f77c5837dccb6926765d56bc4db44f6e4377fc2222dcb49c60e"
+  }
+}

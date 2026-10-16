@@ -2,8 +2,8 @@
 
 One notebook per proposed figure. Start with the figure, agree on its content
 and visual choices, then refine the caption and manuscript text. Figure 2 contains the sample distributions; the diffusion and residual
-architectures follow as Figures 3 and 4. Existing architecture/result notebook
-filenames retain their original prefixes.
+architectures follow as Figures 3 and 4. The diffusion notebook is now `03_diffusion_architecture.ipynb`; remaining
+architecture/result notebook filenames retain their original prefixes.
 
 The approved sample overview v07 is now included as the manuscript's first
 figure in `paper/survey_enhancements.tex`, with label `fig:sample_overview` and
@@ -18,7 +18,7 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | --- | --- | --- | --- |
 | 1 | [01_sample.ipynb](01_sample.ipynb) | Footprint/splits and matched ~24-arcsec NISP/JWST field | True image footprint with connector lines; v07 |
 | 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v05 rendered |
-| 3 | [02_diffusion_architecture.ipynb](02_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
+| 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
 | 4 | [03_residual_architecture.ipynb](03_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
 | 5 | [04_galaxy_examples.ipynb](04_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Wait for completed predictions |
 | 6 | [05_model_comparison.ipynb](05_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
@@ -148,9 +148,23 @@ Earlier combined layouts are preserved as
 [v02: smaller 12-arcsec images](exports/fig01_sample_v02.png), with corresponding
 notebook snapshots in `revisions/`; neither is the requested final layout.
 
-Architecture drafts are [Figure 3: diffusion](exports/fig02_diffusion_architecture_v01.png) and
+Architecture drafts are [Figure 3: diffusion](exports/fig03_diffusion_architecture_v03.png) and
 [Figure 4: residual architectures](exports/fig03_residual_architecture_v01.png).
 Each also has a PDF and an editable-text SVG with the same filename stem.
+Figure 3 v03 replaces the historical diffusion PNG in the manuscript with
+`paper/figs/diffusion_architecture_v03.pdf` and an implementation-based caption.
+It separates training, the shared U-Net, and generation; the residual-block
+inset shows how NISP conditioning and timestep information enter all 14 blocks.
+The notebook checks source hashes against the full run before drawing, without
+constructing a model. The v01 and detailed v02 notebooks are archived in `revisions/`.
+v03 keeps the topology and channel widths while removing equations, repeated
+tensor dimensions, parameter counts, and operation lists from the drawing.
+Full implementation details remain in the notebook notes and export provenance.
+The user approved simplified v03 for the paper. Its caption and diffusion
+subsection now explain the implemented model in plain scientific language;
+the diffusion training table matches the recorded full run. Other historical
+methods/results prose still needs revision. These changes await an Overleaf push. Exporting a later iteration requires copying its PDF into
+`paper/figs/` and updating the manuscript's figure reference/caption.
 
 The legacy-only validation previews are
 [Figure 7: observed shapes](exports/fig06_observed_shapes_v01.png),

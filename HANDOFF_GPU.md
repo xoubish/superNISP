@@ -6,6 +6,31 @@ the old paper results or claim a trained model is ready.
 
 ## Paper figure notebooks started
 
+The simplified Figure 3 v03 is approved for inclusion in the paper. Its caption
+now uses plain scientific language. The diffusion subsection and training table
+have been rewritten against the current implementation: velocity prediction is
+explained, the asinh transform and validity maps are described, and generation
+and validation selection are separated from training. The old VGG-loss,
+500-epoch, sweep and convergence claims were removed from this subsection.
+Added the DDIM reference and corrected the SR3 bibliography entry against arXiv.
+Citation keys, table settings, notebook provenance and installed figure hashes
+were checked. Full local TeX compilation still lacks `etex.sty`. These changes
+have not been pushed to Overleaf; other historical methods/results prose remains.
+
+Figure 3 v03 is now a simplified review draft in `paper_figures/03_diffusion_architecture.ipynb`.
+It redraws training, the source-verified conditional U-Net and 50-step generation,
+including all three skip levels and an inset for the FiLM residual block (14
+blocks total). Source hashes match `diffusion-full50-s20261016`; no model ran.
+PDF/SVG/PNG: `paper_figures/exports/fig03_diffusion_architecture_v03.*`.
+The PDF is installed as `paper/figs/diffusion_architecture_v03.pdf`, replacing
+the historical diffusion chart under the existing `fig:diff_model` label, with
+a new caption. It has not been pushed to Overleaf. The previous notebook is
+archived at `paper_figures/revisions/02_diffusion_architecture_v01.ipynb`.
+The detailed v02 notebook is also archived in `revisions/03_diffusion_architecture_v02.ipynb`.
+v03 removes equations and implementation annotations from the plot, retaining
+channel widths, the conditioning inset and 50-step generation loop.
+Historical methods/results prose remains to be revised separately.
+
 Figure 2 parent comparison v05 is rendered in `paper_figures/02_sample_properties.ipynb`.
 At the user's request, the parent now uses only valid ACS F814W magnitude < 25
 from the full COSMOS2020 catalog: 233,784 objects. No classification, footprint,

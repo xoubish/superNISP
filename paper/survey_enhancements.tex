@@ -263,8 +263,12 @@ The diffusion model learns a generative prior by recovering images from syntheti
 The diffusion model therefore tests whether a learned prior can synthesize fine-scale structure that is not directly inferrable from the input, whereas the ResNet provides a feed-forward baseline that focuses on reconstructing details that are directly supported by image data.
 
 \begin{figure*}
-    \includegraphics[width=\textwidth]{figs/DiffusionNet_chart.png}
-    \caption{Visual representation of Diffusion model design.}
+    \centering
+    \includegraphics[width=\textwidth]{figs/diffusion_architecture_v03.pdf}
+    \caption{Diffusion model for reconstructing F115W images from NISP observations.
+    (a) Training uses JWST targets with added noise; errors are measured only over valid target pixels.
+    (b) The U-Net combines image features at several spatial scales, with the number of feature maps indicated in each stage. The NISP image, its validity mask, and the noise level guide the updates within each block through learned rescalings and offsets (FiLM).
+    (c) Starting from Gaussian noise, 50 successive updates produce a $205\times205$ F115W estimate. The prediction is converted back to surface brightness before evaluation.}
     \label{fig:diff_model}
 \end{figure*}
 
@@ -295,56 +299,74 @@ A consequence of this choice is that the JWST PSF, diffraction spikes included, 
 Any downstream measurement on the super-resolved output therefore inherits an effective PSF close to that of NIRCam, and the adaptive-moment comparisons of Sect.~\ref{sc:results} are constructed accordingly, comparing super-resolved and JWST images under the same measurement.
 
 \subsection{Diffusion model architecture}
+\label{sc:diffusion_model}
 
-Diffusion models operate by gradually corrupting an image with noise and then learning a reverse process that reconstructs a clean signal through a sequence of denoising steps.
-This sequence is indexed by discrete time steps that control how much noise remains in the image.
-Using this framework, we implement an SR3-style conditional diffusion model, originally introduced by \citet{SR3} at Google Research, in which a UNet predicts the noise present at each given time step and also produces an estimate of the underlying clean image.
-This design allows joint supervision through noise prediction and loss functions that directly compare the reconstructed image to the reference image.
-Our implementation follows the diffusion methodology developed in \citet{Nichol2021} and \citet{Ho2020}.
-A schematic of the architecture can be found in Figure \ref{fig:diff_model}.
+Our diffusion model builds an estimate of the JWST F115W image through a sequence of small updates, guided throughout by the observed NISP image.
+It follows the image-refinement approach of \citet{SR3}, based on denoising diffusion models \citep{Ho2020, Nichol2021}.
+During training, we add a known amount of Gaussian noise to a JWST cutout and teach the network to recover information about the original image.
+Repeating this task at different noise levels teaches the model how to proceed from an initially random image towards an F115W reconstruction.
+Figure~\ref{fig:diff_model} shows the training procedure, network structure, and generation of a new image.
 
-The conditional diffusion model takes as input a low-resolution Euclid cutout, which is first resized to the target grid by bilinear interpolation.
-This provides a coarse but spatially aligned guide for the denoising process.
-The UNet backbone follows a standard encoder–decoder structure with skip connections, which ensures that the final layers can learn features directly corresponding to the original Euclid image.
-We use a compact UNet with a base width of 32 channels and three resolution levels.
-The network includes FiLM (feature-wise linear) style modulation \citep{Perez2017}, in which the timestep embedding and the conditioning image generate scale and shift parameters that adapt the feature maps during denoising.
-A cosine noise schedule is used for the forward process.
+The NISP input contains $41\times41$ pixels, and the F115W output contains $205\times205$ pixels over the same sky area.
+We use bilinear interpolation to place the NISP image on the output grid as a spatially aligned guide.
+A second input map identifies valid NISP pixels, allowing the network to distinguish missing data from measured low surface brightness.
+Missing input values are set to zero; the validity map is resized using nearest-neighbour interpolation.
+Before entering the network, both bands are scaled using constants determined from the training sample and passed through the inverse hyperbolic sine transformation, $\mathrm{asinh}(I/3)$, where $I$ is the scaled intensity.
+This reversible transformation compresses the range of bright intensities while retaining negative values from background subtraction.
+The transformation is reversed before evaluating image differences or galaxy shapes in physical surface-brightness units.
 
-Training employs three complementary loss terms that encourage both global accuracy and local structural detail.
-These include a spatially weighted noise prediction loss, an L1 loss on the reconstructed clean signal, and a perceptual loss based on early VGG features \citep{Simonyan2015}.
-The model converges consistently, so the results primarily reflect architectural capacity rather than optimization effects.
+The network has a U-Net structure: an encoder successively reduces the spatial resolution to describe broader image structure, and a decoder restores the resolution to produce the output.
+The encoder levels contain 32, 64, and 128 feature maps, or \emph{channels}; a central stage retains 128 channels, and the decoder returns through the same levels in reverse order.
+Connections between corresponding encoder and decoder levels pass their feature maps directly to the reconstruction path, helping to retain spatial information.
+Each stage contains two residual blocks, which learn corrections that are added to the features entering the block.
+The NISP image and its validity map provide guidance at every stage; the current noise level is also supplied to the network.
+These inputs control learned rescalings and offsets of the internal features, a procedure called feature-wise linear modulation (FiLM; \citealt{Perez2017}).
+The network temporarily pads the images from 205 to 208 pixels on a side to accommodate its changes in resolution, then crops the output back to the target grid.
+
+For each training pair, we randomly choose one of 1000 noise levels from a cosine schedule, with the final level containing only Gaussian noise.
+The quantity labelled \emph{velocity} in Fig.~\ref{fig:diff_model} is a weighted combination of the added noise and the original target image; the weights are set by the chosen noise level.
+This representation allows the network output to be converted into estimates of both the target image and the added noise, including at the highest noise level.
+The training objective combines the mean squared error in this predicted quantity with 0.1 times the mean absolute error in the reconstructed target.
+Both terms are evaluated in the transformed intensity coordinates, averaged over valid JWST pixels within each cutout, and then averaged across the batch.
+
+To generate an image, we start from a random Gaussian field on the output grid and repeatedly apply the trained network using the NISP image and its validity map as guidance.
+The JWST target is used only for training and evaluation.
+We use 50 updates with the denoising diffusion implicit model (DDIM) procedure of \citet{Song2021DDIM}, which allows generation with fewer steps than the number of noise levels used during training.
+No further random noise is added during these updates, so a fixed initial noise field gives a reproducible reconstruction.
+Changing that initial field produces different reconstructions for the same NISP input.
+We retain the full range of predicted intensities and convert the final image back to linear surface brightness.
+
+The training settings are listed in Table~\ref{tab:diff_hyperparams}.
+Training uses all 17\,816 training galaxies, with matched rotations and reflections of each image pair and its masks.
+After each epoch, we generate images for the same 256 validation galaxies using fixed initial noise fields.
+We select the saved network with the smallest mean absolute image error over valid pixels in MJy\,sr$^{-1}$ on this monitoring subset.
+The selected network is then evaluated on the full validation sample of 2118 galaxies; the test sample remains reserved until the analysis choices are fixed.
+Selection uses image error; recovery of the observed galaxy shapes is assessed separately.
 
 \begin{table}[t]
-    \caption{Training hyperparameters of the best-performing diffusion model.}
+    \caption{Training and image-generation settings for the diffusion model.}
     \label{tab:diff_hyperparams}
     \centering
     \begin{tabular}{l l}
         \hline\hline
-        Training parameter & Value \\
+        Parameter & Value \\
         \hline
-        Gradient accumulation steps & 4 \\
+        Training galaxies & 17\,816 \\
         Batch size & 8 \\
-        Epochs & 500 \\
-        Full inference steps & 1000 \\
-        Gaussian weighting $\sigma$ & 0.6 \\
-        Gradient clipping & 1 \\
-        Inference steps & 100 \\
-        Initial noise $\sigma$ & 1 \\
-        Perceptual loss weight & $10^{-4}$ \\
-        Clean-signal loss weight & 0.1 \\
-        Learning rate & $2\times10^{-4}$ \\
-        Timestep sample fraction & 0.1 \\
-        Diffusion timesteps & 1000 \\
-        Weight decay & 0 \\
+        Training budget & 50 epochs \\
+        Optimizer & Adam \\
+        Maximum learning rate & $10^{-4}$ \\
+        Learning-rate schedule & OneCycle (rise, then decay) \\
+        Gradient-norm limit & 1 \\
+        Training noise levels & 1000 \\
+        Noise schedule & Cosine, zero terminal signal \\
+        Reconstruction-loss weight & 0.1 \\
+        Image-generation steps & 50 (DDIM) \\
+        Initial noise standard deviation & 1 \\
+        Validation-monitor galaxies & 256 \\
         \hline
     \end{tabular}
 \end{table}
-
-We carried out a sweep of fifty runs with the \texttt{Weights \& Biases} package \citep{wandb} that varied the learning rate, gradient clipping threshold, noise weighting, loss weights, training duration, and sampling settings.
-The model showed stable and consistent convergence across the entire tuning range.
-All runs reached comparable validation losses and PSNR (peak signal-to-noise ratio) values, and visual inspection of the outputs indicated that they produced broadly similar solutions.
-Final training parameters are listed in Table \ref{tab:diff_hyperparams}.
-This behavior suggests that the diffusion model is robust to a wide range of training configurations, which provides a useful baseline for assessing its intrinsic representational capacity.
 
 \subsection{Residual Network Architecture}
 
