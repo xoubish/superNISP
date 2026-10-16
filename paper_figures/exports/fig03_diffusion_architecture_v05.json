@@ -1,7 +1,7 @@
 {
   "status": "Figure 3 review draft: source-verified training, architecture and generation",
   "notebook": "03_diffusion_architecture.ipynb",
-  "notebook_source_sha256": "0235a1b341f4e64b2b3afdb800ec80ad0132760e1949c45a8db773af3b8a69f3",
+  "notebook_source_sha256": "3d6fc79e10cef1f518e6ec844b372b1f8b6d24f1f87c33d2896e978d636268c9",
   "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
   "inputs": {
     "paper_figures/architecture_style.py": "147fc21378587fda11606ca1e9432a02b0194778152cb3325bca6856dfea5407",
@@ -53,8 +53,8 @@
     "pandas": "2.3.1"
   },
   "exports": {
-    "fig03_diffusion_architecture_v05.pdf": "5bb463c4c4b07b19fb5328cffb29be99f3137b77fc4d872e2d724dfeb4af6299",
-    "fig03_diffusion_architecture_v05.svg": "d74a5946507a5d846ac09de41dc9cc74473c090c779ed837179695fde4426226",
+    "fig03_diffusion_architecture_v05.pdf": "d5665b003e27bd2f543f1d94e4e69d93ef7d3c9c2b16e89e744716939c2fc5e2",
+    "fig03_diffusion_architecture_v05.svg": "828dd6ba410c28482fd73066673bce3134bf05481983ea61efbcbaebe1047a3d",
     "fig03_diffusion_architecture_v05.png": "84cb1564b8db4acc76d35ca39b8c5afb7300569ca13ee85aa05cad50b2a75a4e"
   }
 }

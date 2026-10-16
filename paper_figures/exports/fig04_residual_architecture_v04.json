@@ -1,7 +1,7 @@
 {
   "status": "Figure 4: simplified schematic verified against both residual full runs",
   "notebook": "04_residual_architecture.ipynb",
-  "notebook_source_sha256": "566559ea0fa3735d625733050bc956f02f8f8ee01002447cb7ae678bf4a27f52",
+  "notebook_source_sha256": "c9f7543b1b605470efed167ecfa68c686d64b06ed971c676bc8d57cf845c96e3",
   "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
   "inputs": {
     "paper_figures/architecture_style.py": "147fc21378587fda11606ca1e9432a02b0194778152cb3325bca6856dfea5407",
@@ -49,8 +49,8 @@
     "pandas": "2.3.1"
   },
   "exports": {
-    "fig04_residual_architecture_v04.pdf": "f91bc323e9b6341cdcaba3326d801e02755fe8f051cc95ecb5a5138caf3225f4",
-    "fig04_residual_architecture_v04.svg": "b0ad0c996ba53db16234316751525ca41d559453f763e4299f1137cb4f6a7978",
+    "fig04_residual_architecture_v04.pdf": "c3a54e750f509903b9332c947fc52a2a0ce727ea49414a35c0d8cd16335d7050",
+    "fig04_residual_architecture_v04.svg": "eb3e9afde886306abec77edce70d2437734b4efe8992312cab90211750d61e4a",
     "fig04_residual_architecture_v04.png": "fd256179704d01efd148d44cf9c81c8b97b642e7018df775cbb11e652bbcc653"
   }
 }
