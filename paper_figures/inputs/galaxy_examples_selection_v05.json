@@ -1,0 +1,156 @@
+{
+  "split": "validation",
+  "rule": "Row b retained. Rows a/c/d/e selected visually from observed NISP/JWST pairs before inspecting their predictions, to illustrate close projected pairs, overlapping extended sources and crowded fields. Reviewed 64 distinct validation fields ranked by second-brightest separated peak in smoothed JWST central crops. Illustrative morphology/neighbor selection; not a random or representative population sample and not a model-performance selection. Projected neighbors are not asserted to be physically associated.",
+  "candidate_object_ids": [
+    701148,
+    1095636,
+    679385,
+    571196,
+    718760,
+    575277,
+    890011,
+    731642,
+    695050,
+    1163294,
+    1113203,
+    668457,
+    570041,
+    592591,
+    809288,
+    715383,
+    744769,
+    1163479,
+    812653,
+    497208,
+    749105,
+    755859,
+    793534,
+    579527,
+    458304,
+    729710,
+    734405,
+    536107,
+    778292,
+    725643,
+    489845,
+    727897,
+    582445,
+    719546,
+    1034199,
+    759391,
+    711947,
+    568106,
+    475341,
+    707916,
+    1013760,
+    555514,
+    761415,
+    464749,
+    599997,
+    716722,
+    462742,
+    666761,
+    760420,
+    690404,
+    1030361,
+    773346,
+    1035205,
+    1018966,
+    995707,
+    728683,
+    762880,
+    1112502,
+    497821,
+    578316,
+    1103860,
+    921594,
+    997288,
+    1147623
+  ],
+  "candidate_search": {
+    "script": "paper_figures/inspect_multiple_sources.py",
+    "script_sha256": "5f89054ad55eabe0c0c6b3d08b276b5d7ad232cec9ac4d8b570f99f4125a5d7b",
+    "record": "paper_figures/inputs/figure5_multiple_sources_v05/candidates.json",
+    "record_sha256": "4ae77fd9408f5460f2de660e3883c7c94a16e13964b7a7a70ed7931ced71d063",
+    "validation_count": 2118,
+    "qualifying_fields": 369,
+    "distinct_fields": 313,
+    "rule": "Require fully valid central NISP/JWST crops. Gaussian sigma=2 target pixels; 15-pixel maximum filter, 10-pixel edge exclusion, peaks >0.08 MJy/sr, greedy minimum separation 14 target pixels, second/first peak ratio >=0.12, one peak within 18 pixels of center. Rank by second peak brightness, reject centers within 5 arcsec of previously retained fields, inspect top 64."
+  },
+  "selection_basis": [
+    "close pair of extended sources blended in NISP",
+    "retained face-on disk",
+    "overlapping elongated sources",
+    "crowded field with several extended neighbors",
+    "close pair with different orientations"
+  ],
+  "indices": [
+    770,
+    1330,
+    867,
+    1028,
+    375
+  ],
+  "rows": [
+    9489,
+    12324,
+    10011,
+    11213,
+    2718
+  ],
+  "object_ids": [
+    749105,
+    677525,
+    592591,
+    744769,
+    997288
+  ],
+  "data_hashes": {
+    "manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "normalization.json": "384090aaa84cfe27218bc295fb1eed923b7854b45912094d9b078f57f564c72a",
+    "SHA256SUMS": "a4bf71c37253615d14e01341ae7a485399d2461c5c4924cb3f9a6ed4deaa65ac"
+  },
+  "limits_mjy_sr": [
+    {
+      "low": -0.015,
+      "high": 0.8658122453689481,
+      "stretch": 0.06926497962951585,
+      "residual": 0.2642436736106844
+    },
+    {
+      "low": -0.015,
+      "high": 2.535468448638861,
+      "stretch": 0.2028374758911089,
+      "residual": 0.7651405345916583
+    },
+    {
+      "low": -0.015,
+      "high": 1.163824649810789,
+      "stretch": 0.09310597198486312,
+      "residual": 0.35364739494323666
+    },
+    {
+      "low": -0.015,
+      "high": 0.9343985891342074,
+      "stretch": 0.07475188713073659,
+      "residual": 0.2848195767402622
+    },
+    {
+      "low": -0.015,
+      "high": 0.8195032596588098,
+      "stretch": 0.06556026077270478,
+      "residual": 0.25035097789764293
+    }
+  ],
+  "display_crop_native_pixels": 21,
+  "sampling_seeds": [
+    314159,
+    314160,
+    314161
+  ],
+  "display_rule": "Shared linear MJy/sr across all columns, asinh display: low=-0.015, high=99.8th percentile of observed JWST central crop (minimum .05), stretch=max(.02,.08*high). No model-dependent display limits.",
+  "previous_selection": "paper_figures/inputs/galaxy_examples_selection_v04.json",
+  "unchanged_row_indices": [
+    1
+  ]
+}

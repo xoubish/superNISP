@@ -4,6 +4,74 @@ Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
+## Figure 5 v06 installed in manuscript
+
+User approved v06 and requested adding it to the paper. Exact approved PDF
+copied to `paper/figs/galaxy_examples_v06.pdf`, included as the fifth figure
+under Results with label `fig:galaxy_examples`. Caption describes all five rows,
+six columns, observed cutouts without injections, shared intensity scales,
+field size, scale bars, checkpoint epochs and illustrative selection.
+The old separate diffusion/ResNet image galleries are replaced by the combined
+grid; their citations and directly associated visual claims are updated.
+Remaining historical timestep/quantitative results still require revision;
+this insertion does not validate them.
+
+Verified exact PDF checksum, fifth-figure position, graphics paths and updated
+labels. A standalone article proof of the actual figure/caption compiles on
+one page. Full A&A manuscript compilation still stops at missing `etex.sty`.
+Regenerated `.overleaf/superNISP-paper.zip` and verified embedded PDF and both
+main sources. No Overleaf push in this step.
+
+## Figure 5 v06 — simple isolated source first
+
+User liked v05 and requested one ordinary example instead of its row e, placed
+at the top. Restored isolated modest inclined galaxy 504234 (v04 row c), then
+retained v05 rows a-d in order. Current IDs: 504234, 749105, 677525, 592591,
+744769. The large face-on disk is now c and the crowded field is now e.
+All arrays and display scales exactly match their respective source rows;
+checkpoint hashes unchanged (49/49/35). This is a rearrangement of previously
+viewed examples, documented as such in the notebook/caption/selection.
+
+Active notebook VERSION v06; v05 archived. Reuse
+`paper_figures/inputs/galaxy_examples_selection_v06.json`. Main and residual
+PDF/SVG/PNG exports complete. Main grid visually checked; input, checkpoint,
+source, notebook and export hashes verified. Executed notebook and exporter
+snapshots saved in `runs/figure5-v06`. Completed tmux `supernisp-figure5-v06`,
+exit 0, with the user's existing explicit W&B upload authorization:
+https://wandb.ai/AI-Astro/superNISP-corrected/runs/1kwf3s0z .
+No manuscript insertion or Overleaf push.
+
+## Figure 5 v05 — pairs and crowded fields, b retained
+
+User requests stronger examples including multiple galaxies; keep b. Selected
+IDs 749105, 677525, 592591, 744769, 997288 from observed NISP/JWST images before
+new predictions: close pair, retained face-on disk, overlapping elongated
+sources, crowded field, and another close pair. All validation; no claims of
+physical association or statistical representativeness. Observation-only
+search script `paper_figures/inspect_multiple_sources.py` scanned 2,118 validation
+objects; 369 qualifying fields, 313 distinct, top 64 visually reviewed.
+Candidate sheets/record: `paper_figures/inputs/figure5_multiple_sources_v05/`.
+Selection/scales/seeds and search hashes frozen in
+`paper_figures/inputs/galaxy_examples_selection_v05.json`.
+Observed-only preview: `paper_figures/exports/fig05_observed_selection_v05.png`
+and `.pdf`. Row b keeps its object and display limits. The current diffusion
+best.pt hash still matches v04's epoch-35 snapshot; training has now finished.
+
+The user explicitly approved uploading the revised Figure 5 images, prediction
+arrays and selection/checkpoint metadata to AI-Astro/superNISP-corrected after
+automatic approval review requested specific authorization. Export completed
+in tmux `supernisp-figure5-v05`, CUDA 1, output `runs/figure5-v05`, console
+`runs/figure5-v05-console`, exit 0. W&B synced the figures and prediction artifact:
+https://wandb.ai/AI-Astro/superNISP-corrected/runs/50peiezt .
+
+Active notebook VERSION v05, five rows and same six columns. All b arrays and
+display scales exactly match v04; checkpoint hashes unchanged (ResNet49,
+direct5 49, diffusion35). Source, selection, bundle, notebook and export hashes
+verified; diffusion sample/mean consistency checked; main and residual figures
+visually inspected. Exporter and executed notebook snapshots are in the run
+folder. V04 notebook preserved in `revisions/05_galaxy_examples_v04.ipynb`.
+Reuse selection v05 for future updates. No manuscript insertion or Overleaf push.
+
 ## Figure 5 v04 — retain a/b/d, replace c and add e
 
 Current five-row selection: 722361, 677525, 504234, 679385, 1126532.

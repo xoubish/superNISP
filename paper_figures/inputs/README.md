@@ -28,8 +28,8 @@ Use fixed shared per-object display scales and
 symmetric residual limits; retain negative pixels and invalid support.
 
 `galaxy_examples_selection.json` retains the first input-ranked selection.
-The current observed-morphology selection is `galaxy_examples_selection_v04.json`;
-pass it with `--selection paper_figures/inputs/galaxy_examples_selection_v04.json`
+The current observed-morphology selection is `galaxy_examples_selection_v06.json`;
+pass it with `--selection paper_figures/inputs/galaxy_examples_selection_v06.json`
 and reuse it for subsequent checkpoint updates. It fixes validation IDs, observed-image selection, display limits,
 and diffusion noise seeds. A new bundle version preserves older predictions.
 Run `code/export_paper_examples.py` with `--version vNN --output runs/figure5-vNN`

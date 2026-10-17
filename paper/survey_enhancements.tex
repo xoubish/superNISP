@@ -573,15 +573,29 @@ All these measurements assess agreement with observed F115W shapes across two ba
 
 \section{\label{sc:results}Results}
 
-\subsection{Diffusion model}
-
-\begin{figure*}
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{figs/diffusion_image_grid.png}
-    \caption{Image comparisons between input Euclid images, super-resolved diffusion model outputs, and JWST images. Images super-resolved with the diffusion model tend to be more compact and blurred compared to true JWST images.}
-    \label{fig:diffusion_images}
+    % Approved frozen export from paper_figures/05_galaxy_examples.ipynb, v06.
+    \includegraphics[width=\textwidth]{figs/galaxy_examples_v06.pdf}
+    \caption{Observed images and reconstructions for five selected validation fields: (a) a modest isolated galaxy, (b) a close projected pair, (c) a face-on disk, (d) overlapping extended sources, and (e) a crowded field with multiple neighbours.
+    Columns show, from left to right, native \Euclid\ NISP $Y$, the JWST F115W reference, bilinear interpolation of NISP, and diffusion, ResNet, and directResNet reconstructions; directResNet denotes the direct-$5\times$ residual variant.
+    All fields are observational cutouts, with no injected sources.
+    Each row spans approximately $6.3$ arcsec and uses the same asinh intensity stretch in physical surface-brightness units across all columns; scale bars indicate $2$ arcsec.
+    Bilinear interpolation retains the NISP band and instrumental response.
+    Reconstructions use the validation-selected checkpoints at epoch 35 for diffusion and epoch 49 for both residual models; diffusion shows one fixed-seed realization with 50 sampling steps.
+    The original examples were selected from observed images, and this arrangement combines an isolated source with fields containing multiple sources.
+    The selection is illustrative rather than statistically representative, and projected neighbours need not be physically associated.}
+    \label{fig:galaxy_examples}
 \end{figure*}
 
+Figure~\ref{fig:galaxy_examples} compares the three models on the same observed fields, from an isolated galaxy to close pairs and a crowded field.
+The shared display scale within each row allows the reconstructions to be compared directly with the input and reference images.
+These selected examples illustrate differences in source separation and recovered morphology; they do not by themselves establish a population-level ranking or calibrated shape recovery.
+
+\subsection{Diffusion model}
+
+% The timestep figure and quantitative discussion below retain historical
+% results pending a separate revision against the corrected validation runs.
 \begin{figure*}
     \centering
     \includegraphics[width=\textwidth]{figs/diffusion_time.png}
@@ -592,8 +606,8 @@ All these measurements assess agreement with observed F115W shapes across two ba
 
 The diffusion model reconstructed the overall light distribution of each source with reasonable accuracy according to pixel-wise error metrics, achieving performance comparable to a simple bilinear baseline only on MAE and modestly improving on RMSE.
 However, it did not recover high-frequency or anisotropic features with as much success.
-Structures such as spiral arms, clumps, bars, and star–forming knots that are present in the target images were systematically absent based on visual inspection. 
-The resulting reconstructions resemble smoothed and nearly isotropic versions of the reference images (see Figure \ref{fig:diffusion_images}).
+The current diffusion examples in Figure~\ref{fig:galaxy_examples} reproduce extended and anisotropic light distributions, including neighbouring sources, but retain differences in fine structure and background texture relative to JWST.
+Their appearance alone does not establish the fidelity of the recovered features.
 Adjustments to the perceptual loss weight, the timestep sampling distribution, and the training duration did not alter this behavior.
 Diagnostics at intermediate time steps also show that the missing structure did not emerge during the reverse process (Figure \ref{fig:diffusion_time}).
 
@@ -602,16 +616,10 @@ Diffusion models rely on the representation power of the denoising network, and 
 An alternative, not mutually exclusive, contribution is the strength of the conditioning: a weakly conditioned generative model regresses toward the smooth mean of the target distribution, and the JWST reference images themselves contain noise that a pixel-averaged objective rewards smoothing over.
 Testing wider backbones and stronger conditioning is left to future work; at the scale tested here, the practical conclusion stands that the generative approach does not recover the structure the direct mapping does.
 
-\begin{figure*}
-    \centering
-    \includegraphics[width=\textwidth]{figs/rrdb_image_grid.png}
-    \caption{Image comparisons between input Euclid images, super-resolved ResNet model outputs, and JWST images. These outputs more faithfully reproduce structure than results from the diffusion model.}
-    \label{fig:resnet_images}
-\end{figure*}
-
 \subsection{ResNet model}
 
-In contrast to the diffusion network, the residual network produces reconstructions that more faithfully preserve the morphology of the target JWST images (Figure \ref{fig:resnet_images}).
+The two residual variants in Figure~\ref{fig:galaxy_examples} recover compact sources and separate close neighbours, with smoother backgrounds than the diffusion realization.
+Both simplify some of the internal structure visible in the JWST reference, including the face-on disk in row~(c).
 It consistently performs better than a simple bilinear interpolation on both pixel-wise and structural metrics, as shown in Figure \ref{fig:pixel_comp}.
 This indicates that the RRDB structure allows the model to learn true features from the input images, rather than falling back on upsampling methods.
 Due to the high degree of accuracy, beyond fine-tuning the training hyperparameters with \texttt{W\&B} \citep{wandb}, no major structural changes were needed after the initial model was built.
@@ -626,7 +634,7 @@ The high SSIM score, along with a visual image comparison, shows that the ResNet
     \label{fig:pixel_comp}
 \end{figure*}
 
-The ResNet model reconstructs the target JWST NIRCam images more faithfully in a qualitative sense: its super-resolved outputs preserve compact sources and maintain more of the visual morphology present in the targets (Figures \ref{fig:diffusion_images} and \ref{fig:resnet_images}).
+Figure~\ref{fig:galaxy_examples} provides a qualitative comparison on identical fields and intensity scales; quantitative model comparisons require measurements on a common validation population.
 Both super-resolution methods improve over a simple bilinear interpolation, indicating that the mapping from Euclid to JWST is learned rather than merely smoothed or upsampled.
 
 For comparison we use four metrics: (a) the Mean Absolute Error -- the average absolute difference between pixels in the target images and the super-resolution image, (b) the Root Mean Squared Error -- the root average of the squared differences between pixels in the target and SR image, (c) the difference in Peak Signal-to-Noise Ratio (PSNR) between the galaxy in the SR and target images, and (d) the structural similarity (SSIM) between the SR and target images (the latter two are calculated with \texttt{scikit-image}; \citealt{skimage}).

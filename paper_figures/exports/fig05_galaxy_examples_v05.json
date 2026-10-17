@@ -1,0 +1,124 @@
+{
+  "status": "Provisional best-checkpoint validation examples; diffusion best available at export",
+  "notebook": "05_galaxy_examples.ipynb",
+  "notebook_source_sha256": "d1d97231d26444a0bca7e50fe9f7e0a86b6e3aed1b21a8eed07bc11293e7b67c",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/galaxy_examples_v05.npz": "5096ebe91cff0343688e20942aaa5ff0e5201ef7260611f5c191c191bd5c3273",
+    "paper_figures/inputs/galaxy_examples_v05.json": "0af5345cca0123bf7e372ddf4e918fcbfbf9570e4b22d40c75c5be392d280163",
+    "paper_figures/inputs/galaxy_examples_selection_v05.json": "cbe800727cb34c0b5439445978c8cf25f2c237162acb202c1dbfb2fe01303fa7"
+  },
+  "settings": {
+    "object_ids": [
+      749105,
+      677525,
+      592591,
+      744769,
+      997288
+    ],
+    "predictions": [
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "crop_native": 21,
+    "intensity_limits": [
+      {
+        "low": -0.015,
+        "high": 0.8658122453689481,
+        "stretch": 0.06926497962951585,
+        "residual": 0.2642436736106844
+      },
+      {
+        "low": -0.015,
+        "high": 2.535468448638861,
+        "stretch": 0.2028374758911089,
+        "residual": 0.7651405345916583
+      },
+      {
+        "low": -0.015,
+        "high": 1.163824649810789,
+        "stretch": 0.09310597198486312,
+        "residual": 0.35364739494323666
+      },
+      {
+        "low": -0.015,
+        "high": 0.9343985891342074,
+        "stretch": 0.07475188713073659,
+        "residual": 0.2848195767402622
+      },
+      {
+        "low": -0.015,
+        "high": 0.8195032596588098,
+        "stretch": 0.06556026077270478,
+        "residual": 0.25035097789764293
+      }
+    ],
+    "checkpoints": {
+      "legacy": {
+        "epoch": 49,
+        "sha256": "be747f0cd0b02bb81ff0ab42a9ce8ea81a0e473c28c58d8406a428f758ea6b56",
+        "run": "residual-full50-s20261016",
+        "criterion": "validation/mae",
+        "criterion_value": 0.9645708277047638,
+        "training_complete": true,
+        "snapshot": "runs/figure5-v05/legacy-best.pt",
+        "source_hashes": {
+          "train_paired.py": "e1d0eba1481fe690061afc4dfaf276753422fe00f10f27ec750672343b8ccf29",
+          "residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+          "paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6",
+          "galaxy_visuals.py": "bef6b74cfbe071a4903f78965026d3d5dd7b0f6d76135c953b27be7096708ff0"
+        },
+        "training_wandb_id": "nifpxes6"
+      },
+      "direct5": {
+        "epoch": 49,
+        "sha256": "a0fdbed2ee676d316ad5e9d4b466ed7c85698e3d5dcc55e7e965ddbc76a71103",
+        "run": "direct5-full50-s20261016",
+        "criterion": "validation/mae",
+        "criterion_value": 0.9618127899872345,
+        "training_complete": true,
+        "snapshot": "runs/figure5-v05/direct5-best.pt",
+        "source_hashes": {
+          "train_paired.py": "e1d0eba1481fe690061afc4dfaf276753422fe00f10f27ec750672343b8ccf29",
+          "residual_baseline.py": "cac208947a3708cc5939e9f23e2cfbf2dd17c4e1b2c848e158aa3770aa139271",
+          "paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6",
+          "galaxy_visuals.py": "bef6b74cfbe071a4903f78965026d3d5dd7b0f6d76135c953b27be7096708ff0"
+        },
+        "training_wandb_id": "ilaim0sg"
+      },
+      "diffusion": {
+        "epoch": 35,
+        "sha256": "0ca8fcda5c8f166cec304e0f5b17cc3209897bee9c66aee254156bd402b17d17",
+        "run": "diffusion-full50-s20261016",
+        "criterion": "generated/mae_mjy_sr",
+        "criterion_value": 0.017204299103468657,
+        "training_complete": true,
+        "snapshot": "runs/figure5-v05/diffusion-best.pt",
+        "source_hashes": {
+          "train_diffusion_full.py": "7c3587528b2dfc8b1dc1c27252f1ec494c1caf04bef7e4dae7b057f59de18286",
+          "diffusion_full_runtime.py": "0a81b28abd6fb3e308d955ecbcc493b1c754667b0397b8adea1a537111eb0796",
+          "diffusion_full_diagnostics.py": "0367469968f3aea5791612469479087d8450661bf7031c95772ee491548f3d61",
+          "diffusion_corrected.py": "aebd5ffd41eef6eb583604e07a273dd69c9f94a31dea93d8a0ec40d3cbe6ab61",
+          "diffusion_diagnostics.py": "901f6d735f1d993181eca360c30e0bc1093e0c5b7602f773d996428102edd630",
+          "diffusion/model_sr3.py": "251fc8caecae29278e8b5cd6fda3068278bd7c058bf5c37a54896b555ce6b090",
+          "paired_sample.py": "4030fd581aeffefa4403324f95ea32a71b37df910ab1273bee1ede936410b9a6",
+          "train_paired.py": "e1d0eba1481fe690061afc4dfaf276753422fe00f10f27ec750672343b8ccf29",
+          "shape_diagnostics.py": "e2498c8be6ba1283b9c2fe69513862e61e924afda17986893f228e5097561482",
+          "galaxy_visuals.py": "bef6b74cfbe071a4903f78965026d3d5dd7b0f6d76135c953b27be7096708ff0"
+        },
+        "training_wandb_id": "gepl2iv2"
+      }
+    },
+    "scale": "fixed shared per-object asinh intensity; native NISP pixels, no display smoothing"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig05_galaxy_examples_v05.pdf": "d596098b10a9cd04fc74925ee1b0b7c3acead4b02b742ca6c915f598553f7f16",
+    "fig05_galaxy_examples_v05.svg": "8b3ec8ba56db6e3714d024bc4f022ab72227a9250fd4f4183cce09e135244ff6",
+    "fig05_galaxy_examples_v05.png": "904dbd35fa6fb3a2f9bd1b6395f85414bdd4e9bd395694b93a18a0eb69553b1f"
+  }
+}

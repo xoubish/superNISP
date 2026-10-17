@@ -20,7 +20,7 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v05 rendered |
 | 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
 | 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
-| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Five rows: replaced c, added e, retained a/b/d; v04 |
+| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Isolated source first, then pairs/disk/crowded field; v06 |
 | 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
 | 7 | [07_observed_shapes.ipynb](07_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
 | 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
@@ -285,3 +285,50 @@ source, input and export hashes were verified, and the main grid visually review
 Completed in tmux `supernisp-figure5-v04` with
 [W&B xqwixuq9](https://wandb.ai/AI-Astro/superNISP-corrected/runs/xqwixuq9), exit 0.
 V03 notebook archived. V04 has not yet been inserted into the manuscript.
+
+## Figure 5 v05: pairs and crowded fields
+
+The [observed-image preview](exports/fig05_observed_selection_v05.png) retains
+the face-on disk in b and replaces a/c/d/e with close projected pairs,
+overlapping elongated sources and a crowded field. IDs are 749105, 677525,
+592591, 744769, 997288. The new examples were chosen before inspecting their
+predictions from 64 observed-only candidate fields; this is an illustrative
+selection, not a statistically representative sample. Search details and
+reproduction commands are in [the candidate record](inputs/figure5_multiple_sources_v05/README.md).
+
+[Current Figure 5](exports/fig05_galaxy_examples_v05.png) and its
+[residual sheet](exports/fig05_galaxy_residuals_v05.png) are exported, with active
+notebook VERSION v05. All b arrays and display scales exactly match v04.
+Checkpoint hashes remain unchanged (epochs ResNet49/direct5 49/diffusion35);
+all training runs are now complete. Selection, input, source and export hashes
+were verified and both figures visually reviewed.
+
+The user explicitly approved the W&B upload. Completed tmux
+`supernisp-figure5-v05`, exit 0, with
+[W&B 50peiezt](https://wandb.ai/AI-Astro/superNISP-corrected/runs/50peiezt).
+Reuse `inputs/galaxy_examples_selection_v05.json` for subsequent updates.
+V04 notebook is archived. V05 has not been inserted into the manuscript.
+
+## Figure 5 v06: isolated source first
+
+[Current Figure 5](exports/fig05_galaxy_examples_v06.png) replaces v05 row e
+with the modest isolated galaxy 504234 from v04 and puts it first. V05 rows a-d
+follow in their original relative order. The face-on disk is now c; the crowded
+field is now e. All image arrays and display scales exactly match the source
+rows, with the same checkpoint hashes. The caption describes this as an editorial
+rearrangement of previously viewed examples.
+
+[Residuals](exports/fig05_galaxy_residuals_v06.png) use the same row order.
+Reuse `inputs/galaxy_examples_selection_v06.json` for future updates. Active
+notebook VERSION v06; v05 archived. Export and provenance checks passed, and
+the main grid was visually reviewed. Completed tmux `supernisp-figure5-v06`,
+exit 0, with [W&B 1kwf3s0z](https://wandb.ai/AI-Astro/superNISP-corrected/runs/1kwf3s0z).
+The user approved v06 for the manuscript. Its exact PDF is installed at
+`paper/figs/galaxy_examples_v06.pdf` as Figure 5, label `fig:galaxy_examples`,
+with a caption describing the fields, columns, display scale and selection.
+It replaces both historical image galleries; associated references and visual
+descriptions are updated. The other historical numerical results still need
+revision. PDF checksum, figure order and references were checked, and the figure
+with its caption compiles in a standalone one-page proof. Full manuscript
+compilation remains blocked by missing `etex.sty`. The local Overleaf archive
+is refreshed; these changes have not been pushed.
