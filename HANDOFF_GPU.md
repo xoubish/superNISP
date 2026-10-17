@@ -4,6 +4,15 @@ Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
+## Figure 5 v06 published to Overleaf
+
+User requested the push after local insertion. `python scripts/overleaf.py
+publish` fetched without remote conflicts and published commit `13ff60c` to
+Overleaf project `6ad2883f967dc592692b8809`. Changes: Figure 5 PDF and the
+identical `main.tex`/`survey_enhancements.tex` sources. All 36 publication files
+match the Overleaf checkout; local HEAD and origin/main agree, checkout clean.
+Full Overleaf compilation was not inspected. Main research repo not committed.
+
 ## Figure 5 v06 installed in manuscript
 
 User approved v06 and requested adding it to the paper. Exact approved PDF

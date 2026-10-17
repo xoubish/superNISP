@@ -331,4 +331,6 @@ descriptions are updated. The other historical numerical results still need
 revision. PDF checksum, figure order and references were checked, and the figure
 with its caption compiles in a standalone one-page proof. Full manuscript
 compilation remains blocked by missing `etex.sty`. The local Overleaf archive
-is refreshed; these changes have not been pushed.
+is refreshed. The user subsequently requested publication: Figure 5 and both
+manuscript sources were pushed to Overleaf in commit `13ff60c`. All 36 publication
+files match the synchronized checkout. Overleaf compilation was not inspected.
