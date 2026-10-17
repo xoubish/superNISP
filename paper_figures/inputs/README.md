@@ -88,10 +88,12 @@ small sidecar/provenance files should accompany any shared rendered figures.
 
 Display `legacy` as **ResNet** and `direct5` as **ResNet-D5** (direct 5×
 upsampling). Preserve these internal keys, checkpoints and frozen data hashes.
-Figure 5 display v07 reads bundle v06 via `BUNDLE_VERSION`; Figure 6 display
-v02 reads benchmark v01 via `BENCHMARK_VERSION`. For a new benchmark export,
-set both `VERSION` and `BENCHMARK_VERSION` to its fresh version. For a label-only
-revision, increase only `VERSION` and reuse the existing input bundle.
+Figure 5 display v07 reads bundle v06 via `BUNDLE_VERSION`. Figure 6 display
+v06 reads benchmark v03 and both spectral v01 bundles through explicit input
+paths in its setup cell. For a new analysis, update those paths together only
+when the benchmark, masks, predictions and spectral provenance agree; the
+notebook validates that agreement. For a presentation-only revision, increase
+`VERSION` and reuse the existing input bundles.
 
 ## Figure 6 source-mask experiment (v03)
 
@@ -135,8 +137,8 @@ Primary power ratios are geometric means; signed Fourier correlations are
 arithmetic means. Bounds are paired 2,000-draw spatial-block percentile intervals.
 The outside-source spectrum is a diagnostic proxy, not a calibrated noise PSD.
 No noise subtraction or PSF deconvolution is applied. No new model inference
-or external upload is performed. Notebook `06b_spatial_structure.ipynb` plots
-only the saved results, leaving the main Figure 6 notebook unchanged.
+or external upload is performed. These saved results now feed the consolidated `06_model_comparison.ipynb` (v04);
+the original whole-cutout notebook is archived in `revisions/`.
 
 ## Strict-source Fourier companion: `spatial_spectra_source_v01.json` / `.npz`
 
@@ -149,7 +151,9 @@ valid source support. Reference/background contrast uses the source3 reference
 numerator, so its reference-only subsets differ from the whole-cutout subsets.
 No model-based cuts. Contract, hashes, cases, exclusions and paired summaries
 are in JSON; all per-object powers/correlations/window areas are in local NPZ.
-Notebook `06c_source_spatial_structure.ipynb` plots the saved measurements.
+The consolidated `06_model_comparison.ipynb` (v04) plots these saved source and
+outside-source measurements alongside benchmark v03 RMSE. The original source-only
+notebook is archived in `revisions/`.
 
 ## Cached shape comparison: `cached_shapes_v01.json` / `.npz`
 
@@ -161,3 +165,19 @@ overlapping failure reasons, paired block RMSE differences and provenance hashes
 NPZ retains all per-object measurements and fit statuses. Primary plots use the
 matched sample within each estimator and report full-denominator success beside
 errors. Notebook `07b_model_shapes.ipynb`; local-only analysis with no W&B usage.
+
+## Exploratory PSNR and SSIM (v01)
+
+`psnr_ssim_v01.json` stores the fixed protocol, input/source hashes, per-method
+means and paired 95% spatial-block intervals, plus paired differences relative
+to bilinear for all-valid, source and outside-source regions. The companion
+local `.npz` stores per-object PSNR/SSIM, shared JWST ranges, retained SSIM window
+counts, object IDs and spatial blocks. Produced by `code/analyze_psnr_ssim.py`
+from the original v03 prediction cache and 2-sigma masks. The premeasurement
+contract and source snapshots are in `runs/psnr-ssim-v01/`.
+
+All 2,118 objects retain valid 7×7 windows in all three regions. PSNR reproduces
+the benchmark's regional RMSE with a shared per-object reference range. SSIM
+is averaged only over fully contained windows, without zero-masking sources.
+The consolidated `06_model_comparison.ipynb` reads this optional bundle to
+produce the separate `fig06_psnr_ssim_v01` review plot. No inference or uploads.

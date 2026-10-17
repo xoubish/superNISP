@@ -1,0 +1,71 @@
+{
+  "status": "Local validation draft: combined source/outside RMSE, power and signed Fourier correlation",
+  "notebook": "06_model_comparison.ipynb",
+  "notebook_source_sha256": "c90c4db0e546f4772f10e78353e6cdb197143df3e3dc959a68363e4f7bacbfd0",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/model_benchmark_v03.json": "5d015b42b30d3e00e7f4340ea701c8f9220e09d9fb7a9ee50597d5c726acf758",
+    "paper_figures/inputs/spatial_spectra_v01.json": "ace77f1664729d5220a007fb81da4c58c3de03577ebdcb3debb59ec0c977547a",
+    "paper_figures/inputs/spatial_spectra_source_v01.json": "4d93b46b8209fc16522984e819045c18a31e04dceaf70dbd5c05eb70410de1fa"
+  },
+  "settings": {
+    "methods": [
+      "bilinear",
+      "bicubic",
+      "diffusion",
+      "diffusion_mean3",
+      "legacy",
+      "direct5"
+    ],
+    "panels": [
+      "source_rmse",
+      "outside_source_rmse",
+      "power_ratio",
+      "signed_fourier_correlation"
+    ],
+    "rmse_objects": 2118,
+    "source_spectral_objects": 1363,
+    "outside_spectral_objects": 1356,
+    "source_mask": {
+      "gaussian_sigma_pixels": 1.0,
+      "gaussian_truncate": 4.0,
+      "sky_annulus_pixels": [
+        70.0,
+        95.0
+      ],
+      "sky_clip_sigma": 3.0,
+      "sky_clip_iterations": 5,
+      "threshold_sigma": [
+        1.5,
+        2.0,
+        3.0
+      ],
+      "primary_threshold_sigma": 2.0,
+      "minimum_connected_pixels": 10,
+      "connectivity": 8,
+      "dilation_radius_pixels": 3,
+      "rule": "Smooth the full signed JWST reference with a normalized Gaussian; estimate median and sigma-clipped standard deviation from valid smoothed pixels at radius 70\u201395. Detect all 8-connected regions with at least 10 pixels above median + threshold*sigma; fill holes and dilate by a radius-3 disk. Intersect with common validity and crop to the central 105x105 pixels only after detection. Background is the complement within common validity. No per-model masks.",
+      "reference": "https://photutils.readthedocs.io/en/stable/user_guide/segmentation.html"
+    },
+    "source_window": "Strict support: fixed 2-sigma JWST source mask intersected with common validity, including all detected neighbours. Exactly zero outside this support. Inward sine-squared distance taper width=3 target pixels times separable Tukey alpha=0.5; subtract each image own weighted mean before FFT; FFT divided by sqrt(sum(window**2)). Same window for every model and JWST.",
+    "outside_window": "Outside the fixed 2-sigma source mask, with a 3-pixel cosine taper to source/invalid boundaries and the outer Tukey window. Window-energy normalized. Usable if sum(w**2)>16 and effective area sum(w)**2/sum(w**2)>=64. An empirical background proxy, not an unbiased noise PSD; contains faint sources and mask coupling.",
+    "pixel_scale_arcsec": 0.05934367,
+    "power": "Geometric mean over objects of P_model/P_observed_JWST (mean log10 ratio); ideal 1. No image flux fitting, PSF correction or noise subtraction.",
+    "correlation": "Mean over objects of real cross-spectrum / sqrt(P_model*P_observed_JWST), each annularly averaged first. Signed, phase-sensitive r; ideal 1. Not magnitude-squared coherence.",
+    "rmse_intervals": "Resample spatial blocks with replacement, retaining all objects and methods paired. Equal object weights within the resulting population. Percentile 95% intervals; conditional on this field, validation selection and trained checkpoints.",
+    "spectral_intervals": "2000 paired spatial-block draws, seed 20261017. Objects have equal weight within each statistic; same block draws for all models.",
+    "region_styles": {
+      "source": "solid",
+      "outside_source": "dashed"
+    }
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_model_comparison_v04.pdf": "fa996cc9a00fd057050a086a4208b39bfb8c3b8af14f942eda6dea61f9a31df5",
+    "fig06_model_comparison_v04.svg": "b994a06b8a65222e4caada35c1ed156225de0e1b6fcd07236312afa8097ca4ca",
+    "fig06_model_comparison_v04.png": "f1375a744d785df2142c30dc6ab87f5940736414158b8fbae44d1585e159c006"
+  }
+}

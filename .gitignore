@@ -154,3 +154,6 @@ paper_figures/inputs/galaxy_examples_*.npz
 paper_figures/inputs/spatial_spectra_*.npz
 
 paper_figures/inputs/cached_shapes_*.npz
+
+# Local exploratory PSNR/SSIM arrays; JSON retains summaries and provenance.
+paper_figures/inputs/psnr_ssim_*.npz

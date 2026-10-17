@@ -1,0 +1,39 @@
+{
+  "status": "Local exploratory PSNR and SSIM; supplementary review plot, not installed in manuscript",
+  "notebook": "06_model_comparison.ipynb",
+  "notebook_source_sha256": "d06bf8a26865ba284c87de815643826b68636a2f0fe7acc59d10ad718ea27b49",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/psnr_ssim_v01.json": "e942cd01c995a7ab35d37a626a01b4a8da23e89a137d34035e24faa8ad0f57e5"
+  },
+  "settings": {
+    "methods": [
+      "bilinear",
+      "bicubic",
+      "diffusion",
+      "diffusion_mean3",
+      "legacy",
+      "direct5"
+    ],
+    "regions": [
+      "all",
+      "source",
+      "outside"
+    ],
+    "objects": 2118,
+    "intensity": "Original signed, sky-subtracted linear MJy/sr in central 105x105 pixels; no rescaling, clipping, offset, flux fitting or noise subtraction.",
+    "data_range": "For each cutout, max(target[common_valid])-min(target[common_valid]); identical for every method and all three regions. No model-dependent ranges.",
+    "psnr": "20 log10(data_range / per-object regional RMSE); arithmetic mean of per-object dB, not PSNR of mean RMSE. All regional common-valid pixels included.",
+    "ssim": "scikit-image local SSIM: uniform 7x7 window, sample covariance, K1=0.01, K2=0.03. Average only centres whose entire window lies inside the selected region and common-valid support, including at image borders. Then average objects equally. Source/outside pixels are not zeroed. Invalid pixels are filled only for computation and cannot enter retained windows.",
+    "bootstrap": "2000 paired spatial-block bootstrap resamples, seed 20261017, over 18 blocks; equal object weighting; 95% percentile intervals. Paired score differences relative to bilinear saved."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_psnr_ssim_v01.pdf": "eefab7ab247e93f2c971d2c0a97758b864593c69bdf8f825bd1325f8bc1a04d6",
+    "fig06_psnr_ssim_v01.svg": "3a8fc84a30389350918e30f947b1c9a10aa297f4e1c87b0215ccfd8f2517e79c",
+    "fig06_psnr_ssim_v01.png": "19d634588da0091eeea907ef834f1f0f34f2224f600268c46e1cabcd42166609"
+  }
+}

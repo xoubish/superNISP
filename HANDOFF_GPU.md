@@ -1,8 +1,36 @@
 # superNISP GPU handoff
 
-Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
+Updated 2026-10-17. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
+
+## Latest next-machine plan — 2026-10-17
+
+The user approved a paired ResNet refinement experiment, then asked to move
+machines after both GPUs were found occupied by unrelated Ray workers.
+**No new GPU training has started or been queued.** The concrete plan and
+transfer list are in [ResNet refinement handoff](paper/resnet_refinement_handoff.md).
+Implement a separate trainer for two matched 10-epoch forks of the epoch-49
+ResNet: original masked-L1 control versus 50/50 source/outside L1, with inherited
+weights/Adam state and a fresh cosine LR schedule (1e-5 to 1e-6). Same parent RNG,
+batches, augmentation, budget and source-MAE checkpoint selection for both.
+Preserve epoch 0 as a candidate and compare errors, spectral agreement and shapes.
+The new refinement trainer/launcher is **not yet implemented**.
+
+CPU-only `code/prepare_refinement_masks.py` completed full-field train/validation
+masks at `runs/residual-refinement-masks-v01/`. All 17,816/2,118 objects have both
+regions; median source fractions are 13.34%/13.27%. Validation masks exactly
+reproduce Figure 6 after cropping/intersection. Completion flags and hash were
+verified. Transfer the completed bundle; no regeneration is needed.
+Bring the parent checkpoint/data and gitignored caches to the new machine as
+listed in the detailed note. Existing tmux + online-W&B training requirements
+still apply; current Figure 6 outputs remain local-only.
+
+Current Figure 6 is the single `06_model_comparison.ipynb`, export **v06**:
+three panels in one row, source/outside RMSE together (filled circle/open square),
+power and correlation (solid/dashed), with no panel titles or footer notes.
+The separate PSNR/SSIM exploration remains in the same notebook. Earlier
+Figure 6 status sections below are historical.
 
 ## All-model observed-shape comparison complete (local v01)
 

@@ -1,5 +1,9 @@
 # Figure 6: strict source-only Fourier comparison (local v01)
 
+Current presentation: [consolidated Figure 6 notebook](../paper_figures/06_model_comparison.ipynb)
+combines source/outside RMSE, power, and correlation in v04. The analysis and
+original exports documented below remain unchanged.
+
 Requested repeat of the whole-cutout spatial-structure plot, using only source
 pixels. No new inference, training, W&B upload, or manuscript installation.
 The main source-error/speed Figure 6 and whole-cutout Fourier exports are preserved.
@@ -9,7 +13,7 @@ The main source-error/speed Figure 6 and whole-cutout Fourier exports are preser
 - [Source-only plot](../paper_figures/exports/fig06_source_spatial_structure_v01.png)
 - [Vector PDF](../paper_figures/exports/fig06_source_spatial_structure_v01.pdf)
 - [Boundary sensitivity](../paper_figures/exports/fig06_source_window_checks_v01.png)
-- [Notebook](../paper_figures/06c_source_spatial_structure.ipynb)
+- [Notebook](../paper_figures/revisions/06c_source_spatial_structure_v01_before_consolidation.ipynb)
 - Summary: `paper_figures/inputs/spatial_spectra_source_v01.json`; local per-object
   arrays: same stem `.npz`.
 - Run and frozen contract/source snapshots: `runs/spectra-source-v01`.

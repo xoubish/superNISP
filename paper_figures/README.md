@@ -21,7 +21,7 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
 | 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, ResNet/ResNet-D5 heads, dense-block detail | Named variants; v05 |
 | 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Isolated source first, then pairs/disk/crowded field; v07 |
-| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Source/background accuracy and speed; local-only v03 |
+| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Source/outside RMSE, power and Fourier correlation | Three panels in one row; local-only v06 |
 | 7 | [07_observed_shapes.ipynb](07_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
 | 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
 | 9 | [09_shape_robustness.ipynb](09_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Frozen legacy validation preview |
@@ -43,15 +43,15 @@ field under `inputs/` for reuse elsewhere. No training or inference is involved.
 ## Current model names
 
 Use **ResNet** for the two-stage residual network and **ResNet-D5** for the
-direct 5× upsampling variant. Figure 4 v05, Figure 5 v07 and Figure 6 v02
+direct 5× upsampling variant. Figure 4 v05, Figure 5 v07 and Figure 6 v06
 apply these names throughout labels and captions:
 [architecture](exports/fig04_residual_architecture_v05.png),
 [examples](exports/fig05_galaxy_examples_v07.png),
 [residuals](exports/fig05_galaxy_residuals_v07.png),
-[accuracy and speed](exports/fig06_model_comparison_v02.png), and
+[accuracy and spatial structure](exports/fig06_model_comparison_v06.png), and
 [error distributions](exports/fig06_error_distributions_v02.png).
 These are label-only revisions: Figure 5 reuses bundle v06 (`BUNDLE_VERSION`),
-and Figure 6 reuses benchmark v01 (`BENCHMARK_VERSION`). Internal `legacy`
+and Figure 6 v06 reuses benchmark v03 and both spectral v01 bundles. Internal `legacy`
 and `direct5` keys and archived snapshots retain their original identities.
 The manuscript uses the new architecture and example PDFs; Figure 6 remains local.
 The sections below retain the history of earlier figure versions.
@@ -187,7 +187,7 @@ The legacy-only validation previews are
 [Figure 8: property dependence](exports/fig08_shape_dependence_v01.png), and
 [Figure 9: measurement robustness](exports/fig09_shape_robustness_v01.png).
 Their input analyses are frozen; rerunning these notebooks will not silently
-switch to newer model results. Figure 6 awaits its matched prediction/benchmark bundle. Figure 5 now uses
+switch to newer model results. Figure 6 now reads its completed matched benchmark and spectral bundles. Figure 5 now uses
 versioned best-checkpoint exports; its earlier waiting notebook is archived.
 
 Figure 4 v02 uses the same simplified style as Figure 3: common feature
@@ -351,6 +351,78 @@ is refreshed. The user subsequently requested publication: Figure 5 and both
 manuscript sources were pushed to Overleaf in commit `13ff60c`. All 36 publication
 files match the synchronized checkout. Overleaf compilation was not inspected.
 
+## Figure 6 v06: simplified figure labels
+
+The [current preview](exports/fig06_model_comparison_v06.png)
+([PDF](exports/fig06_model_comparison_v06.pdf)) retains the three-panel row,
+filled/open RMSE symbols and solid/dashed spectra. Panel titles and the two
+footer notes are removed; the working caption identifies panels by position
+and retains sample counts, interval definitions, Nyquist and reference caveats.
+The figure margins are tightened around the remaining axes and legends.
+The v05 exports and [executed notebook](revisions/06_model_comparison_v05_before_label_cleanup.ipynb)
+are preserved. Measurements and the separate PSNR/SSIM comparison are unchanged.
+
+## Figure 6 v05: three panels in one row (archived labels)
+
+The [current preview](exports/fig06_model_comparison_v05.png)
+([PDF](exports/fig06_model_comparison_v05.pdf)) uses one row of three panels:
+(a) source and outside-source RMSE together, (b) spatial power, and (c) signed
+Fourier correlation. Source RMSE uses filled circles; outside-source RMSE uses
+open squares on the same linear axis and method rows. Spectra retain solid source
+and dashed outside-source curves. The shared legends explain symbols and lines.
+All samples, measurements and uncertainty intervals are unchanged.
+
+The only active notebook remains [06_model_comparison.ipynb](06_model_comparison.ipynb),
+with its caption updated for panels (a)–(c). The previous 2×2 layout and executed
+notebook are preserved in `exports/fig06_model_comparison_v04.*` and
+[the v04 snapshot](revisions/06_model_comparison_v04_before_single_row.ipynb).
+The exploratory PSNR/SSIM plot remains separate in the same notebook.
+
+## Figure 6 v04: consolidated accuracy and spatial structure (archived layout)
+
+The only active Figure 6 notebook is [06_model_comparison.ipynb](06_model_comparison.ipynb).
+Its [four-panel preview](exports/fig06_model_comparison_v04.png) and
+[PDF](exports/fig06_model_comparison_v04.pdf) combine source RMSE (a), outside-source
+RMSE (b), model/JWST power ratio (c), and signed Fourier correlation (d).
+The spectral panels overlay source (solid) and outside-source (dashed) curves,
+using consistent colors for all six methods and saved 95% spatial-block intervals.
+The two RMSE panels have separate linear axes. Counts are explicit: 2,118 objects
+for both RMSE regions, 1,363 for source spectra, and 1,356 for outside-source spectra.
+
+This is a presentation revision of benchmark v03 and spectra/source-spectra v01;
+no models, masks, samples, or metrics were recomputed. The notebook checks shared
+input hashes, populations and summaries, includes a working caption and MAE/timing
+table, and optionally shows boundary checks with `SHOW_CHECKS = True`.
+The three previous notebooks are preserved byte-for-byte in
+`revisions/*_before_consolidation.ipynb`; their exports and other checks remain
+available. The former active `06b` and `06c` notebooks have been retired.
+The v04 notebook and PDF/SVG/PNG exports remain local for review.
+
+## Figure 6 exploratory PSNR/SSIM comparison
+
+The same [active notebook](06_model_comparison.ipynb) now includes a separate
+[six-panel PSNR/SSIM plot](exports/fig06_psnr_ssim_v01.png)
+([PDF](exports/fig06_psnr_ssim_v01.pdf)): all valid pixels, source interiors,
+and outside-source interiors, for all six methods and all 2,118 objects.
+The main Figure 6 has separate RMSE, power and correlation panels. Mean source PSNR is 25.31 dB for
+bilinear, 26.16 for single diffusion, 27.65 for diffusion mean-of-three, and
+28.67/28.72 for ResNet/ResNet-D5. Source SSIM is 0.5465, 0.5326, 0.5915,
+and 0.6184/0.6183, respectively. Single diffusion's paired SSIM difference
+from bilinear is −0.0139 (95% block interval −0.0206 to −0.0070).
+
+The range is each reference cutout's common-valid maximum minus minimum,
+shared by all methods and regions. PSNR uses all regional pixels and is averaged
+in dB per object. SSIM uses uniform 7×7 windows fully inside each region and
+valid support, with sample covariance and K1/K2=0.01/0.03, on original signed
+linear intensities. Images are not zero-masked at source boundaries.
+This is exploratory observed-image similarity, sensitive to the reference
+range and SSIM constants; it is not a noise-free morphology score.
+
+Analysis: `code/analyze_psnr_ssim.py`; frozen contract and verification:
+`runs/psnr-ssim-v01/`; summary/provenance: `inputs/psnr_ssim_v01.json`;
+local per-object arrays: the matching `.npz`. The notebook verifies input
+hashes and provides the numerical table. All outputs remain local.
+
 ## Figure 6 v01: accuracy and speed, local only
 
 [Figure 6](exports/fig06_model_comparison_v01.png) compares mean per-object MAE,
@@ -379,7 +451,7 @@ and `WANDB_MODE=disabled`. The figures are review drafts, not inserted or pushed
 
 ## Figure 6 v03: source masks and separate background errors
 
-[Current Figure 6](exports/fig06_model_comparison_v03.png) uses source-only
+[Archived Figure 6 v03](exports/fig06_model_comparison_v03.png) uses source-only
 MAE and RMSE alongside the original inference timings. The
 [source/background comparison](exports/fig06_source_background_v03.png)
 shows paired gains for all valid pixels, source pixels and outside-source
@@ -410,7 +482,7 @@ The [Fourier diagnostic](exports/fig06_spatial_structure_v01.png) measures power
 ratios and signed reference cross-correlation from the existing v03 cache.
 [Window checks](exports/fig06_spectral_window_checks_v01.png) and an
 [outside-source control](exports/fig06_spectral_background_v01.png) accompany it.
-Notebook: [06b_spatial_structure.ipynb](06b_spatial_structure.ipynb).
+Notebook: [archived whole-cutout notebook](revisions/06b_spatial_structure_v01_before_consolidation.ipynb).
 The source-error/speed Figure 6 remains unchanged.
 
 Primary curves use 1,363 complete-valid cutouts; a validity-taper check includes
@@ -431,7 +503,7 @@ Run `runs/spectra-v01` completed locally on CPU with no new inference or uploads
 
 [Source-only Fourier plot](exports/fig06_source_spatial_structure_v01.png),
 [boundary checks](exports/fig06_source_window_checks_v01.png), and
-[notebook](06c_source_spatial_structure.ipynb) repeat the comparison on exactly
+[archived notebook](revisions/06c_source_spatial_structure_v01_before_consolidation.ipynb) repeat the comparison on exactly
 zero-outside-source windows. The same 1,363 fields are used; masks include all
 detected neighbours. At 0.36–0.89 arcsec, diffusion / ResNet-D5 power ratios are
 0.912 / 0.419, and correlations 0.604 / 0.738. Source masking raises correlation

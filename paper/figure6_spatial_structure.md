@@ -1,5 +1,9 @@
 # Figure 6 companion: spatial power and reference correlation
 
+Current presentation: [consolidated Figure 6 notebook](../paper_figures/06_model_comparison.ipynb)
+combines source/outside RMSE, power, and correlation in v04. The analysis and
+original exports documented below remain unchanged.
+
 Local exploratory comparison, 2026-10-16. User approved testing the visual
 sharpness of diffusion with power spectra and Fourier cross-correlation.
 No new inference, training, W&B initialization or external upload was performed.
@@ -136,7 +140,7 @@ validation evidence, with the existing fixed checkpoints and one training seed.
 
 ## Artifacts and verification
 
-- Notebook: `paper_figures/06b_spatial_structure.ipynb`.
+- Notebook: `paper_figures/revisions/06b_spatial_structure_v01_before_consolidation.ipynb`.
 - Main diagnostic: `paper_figures/exports/fig06_spatial_structure_v01.pdf` / `.png`.
 - Window checks: `paper_figures/exports/fig06_spectral_window_checks_v01.pdf` / `.png`.
 - Background control: `paper_figures/exports/fig06_spectral_background_v01.pdf` / `.png`.
