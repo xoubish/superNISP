@@ -1,0 +1,52 @@
+{
+  "status": "Companion matched-error distributions and paired spatial-block gains",
+  "notebook": "06_model_comparison.ipynb",
+  "notebook_source_sha256": "b01446e2554606691200c54ab3086f7ca82ba26d58ae37a56238a6ab6ecc8fc8",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/model_benchmark_v03.json": "5d015b42b30d3e00e7f4340ea701c8f9220e09d9fb7a9ee50597d5c726acf758"
+  },
+  "settings": {
+    "objects": 2118,
+    "methods": [
+      "bilinear",
+      "bicubic",
+      "diffusion",
+      "diffusion_mean3",
+      "legacy",
+      "direct5"
+    ],
+    "source_mask": {
+      "gaussian_sigma_pixels": 1.0,
+      "gaussian_truncate": 4.0,
+      "sky_annulus_pixels": [
+        70.0,
+        95.0
+      ],
+      "sky_clip_sigma": 3.0,
+      "sky_clip_iterations": 5,
+      "threshold_sigma": [
+        1.5,
+        2.0,
+        3.0
+      ],
+      "primary_threshold_sigma": 2.0,
+      "minimum_connected_pixels": 10,
+      "connectivity": 8,
+      "dilation_radius_pixels": 3,
+      "rule": "Smooth the full signed JWST reference with a normalized Gaussian; estimate median and sigma-clipped standard deviation from valid smoothed pixels at radius 70\u201395. Detect all 8-connected regions with at least 10 pixels above median + threshold*sigma; fill holes and dilate by a radius-3 disk. Intersect with common validity and crop to the central 105x105 pixels only after detection. Background is the complement within common validity. No per-model masks.",
+      "reference": "https://photutils.readthedocs.io/en/stable/user_guide/segmentation.html"
+    },
+    "gain": "100*(1 - mean per-object method error / mean per-object bilinear error)",
+    "intervals": "Resample spatial blocks with replacement, retaining all objects and methods paired. Equal object weights within the resulting population. Percentile 95% intervals; conditional on this field, validation selection and trained checkpoints."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_error_distributions_v03.pdf": "afdc76dfdcda285f1f7f040635f17ab519358a255c1ff4735988d06450259ba5",
+    "fig06_error_distributions_v03.svg": "f4d16b56216d64b0dbac3434f4979c5e555a373d40967ea0e65ee0098d11aa1a",
+    "fig06_error_distributions_v03.png": "627d1e08387f594dabcea1cf533e4d78364394a832288e7e28e5cccb471154cf"
+  }
+}

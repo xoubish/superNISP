@@ -22,7 +22,7 @@ with the change to a full-content `main.tex`.
 | Diffusion sample variation and mean-image definition | `code/diffusion_diagnostics.py`, `code/diffusion_full_diagnostics.py` |
 
 All recorded training source hashes matched the current files for the residual,
-direct-5x and diffusion full runs. No model weights were loaded for this review.
+ResNet-D5 and diffusion full runs. No model weights were loaded for this review.
 The training table specifies the budget; it does not assert that ongoing runs
 have finished or that the models have converged. Full diffusion evaluation and
 its three-draw mean are described as the evaluation protocol.

@@ -1,0 +1,84 @@
+{
+  "status": "Local source-masked validation accuracy; original device-resident inference timings",
+  "notebook": "06_model_comparison.ipynb",
+  "notebook_source_sha256": "b01446e2554606691200c54ab3086f7ca82ba26d58ae37a56238a6ab6ecc8fc8",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/model_benchmark_v03.json": "5d015b42b30d3e00e7f4340ea701c8f9220e09d9fb7a9ee50597d5c726acf758"
+  },
+  "settings": {
+    "objects": 2118,
+    "methods": [
+      "bilinear",
+      "bicubic",
+      "diffusion",
+      "diffusion_mean3",
+      "legacy",
+      "direct5"
+    ],
+    "timing": {
+      "device": "cuda:1",
+      "gpu": "NVIDIA L40S",
+      "batch_size": 8,
+      "precision": "float32; no autocast or TF32",
+      "warmup": 2,
+      "repeats": 10,
+      "statistic": "Median synchronized wall time per batch divided by batch size; range is min/max repeats, not a confidence interval.",
+      "scope": "Device-resident NISP inputs to physical-intensity outputs. Includes representation conversion, diffusion noise creation and ensemble averaging. Excludes disk IO, host/device transfers, metrics, interpolation validity-mask construction and model loading.",
+      "timing_object_ids": [
+        828374,
+        828379,
+        830381,
+        830426,
+        830517,
+        830750,
+        831117,
+        832501
+      ],
+      "sampling_steps": 50,
+      "seeds": [
+        314159,
+        314160,
+        314161
+      ],
+      "ensemble_size": 3,
+      "pytorch": "2.6.0+cu124",
+      "cuda": "12.4",
+      "reused_from": "paper_figures/inputs/model_benchmark_v01.json",
+      "reused_bundle_sha256": "6fab3711e5a8774b0dca9f46bf70b233c5bd6ae0db3b0bdc59feea7a8a940c1b"
+    },
+    "crop_target_pixels": 105,
+    "source_mask": {
+      "gaussian_sigma_pixels": 1.0,
+      "gaussian_truncate": 4.0,
+      "sky_annulus_pixels": [
+        70.0,
+        95.0
+      ],
+      "sky_clip_sigma": 3.0,
+      "sky_clip_iterations": 5,
+      "threshold_sigma": [
+        1.5,
+        2.0,
+        3.0
+      ],
+      "primary_threshold_sigma": 2.0,
+      "minimum_connected_pixels": 10,
+      "connectivity": 8,
+      "dilation_radius_pixels": 3,
+      "rule": "Smooth the full signed JWST reference with a normalized Gaussian; estimate median and sigma-clipped standard deviation from valid smoothed pixels at radius 70\u201395. Detect all 8-connected regions with at least 10 pixels above median + threshold*sigma; fill holes and dilate by a radius-3 disk. Intersect with common validity and crop to the central 105x105 pixels only after detection. Background is the complement within common validity. No per-model masks.",
+      "reference": "https://photutils.readthedocs.io/en/stable/user_guide/segmentation.html"
+    },
+    "median_source_fraction": 0.18851454261858885,
+    "accuracy_intervals": "Resample spatial blocks with replacement, retaining all objects and methods paired. Equal object weights within the resulting population. Percentile 95% intervals; conditional on this field, validation selection and trained checkpoints."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_model_comparison_v03.pdf": "00dc6db848028b60fc1cb6f12193610cddafb7f6f1cc0ad7132f4f9db8e5226c",
+    "fig06_model_comparison_v03.svg": "e1cc3ad5521543ba0c64342fcbe080390fb75521a5f5e9bf1b458daa8bd41bbf",
+    "fig06_model_comparison_v03.png": "a255dc26ea3e1bb78f89d62f9556c37dd20e4edd022f321aa8af620c37bfcc75"
+  }
+}

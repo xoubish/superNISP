@@ -1,0 +1,47 @@
+{
+  "status": "Local source/background diagnostic; positive gain means lower error than bilinear",
+  "notebook": "06_model_comparison.ipynb",
+  "notebook_source_sha256": "b01446e2554606691200c54ab3086f7ca82ba26d58ae37a56238a6ab6ecc8fc8",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/model_benchmark_v03.json": "5d015b42b30d3e00e7f4340ea701c8f9220e09d9fb7a9ee50597d5c726acf758"
+  },
+  "settings": {
+    "objects": 2118,
+    "source_mask": {
+      "gaussian_sigma_pixels": 1.0,
+      "gaussian_truncate": 4.0,
+      "sky_annulus_pixels": [
+        70.0,
+        95.0
+      ],
+      "sky_clip_sigma": 3.0,
+      "sky_clip_iterations": 5,
+      "threshold_sigma": [
+        1.5,
+        2.0,
+        3.0
+      ],
+      "primary_threshold_sigma": 2.0,
+      "minimum_connected_pixels": 10,
+      "connectivity": 8,
+      "dilation_radius_pixels": 3,
+      "rule": "Smooth the full signed JWST reference with a normalized Gaussian; estimate median and sigma-clipped standard deviation from valid smoothed pixels at radius 70\u201395. Detect all 8-connected regions with at least 10 pixels above median + threshold*sigma; fill holes and dilate by a radius-3 disk. Intersect with common validity and crop to the central 105x105 pixels only after detection. Background is the complement within common validity. No per-model masks.",
+      "reference": "https://photutils.readthedocs.io/en/stable/user_guide/segmentation.html"
+    },
+    "regions": [
+      "all_valid",
+      "source",
+      "outside_source"
+    ]
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_source_background_v03.pdf": "ead8127ce6f98a374943712094e451739bb795ed4c81abf7788cf77c1d880fd7",
+    "fig06_source_background_v03.svg": "45b82a10882833469b6057df60c2fd802b3bffa23fbebf7fcb2b6a16837d9e4c",
+    "fig06_source_background_v03.png": "c2ad21b3172a420110d21429ff8b9e19c244ec3839ba6576416ecac2ffa384c7"
+  }
+}

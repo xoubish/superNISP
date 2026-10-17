@@ -1,0 +1,51 @@
+{
+  "status": "Reference-derived source masks for all five approved example fields",
+  "notebook": "06_model_comparison.ipynb",
+  "notebook_source_sha256": "b01446e2554606691200c54ab3086f7ca82ba26d58ae37a56238a6ab6ecc8fc8",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/model_benchmark_v03.json": "5d015b42b30d3e00e7f4340ea701c8f9220e09d9fb7a9ee50597d5c726acf758",
+    "runs/figure6-source-masks-v03/source_masks.npz": "b4217d1c6cc1034447d5375b702c280d41f033147957857f7f988b35cc9b1ade",
+    "paper_figures/inputs/galaxy_examples_v06.npz": "9dfb86b096b25e089c9960e08c4cfd764f3a2e12268379e1b4becae307923d70",
+    "paper_figures/inputs/galaxy_examples_v06.json": "89fed9f0e3a70e7a03998fcf9dd410e60a698adc69e2c2f983323d8ba1319c2e"
+  },
+  "settings": {
+    "object_ids": [
+      504234,
+      749105,
+      677525,
+      592591,
+      744769
+    ],
+    "source_mask": {
+      "gaussian_sigma_pixels": 1.0,
+      "gaussian_truncate": 4.0,
+      "sky_annulus_pixels": [
+        70.0,
+        95.0
+      ],
+      "sky_clip_sigma": 3.0,
+      "sky_clip_iterations": 5,
+      "threshold_sigma": [
+        1.5,
+        2.0,
+        3.0
+      ],
+      "primary_threshold_sigma": 2.0,
+      "minimum_connected_pixels": 10,
+      "connectivity": 8,
+      "dilation_radius_pixels": 3,
+      "rule": "Smooth the full signed JWST reference with a normalized Gaussian; estimate median and sigma-clipped standard deviation from valid smoothed pixels at radius 70\u201395. Detect all 8-connected regions with at least 10 pixels above median + threshold*sigma; fill holes and dilate by a radius-3 disk. Intersect with common validity and crop to the central 105x105 pixels only after detection. Background is the complement within common validity. No per-model masks.",
+      "reference": "https://photutils.readthedocs.io/en/stable/user_guide/segmentation.html"
+    }
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_source_masks_v03.pdf": "18a4fc03e2e3d11820d918cd7af6febdc8610babf2ae5a9e33c6f047ca1c8800",
+    "fig06_source_masks_v03.svg": "70274f11cb3936e8f1b8e97dfbaba35cc92fbf6968e82c109b17fff8876c7856",
+    "fig06_source_masks_v03.png": "22bc1ac2700b5d26cb1a74c1842870475ef3c0dd1918274fb1aff334a92ced79"
+  }
+}

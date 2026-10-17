@@ -1,0 +1,27 @@
+{
+  "status": "Local observed ellipticity component agreement on a matched success population",
+  "notebook": "07b_model_shapes.ipynb",
+  "notebook_source_sha256": "c1eb0fdffad19e28bbdbf4b300a8448868599c3fd0760e1fafac8f81752cd061",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v01.json": "2a75b9adfb816ec656a986733ab3dca99b47f98ad9a33d34112b9d67b7372fc8"
+  },
+  "settings": {
+    "estimator": "fixed",
+    "objects": 1447,
+    "methods": [
+      "diffusion",
+      "legacy",
+      "direct5"
+    ]
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_model_shape_agreement_v01.pdf": "a2d1656ec1271f1559a638b8851ef94ec6887cfb8b30c5fb75ba27130c052933",
+    "fig07_model_shape_agreement_v01.svg": "b330b9bd355b43f5ae41522b8633fd7f9c691e2e5b049e03c9e57f67809253d8",
+    "fig07_model_shape_agreement_v01.png": "3a950be5121b222c811b1c42702e062e53792f47a07aafb51f3c71e9421c1911"
+  }
+}

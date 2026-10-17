@@ -9,7 +9,7 @@ that any one defect explains the historical figures.
 
 Historical files under `code/diffusion/` are preserved. The new path imports
 their SR3 UNet and implements its wrapper in `code/diffusion_corrected.py`.
-No source used by the active direct-5x pipeline was modified.
+No source used by the active ResNet-D5 pipeline was modified.
 
 ## Model and measurement contract
 

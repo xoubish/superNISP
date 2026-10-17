@@ -149,3 +149,8 @@ runs/
 
 # Versioned model-prediction bundles (provenance JSON remains tracked).
 paper_figures/inputs/galaxy_examples_*.npz
+
+# Local Fourier measurements; JSON sidecars retain provenance and summaries.
+paper_figures/inputs/spatial_spectra_*.npz
+
+paper_figures/inputs/cached_shapes_*.npz

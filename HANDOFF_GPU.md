@@ -4,6 +4,177 @@ Updated 2026-10-16. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
+## All-model observed-shape comparison complete (local v01)
+
+User asked which recent Figure 6 diagnostics belong in the paper and requested
+shapes for diffusion, ResNet and ResNet-D5. CPU-only `code/analyze_cached_shapes.py`
+used v03 cached predictions, including bilinear/bicubic and diffusion mean3.
+Run `runs/cached-shapes-v01`; frozen summary/arrays `cached_shapes_v01.json/.npz`.
+Notebook `paper_figures/07b_model_shapes.ipynb`; exports `fig07_model_shapes_v01`
+and `fig07_model_shape_agreement_v01`. No inference, upload or manuscript edits.
+
+Fixed moments: same 1,447 successes, single diffusion/mean3/ResNet/D5 RMSE
+.2292/.1876/.1624/.1626. Adaptive moments: same 1,546 successes, RMSE
+.3031/.2538/.2210/.2214. ResNets indistinguishable by paired block intervals.
+Same 1,313 objects across both estimators preserve the ranking. Full-success
+fractions use all 2,118 fields. Common validity, no source-segmentation clipping;
+observed cross-band shapes, no PSF/shear calibration. Tests and independent
+all-object NumPy moments, direct HSM samples, bootstrap/hash checks passed.
+
+Recommended main results: source pixel errors/speed, source-only Fourier power
+and correlation together, and matched shape errors with measurement success.
+Background/window controls in appendix; if space tight, prioritize errors/speed
+and shapes. Report `paper/model_shape_comparison.md` contains detailed values,
+limitations and a proposed results layout; numbering is not yet installed.
+
+## Figure 6 strict source-only Fourier repeat complete (local v01)
+
+User requested the Fourier comparison within sources only. CPU analysis
+`code/analyze_source_spatial_spectra.py` uses frozen v03 predictions and 2σ masks,
+with exactly zero outside source/common validity. Primary inward taper width 3
+pixels, checks 1/5; all include neighbours and use identical model/reference
+windows. Same 1,363 complete fields; all 2,118 retained in a separate check.
+Run `runs/spectra-source-v01`; bundle `spatial_spectra_source_v01.json`/`.npz`.
+Notebook `paper_figures/06c_source_spatial_structure.ipynb`; exports
+`fig06_source_spatial_structure_v01` and `fig06_source_window_checks_v01`.
+
+Source-only intermediate-scale (0.36–0.89 arcsec) single diffusion / ResNet-D5
+power ratios .912/.419, correlations .604/.738. Higher correlation within
+sources does not reverse model ordering. Fine bins depend on mask-edge taper;
+do not claim noise-free morphology or intrinsic resolution from these curves.
+Six analytic tests plus independent FFT, original-control equality, block
+interval and provenance checks. Full report `paper/figure6_source_spatial_structure.md`.
+No inference, external upload or manuscript change. Keep all Figure 6 local.
+
+## Figure 6 Fourier companion complete (local v01)
+
+User approved power-spectrum and Fourier cross-correlation tests of diffusion
+sharpness. CPU-only `code/analyze_spatial_spectra.py` used the frozen v03 cache;
+no model inference, W&B or Overleaf upload. Run `runs/spectra-v01`, tmux
+`supernisp-spectra-v01`, console `runs/spectra-v01-console`, exit 0.
+Notebook `paper_figures/06b_spatial_structure.ipynb`; main source-error Figure 6
+is unchanged. Summary `paper_figures/inputs/spatial_spectra_v01.json`; NPZ arrays
+stay local/ignored. Main, window-check and background-control PDF/SVG/PNG exports
+are in `paper_figures/exports/fig06_spatial*_v01` / `fig06_spectral*_v01`.
+
+Primary population 1,363 complete common-valid cutouts; all 2,118 included in a
+separate tapered-validity check. Primary Tukey alpha .5, alternatives .25/Hann
+and shared soft source mask. Each image is weighted-mean-subtracted for this
+structure diagnostic. No noise subtraction, flux fitting or PSF deconvolution.
+Report geometric-mean power ratios and mean signed cross-correlation, with
+2,000 paired block draws. Outside-source proxy has 1,356 usable primary fields.
+
+Finding: diffusion is closer in observed power, while residuals have higher
+reference correlation. At 6–15 target pixels (~.36–.89 arcsec), the reference-only
+contrast>3 subset (944 objects) gives diffusion P ratio .884 / r .643 versus
+ResNet-D5 .443 / .783. Paired absolute log-power-error difference is -.166 dex
+(CI -.189,-.141), but correlation difference -.141 (CI -.150,-.132).
+The qualitative trade-off survives alternative windows and reference-contrast
+subsets. Diffusion also has uncorrelated background power (same-band P ratio
+.792, r .005); do not claim recovery of real features from power alone.
+
+Four analytical tests passed. Independent FFT checks reproduced 15,984 raw
+power/cross-power values; array identities, selection IDs, primary bootstrap
+intervals and provenance verified. Plots visually reviewed. Verification and
+source snapshots are saved under `runs/spectra-v01`. Full interpretation and
+proposed paper wording: `paper/figure6_spatial_structure.md`.
+
+## Figure 6 source-mask experiment complete (v03)
+
+User approved trying reference-defined source MAE/RMSE with separate background
+errors. Keep all Figure 6 artifacts local. Frozen masks were built with
+`code/prepare_source_masks.py`, protocol in `code/source_masks.py`, before model
+errors were evaluated. Primary 2-sigma masks cover a median 18.85% of common-valid
+pixels; sensitivity masks at 1.5/3 sigma cover 31.89%/10.92%. All 2,118 objects
+have nonempty source and outside-source regions at every threshold.
+
+Completed tmux `supernisp-figure6-v03-b8`, exit 0; console
+`runs/figure6-v03-b8-console`; output `runs/figure6-v03-b8`.
+Masks: `runs/figure6-source-masks-v03`, including random and Figure 5 visual
+reviews. Original batch-size-two attempt was stopped (exit 143) for throughput;
+its partial cache in `runs/figure6-v03` is incomplete and must not be used.
+The completed run uses batch eight, immutable Figure 5 v06 checkpoints and
+original seeds. It reuses v01 timings and saves central predictions in
+`runs/figure6-v03-b8/predictions.h5` for future mask-only revisions.
+
+Active notebook is v03 / benchmark v03; previous v02 archived. Four CPU metric,
+mask and bootstrap checks pass. All four rendered figures were visually reviewed.
+Full verification is saved in `runs/figure6-v03-b8/verification.json`: all
+source/background errors reproduce from cache; paired bootstrap summaries are
+exact; all-pixel scores match v01 within 8.89e-16 MJy/sr. Source, checkpoint,
+cache and export hashes pass. Verification script/environment retained.
+Main plot: source MAE/RMSE + original speed. Companions: source distributions,
+all/source/outside-source paired gains, and masks for the five Figure 5 examples.
+Report: `paper/figure6_source_mask_experiment.md`. Bundle:
+`paper_figures/inputs/model_benchmark_v03.json`.
+
+Source MAE/RMSE improvements vs bilinear: diffusion single 9.01%/26.61%,
+mean3 21.18%/37.10%, ResNet 29.74%/45.63%, ResNet-D5 29.95%/46.56%.
+Diffusion single has 3.93% worse outside-source MAE and 6.13% worse RMSE.
+Learned-model source ordering is stable across all three thresholds. Bicubic's
+source MAE comparison changes sign with threshold; do not call it robustly better.
+Masks can include positive noise and miss faint light; outside-source is not
+necessarily pure sky. Predictions are evaluated unsmoothed with no new offsets.
+No Figure 6 upload or manuscript installation was performed.
+
+## Model display name: ResNet-D5
+
+User approved **ResNet-D5** for the direct 5× residual network, with **ResNet**
+for the two-stage baseline, across Figures 5/6 and all text. Active architecture
+Figure 4 is v05, examples Figure 5 v07, and comparison Figure 6 v02. Main and
+companion plots were rerendered from unchanged saved inputs. Figure 5 retains
+`BUNDLE_VERSION = 'v06'`; Figure 6 retains `BENCHMARK_VERSION = 'v01'`.
+Previous notebooks are archived in `paper_figures/revisions/`. Internal keys,
+checkpoint paths and immutable run snapshots retain their original names.
+Manuscript methods, training table and captions use the new name; the installed
+PDFs are `residual_architecture_v05.pdf` and `galaxy_examples_v07.pdf`.
+Figure 6 remains local and is not included in the manuscript upload.
+Naming updates published to Overleaf on 2026-10-16, commit `7d851d0`;
+all 38 publication files match. Verified exported PDF labels and provenance
+hashes; Figure 5/6 input hashes and scientific settings match their prior versions.
+
+## Figure 6 local accuracy/speed benchmark complete
+
+User requested Figure 6 and selected **accuracy and speed together**. After
+automatic review required a new W&B upload approval, the user explicitly chose
+**Keep Figure 6 local**. This overrides the older online-W&B requirement for
+this figure. Do not upload Figure 6 measurements or plots. Exporter `--local`
+skips all W&B initialization/API/artifact calls; console/progress/config files
+provide local monitoring. Launch also sets `WANDB_MODE=disabled`.
+
+Completed tmux `supernisp-figure6-v01`, exit 0, console `runs/figure6-v01-console`, output
+`runs/figure6-v01`, GPU1. `code/export_model_benchmark.py` reuses Figure5 v06
+immutable checkpoints (49/49/35). Full 2,118-object validation split, identical
+support for all methods (JWST and both interpolation masks), central 105×105
+pixels matching Figure5, plus full-field sensitivity check. Bilinear, bicubic,
+single diffusion sample, linear mean of three, ResNet and ResNet-D5.
+Accuracy: per-object signed physical MAE/RMSE, object-weighted means and paired
+spatial-block bootstrap (2,000 draws). Timing: float32 without TF32, batch8,
+device-resident inputs, 2 warmups/10 synchronized wall-time repeats; includes
+representation conversion and diffusion noise generation, excludes IO/transfers,
+metrics and support masks. Timing uses median/min/max; not single-request latency.
+
+Two CPU regression checks passed for signed/masked errors and object-weighted
+paired block uncertainty. Notebook `06_model_comparison.ipynb` VERSION v01 is
+executed; main 3-panel mean-error/speed comparison and companion error
+CDF/paired-gain sheet exported in PDF/SVG/PNG, visually reviewed. Prior
+inventory draft archived. Bundle `paper_figures/inputs/model_benchmark_v01.json`.
+All source/checkpoint/data/bundle/notebook/export hashes verified; all 2,118 IDs
+and common supports checked. Cached Figure5 comparisons: 120 errors agree to
+maximum absolute difference 2.11e-8 MJy/sr. Verification saved in
+`runs/figure6-v01/verification.json`; source/plot snapshots retained there.
+
+Central-crop reductions vs bilinear in mean MAE / mean per-object RMSE:
+diffusion 4.51% / 26.90%; mean3 17.39% / 37.25%; ResNet 26.05% / 46.11%;
+ResNet-D5 26.16% / 46.95%. Same learned-model ordering on full fields;
+bicubic's small RMSE gain changes sign under the full-field definition.
+Median ms/object at batch8: bilinear .00315, bicubic .00578, diffusion 125.31,
+mean3 377.99, ResNet .4717, ResNet-D5 .6382. Intervals use 18 spatial blocks;
+one training seed per model, validation-selected models, cross-band noisy
+reference; not a held-out test, morphology ranking or shear calibration.
+See `paper/figure6_reconstruction_benchmark.md` for the review summary.
+No W&B initialization/upload, training/test access, manuscript insertion or push.
+
 ## Figure 5 v06 published to Overleaf
 
 User requested the push after local insertion. `python scripts/overleaf.py
@@ -113,7 +284,7 @@ No manuscript insertion/push, training changes or test-data access.
 
 ## Figure 5 v02 — requested ordering and observed morphology selection
 
-Current main grid: NISP Y, JWST F115W, Bilinear, Diffusion, ResNet, directResNet.
+Current main grid: NISP Y, JWST F115W, Bilinear, Diffusion, ResNet, ResNet-D5.
 User requested clearer paper examples. Inspected NISP/JWST-only candidate sheets
 from the 60 brightest validation galaxies with F814W<23 and 5<FLUX_RADIUS<25;
 selected 734405, 677525, 671723, 679385 before new predictions, illustrating

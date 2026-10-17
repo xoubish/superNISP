@@ -1,0 +1,31 @@
+{
+  "status": "Companion matched-error distributions and paired spatial-block gains",
+  "notebook": "06_model_comparison.ipynb",
+  "notebook_source_sha256": "8d187eec4ba9a5b4186f0d6c15a6ff1d9a873f6b34f7968423b49604f15ddaf1",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/model_benchmark_v01.json": "6fab3711e5a8774b0dca9f46bf70b233c5bd6ae0db3b0bdc59feea7a8a940c1b"
+  },
+  "settings": {
+    "objects": 2118,
+    "methods": [
+      "bilinear",
+      "bicubic",
+      "diffusion",
+      "diffusion_mean3",
+      "legacy",
+      "direct5"
+    ],
+    "gain": "100*(1 - mean per-object method error / mean per-object bilinear error)",
+    "intervals": "Resample spatial blocks with replacement, retaining all objects and methods paired. Equal object weights within the resulting population. Percentile 95% intervals; conditional on this field, validation selection and trained checkpoints."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_error_distributions_v01.pdf": "5982fee25a357fc522af8c6ea8847f502110080e43bd6b6e7e11c7d64f741d03",
+    "fig06_error_distributions_v01.svg": "4019f1836eacb9f971062e057bc9f0d75d866b4f1e924ebf1b874a37411b8f25",
+    "fig06_error_distributions_v01.png": "0acffc26a48a1548be35719e986b19734dec1a18786bf6dde7665e84343e627c"
+  }
+}

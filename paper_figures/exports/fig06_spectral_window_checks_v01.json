@@ -1,0 +1,28 @@
+{
+  "status": "Paired diffusion versus ResNet-D5 window-sensitivity diagnostic",
+  "notebook": "06b_spatial_structure.ipynb",
+  "notebook_source_sha256": "63340daad6f1dd61984c36b9b56b999fad0e814e80cf65a58ca2353389569063",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/spatial_spectra_v01.json": "ace77f1664729d5220a007fb81da4c58c3de03577ebdcb3debb59ec0c977547a"
+  },
+  "settings": {
+    "primary_objects": 1363,
+    "cases": [
+      "tukey50",
+      "tukey25",
+      "hann",
+      "soft_source"
+    ],
+    "baseline": "direct5"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_spectral_window_checks_v01.pdf": "caa03c59232302045c9905bf99da686492bdf1864fab9e4a5eac7b877fe2f6d5",
+    "fig06_spectral_window_checks_v01.svg": "5b91abb236308eb8444ce2a271b890eda4b8009dbc60058208caa990221d73aa",
+    "fig06_spectral_window_checks_v01.png": "188ab3c6b44e4348cb17dc86bc172ab82f2bd9422ca2595b90da861fa318e9db"
+  }
+}

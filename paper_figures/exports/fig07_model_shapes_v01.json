@@ -1,0 +1,24 @@
+{
+  "status": "Local matched observed-shape comparison and full-denominator measurement success",
+  "notebook": "07b_model_shapes.ipynb",
+  "notebook_source_sha256": "c1eb0fdffad19e28bbdbf4b300a8448868599c3fd0760e1fafac8f81752cd061",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v01.json": "2a75b9adfb816ec656a986733ab3dca99b47f98ad9a33d34112b9d67b7372fc8"
+  },
+  "settings": {
+    "population": "All 2118 cached validation fields attempted. Each estimator compares the identical intersection of successful JWST and all six model/baseline measurements. Full-denominator success counts and overlapping failure flags retained. Also report intersection across both estimators.",
+    "fixed": "Existing signed Gaussian-weighted moments: sigma 10 target pixels, central aperture radius 25; intensity-weighted centroid with fixed window. e1=(Qxx-Qyy)/(Qxx+Qyy), e2=2Qxy/(Qxx+Qyy). Require positive flux and positive-definite quadrupoles and full valid aperture.",
+    "adaptive": "Existing GalSim HSM adaptive moments on 105x105 target pixels; guess sigma 10; max centroid displacement 10 target pixels; bad pixels masked, full radius-25 validity required; retain convergence/failure details. Observed distortion e1/e2; no PSF correction.",
+    "summary": "Component RMSE sqrt(mean_over_objects((delta_e1**2+delta_e2**2)/2)); per-component bias, scatter, fraction with vector error>0.2, diagnostic OLS slopes; HSM log-size ratios. Round-control e1=e2=0 is diagnostic only."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_model_shapes_v01.pdf": "cced6e442bba3784e87a1df58611442b9946b73cbb3477f68bbec71ad389b24e",
+    "fig07_model_shapes_v01.svg": "db7389ac406e0d9e32731ac5cfe91d32bd4114e34bf500b21912f10a5362e620",
+    "fig07_model_shapes_v01.png": "077663ecd48eb8d73ce7d20ac00d24a0c617d1bc24930f43454ea078808cd9d5"
+  }
+}

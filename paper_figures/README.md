@@ -19,9 +19,9 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | 1 | [01_sample.ipynb](01_sample.ipynb) | Footprint/splits and matched ~24-arcsec NISP/JWST field | True image footprint with connector lines; v07 |
 | 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v05 rendered |
 | 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
-| 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, legacy/direct-5× heads, dense-block detail | Vector schematic draft |
-| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Isolated source first, then pairs/disk/crowded field; v06 |
-| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Budget table ready; benchmark pending |
+| 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, ResNet/ResNet-D5 heads, dense-block detail | Named variants; v05 |
+| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Isolated source first, then pairs/disk/crowded field; v07 |
+| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Matched reconstruction errors and computational cost | Source/background accuracy and speed; local-only v03 |
 | 7 | [07_observed_shapes.ipynb](07_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
 | 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
 | 9 | [09_shape_robustness.ipynb](09_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Frozen legacy validation preview |
@@ -39,6 +39,22 @@ set `MOSAIC_ROOT` in `01_sample.ipynb` on the machine holding the original mosai
 NISP pixels and an aligned 410×410 JWST field (about 24 arcsec across). The
 notebook also accepts explicit paths for the two images and caches the extracted
 field under `inputs/` for reuse elsewhere. No training or inference is involved.
+
+## Current model names
+
+Use **ResNet** for the two-stage residual network and **ResNet-D5** for the
+direct 5× upsampling variant. Figure 4 v05, Figure 5 v07 and Figure 6 v02
+apply these names throughout labels and captions:
+[architecture](exports/fig04_residual_architecture_v05.png),
+[examples](exports/fig05_galaxy_examples_v07.png),
+[residuals](exports/fig05_galaxy_residuals_v07.png),
+[accuracy and speed](exports/fig06_model_comparison_v02.png), and
+[error distributions](exports/fig06_error_distributions_v02.png).
+These are label-only revisions: Figure 5 reuses bundle v06 (`BUNDLE_VERSION`),
+and Figure 6 reuses benchmark v01 (`BENCHMARK_VERSION`). Internal `legacy`
+and `direct5` keys and archived snapshots retain their original identities.
+The manuscript uses the new architecture and example PDFs; Figure 6 remains local.
+The sections below retain the history of earlier figure versions.
 
 ## Working together
 
@@ -231,7 +247,7 @@ Results figures in the manuscript and has not been pushed to Overleaf.
 ## Figure 5 v02: reordered columns and clearer morphology examples
 
 The current [Figure 5](exports/fig05_galaxy_examples_v02.png) is ordered
-**NISP Y, JWST F115W, Bilinear, Diffusion, ResNet, directResNet**.
+**NISP Y, JWST F115W, Bilinear, Diffusion, ResNet, ResNet-D5**.
 The [residual sheet](exports/fig05_galaxy_residuals_v02.png) follows the same
 method order. Bilinear uses NISP in linear MJy/sr and its own interpolation
 support mask, without a band conversion.
@@ -334,3 +350,105 @@ compilation remains blocked by missing `etex.sty`. The local Overleaf archive
 is refreshed. The user subsequently requested publication: Figure 5 and both
 manuscript sources were pushed to Overleaf in commit `13ff60c`. All 36 publication
 files match the synchronized checkout. Overleaf compilation was not inspected.
+
+## Figure 6 v01: accuracy and speed, local only
+
+[Figure 6](exports/fig06_model_comparison_v01.png) compares mean per-object MAE,
+mean per-object pixel RMSE and measured inference time for bilinear, bicubic,
+single-sample diffusion, the mean of three diffusion samples, ResNet and
+ResNet-D5. All 2,118 validation objects use identical support within the
+central 105×105 target-pixel crop, matching Figure 5. Accuracy whiskers are 95%
+paired spatial-block bootstrap intervals; timing whiskers are the min/max of
+ten repetitions, with median points, on an L40S at batch size eight.
+
+The [companion sheet](exports/fig06_error_distributions_v01.png) shows error CDFs
+and paired reductions relative to bilinear. The residual models reduce mean
+MAE by about 26% and mean pixel RMSE by 46–47%; their inference times are about
+0.47/0.64 ms per object versus 125 ms for one diffusion draw and 378 ms for the
+mean of three. These are pixel agreement and runtime results, not a shape
+recovery ranking. See [the benchmark report](../paper/figure6_reconstruction_benchmark.md)
+for exact values, definitions and limitations.
+
+Frozen inputs: `inputs/model_benchmark_v01.json`. Exporter:
+`code/export_model_benchmark.py`; pure metric/bootstrap helper and regression
+checks: `code/reconstruction_benchmark.py`, `code/test_reconstruction_benchmark.py`.
+Run `runs/figure6-v01` completed in tmux with exit 0. All hashes and 120 cached
+Figure5 error comparisons passed; figures visually reviewed. The user chose
+**Keep Figure 6 local**: no W&B initialization or upload. Run with `--local`
+and `WANDB_MODE=disabled`. The figures are review drafts, not inserted or pushed.
+
+## Figure 6 v03: source masks and separate background errors
+
+[Current Figure 6](exports/fig06_model_comparison_v03.png) uses source-only
+MAE and RMSE alongside the original inference timings. The
+[source/background comparison](exports/fig06_source_background_v03.png)
+shows paired gains for all valid pixels, source pixels and outside-source
+pixels. Also available: [source distributions](exports/fig06_error_distributions_v03.png)
+and [exact masks for Figure 5 examples](exports/fig06_source_masks_v03.png).
+
+Masks are derived only from JWST, include neighbouring sources, and are
+identical for every method. Primary detection uses 2 sigma, at least 10
+connected pixels, and a 3-pixel dilation; see the full definition and caveats
+in [the experiment report](../paper/figure6_source_mask_experiment.md).
+All 2,118 validation objects retain both regions. Median source coverage is
+18.85%. Results at 1.5 and 3 sigma preserve the learned-model source ordering.
+
+Single-sample diffusion improves source MAE by 9.01% relative to bilinear,
+while outside-source MAE is 3.93% worse. ResNet-D5 source gains are 29.95%
+(MAE) and 46.56% (RMSE); ResNet is close at 29.74% and 45.63%.
+This separates source reconstruction from background behaviour.
+The v02 notebook and original all-pixel plots are preserved.
+
+Frozen bundle: `inputs/model_benchmark_v03.json`. Run: `runs/figure6-v03-b8`;
+console: `runs/figure6-v03-b8-console`. The central predictions are now cached
+for future mask-only revisions without rerunning inference. No Figure 6
+artifacts have been uploaded to W&B or Overleaf.
+
+## Figure 6 companion: spatial structure (local v01)
+
+The [Fourier diagnostic](exports/fig06_spatial_structure_v01.png) measures power
+ratios and signed reference cross-correlation from the existing v03 cache.
+[Window checks](exports/fig06_spectral_window_checks_v01.png) and an
+[outside-source control](exports/fig06_spectral_background_v01.png) accompany it.
+Notebook: [06b_spatial_structure.ipynb](06b_spatial_structure.ipynb).
+The source-error/speed Figure 6 remains unchanged.
+
+Primary curves use 1,363 complete-valid cutouts; a validity-taper check includes
+all 2,118. Diffusion has power amplitudes closer to observed JWST but lower
+reference correlation than the residual networks. This trade-off persists with
+alternative tapers, a soft source weight and reference-contrast selections.
+In the 944-object reference-contrast subset at 6–15 target pixels (~0.36–0.89
+arcsec), single diffusion / ResNet-D5 have power ratios 0.884 / 0.443 and
+correlations 0.643 / 0.783. Ideal values are 1 for both metrics.
+
+Diffusion also produces substantial uncorrelated background power. Neither
+raw power agreement nor the background proxy establishes noise-free morphological
+recovery. Full protocol, numbers, caveats and proposed wording are in the
+[spatial-structure report](../paper/figure6_spatial_structure.md).
+Run `runs/spectra-v01` completed locally on CPU with no new inference or uploads.
+
+## Figure 6 companion: strict source-only spatial structure (local v01)
+
+[Source-only Fourier plot](exports/fig06_source_spatial_structure_v01.png),
+[boundary checks](exports/fig06_source_window_checks_v01.png), and
+[notebook](06c_source_spatial_structure.ipynb) repeat the comparison on exactly
+zero-outside-source windows. The same 1,363 fields are used; masks include all
+detected neighbours. At 0.36–0.89 arcsec, diffusion / ResNet-D5 power ratios are
+0.912 / 0.419, and correlations 0.604 / 0.738. Source masking raises correlation
+but preserves the power-versus-alignment trade-off. Boundary checks show that
+finest-scale values depend on the mask taper. See the
+[full protocol and interpretation](../paper/figure6_source_spatial_structure.md).
+All outputs remain local; the main Figure 6 and previous companion are preserved.
+
+## Matched observed shapes for all models (local v01)
+
+[Shape error and success summary](exports/fig07_model_shapes_v01.png) and
+[component agreement](exports/fig07_model_shape_agreement_v01.png) compare the
+frozen Figure 6 predictions using fixed and adaptive moments. Notebook:
+[07b_model_shapes.ipynb](07b_model_shapes.ipynb). ResNet and ResNet-D5 have nearly
+identical errors and outperform single diffusion and the mean-of-3 image with
+both estimators. The primary common-success populations contain 1,447 and 1,546
+objects; the shared 1,313-object check preserves the ordering. Full success counts
+use all 2,118 attempted fields. These are observed cross-band shapes, not shear.
+See [the report and proposed figure selection](../paper/model_shape_comparison.md).
+Older shape notebooks/results remain preserved; no manuscript changes or uploads.

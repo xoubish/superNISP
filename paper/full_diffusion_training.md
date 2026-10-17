@@ -29,7 +29,7 @@ diffusion core, representation, objective and maximum learning rate from the
   model sampling. It is a predeclared additional estimator, not a replacement
   selected after looking at its results.
 - Automatically compare individual diffusion samples, the mean image, the
-  frozen legacy epoch-49 result, and the completed direct-5x result when
+  frozen legacy epoch-49 result, and the completed ResNet-D5 result when
   available. Use identical common-success galaxies, full-population failure
   counts and paired spatial-block intervals. Small numerical differences in
   reference shapes from the asinh round trip are checked and recorded.
@@ -52,13 +52,13 @@ with 3.13 GiB peak tensor allocation. The saved full training rows exactly
 match the residual baseline; all 256 monitor rows belong to validation. Both
 pipelines' queued source hashes were verified unchanged after launch.
 
-The existing direct-5x pipeline trains on GPU 0 but already has analysis stages
+The existing ResNet-D5 pipeline trains on GPU 0 but already has analysis stages
 queued for GPU 1. The new diffusion wrapper checks that pipeline at every
-training/sampling batch boundary. Once direct-5x training finishes, diffusion
+training/sampling batch boundary. Once ResNet-D5 training finishes, diffusion
 waits without GPU compute until its analyses exit, then resumes automatically.
-It retains its small model allocation while waiting. A failed direct-5x exit
+It retains its small model allocation while waiting. A failed ResNet-D5 exit
 is explicitly logged; a two-hour unresolved wait aborts rather than silently
-waiting forever. This does not modify the active direct-5x sources or commands.
+waiting forever. This does not modify the active ResNet-D5 sources or commands.
 
 Two regression checks cover the wait/release decisions (including incomplete
 status writes and failed exits) and averaging in linear intensity rather than

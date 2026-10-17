@@ -1,4 +1,4 @@
-# Direct-5x head comparison
+# ResNet-D5 head comparison
 
 The authorized experiment changes the upsampling head from two 2x pixel-shuffle
 blocks plus a final 164-to-205 bilinear resize to one learned 5x pixel-shuffle

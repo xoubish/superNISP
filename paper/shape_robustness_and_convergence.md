@@ -145,5 +145,5 @@ Tracked evidence: [robustness report](diagnostics/shape_robustness_best49.json)
 and [convergence summary](diagnostics/full50_convergence.json). Full scenario
 object IDs, HSM errors, fitted centroids/sizes and per-object flags remain in
 the run's `report.json` and `measurements.npz`. The next experiment is the
-controlled direct-5x head comparison with the same 50-epoch update budget;
+controlled ResNet-D5 head comparison with the same 50-epoch update budget;
 a baseline continuation would be a separate budget/schedule experiment.

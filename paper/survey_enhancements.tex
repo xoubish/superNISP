@@ -361,15 +361,15 @@ We retain the full range of predicted intensities and convert the final image ba
 
 The residual network produces an F115W estimate from the NISP image in a single pass.
 Its layers first extract features on the original $41\times41$ grid, then enlarge these features and combine them into a $205\times205$ output image.
-We compare two variants with the same feature-extraction structure and different enlargement paths (Fig.~\ref{fig:resnet_model}).
+We compare two variants with the same feature-extraction structure and different enlargement paths: the two-stage residual network (ResNet) and the direct-$5\times$ residual network (ResNet-D5; Fig.~\ref{fig:resnet_model}).
 Each variant is trained separately.
 
 \begin{figure*}
     \centering
-    \includegraphics[width=\textwidth]{figs/residual_architecture_v04.pdf}
+    \includegraphics[width=\textwidth]{figs/residual_architecture_v05.pdf}
     \caption{Residual network for reconstructing F115W images from NISP observations.
     (a) Both variants extract features using eight residual dense blocks, followed by edge filtering and learned weighting of the feature maps.
-    (b) Two separately trained variants use different enlargement paths. The first enlarges twice by $2\times$, predicts an image on a $164\times164$ grid, then resizes it to $205\times205$; the second enlarges directly by $5\times$ and predicts on the target grid.
+    (b) Two separately trained variants use different enlargement paths. ResNet enlarges twice by $2\times$, predicts an image on a $164\times164$ grid, then resizes it to $205\times205$; ResNet-D5 enlarges directly by $5\times$ and predicts on the target grid.
     (c) Within each dense block, convolutions reuse earlier features and add a learned correction to the input. Plus symbols denote this addition.}
     \label{fig:resnet_model}
 \end{figure*}
@@ -389,11 +389,11 @@ These learned weights adjust the contribution of each map before enlargement.
 The module operates on internal features; its effect on the reconstructed galaxy shapes is evaluated with the rest of the network.
 
 The two enlargement paths use \emph{pixel shuffling}: a convolution predicts additional feature maps, whose values are rearranged into neighbouring positions on a finer grid \citep{Shi2016PixelShuffle}.
-The first variant doubles the grid size twice, from 41 to 82 and then 164 pixels on a side.
+ResNet doubles the grid size twice, from 41 to 82 and then 164 pixels on a side.
 Two final convolutions combine the features into an image, which is resized by bilinear interpolation to the required $205\times205$ grid.
-The direct-$5\times$ variant instead enlarges the features in one step from 41 to 205 pixels, then predicts the image on that grid.
+ResNet-D5 enlarges the features in one step from 41 to 205 pixels, then predicts the image on that grid.
 This comparison tests whether reconstructing directly at the target sampling improves image and shape recovery.
-The direct variant also has more parameters (Table~\ref{tab:training_settings}), so the comparison includes a change in model capacity.
+ResNet-D5 also has more parameters (Table~\ref{tab:training_settings}), so the comparison includes a change in model capacity.
 
 Both variants take the linearly scaled NISP intensity image as their sole network input, with invalid input pixels set to zero as described in Sect.~\ref{sc:preprocessing}.
 The output is converted back to surface brightness without clipping its range.
@@ -434,7 +434,7 @@ Losses, validation metrics, and fixed galaxy examples are monitored with Weights
     \centering
     \begin{tabular}{lccc}
         \hline\hline
-        Setting & Diffusion & Residual, two-stage & Residual, direct $5\times$ \\
+        Setting & Diffusion & ResNet & ResNet-D5 \\
         \hline
         Trainable parameters & 4\,910\,593 & 2\,332\,177 & 2\,959\,953 \\
         Feature channels & 32, 64, 128 & 64 & 64 \\
@@ -575,10 +575,10 @@ All these measurements assess agreement with observed F115W shapes across two ba
 
 \begin{figure*}[t]
     \centering
-    % Approved frozen export from paper_figures/05_galaxy_examples.ipynb, v06.
-    \includegraphics[width=\textwidth]{figs/galaxy_examples_v06.pdf}
+    % Approved examples, with ResNet-D5 naming; v07 reuses v06 predictions.
+    \includegraphics[width=\textwidth]{figs/galaxy_examples_v07.pdf}
     \caption{Observed images and reconstructions for five selected validation fields: (a) a modest isolated galaxy, (b) a close projected pair, (c) a face-on disk, (d) overlapping extended sources, and (e) a crowded field with multiple neighbours.
-    Columns show, from left to right, native \Euclid\ NISP $Y$, the JWST F115W reference, bilinear interpolation of NISP, and diffusion, ResNet, and directResNet reconstructions; directResNet denotes the direct-$5\times$ residual variant.
+    Columns show, from left to right, native \Euclid\ NISP $Y$, the JWST F115W reference, bilinear interpolation of NISP, and diffusion, ResNet, and ResNet-D5 reconstructions; ResNet-D5 denotes the direct-$5\times$ residual variant.
     All fields are observational cutouts, with no injected sources.
     Each row spans approximately $6.3$ arcsec and uses the same asinh intensity stretch in physical surface-brightness units across all columns; scale bars indicate $2$ arcsec.
     Bilinear interpolation retains the NISP band and instrumental response.

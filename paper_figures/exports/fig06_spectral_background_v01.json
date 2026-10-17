@@ -1,0 +1,22 @@
+{
+  "status": "Outside-source spectral control for texture/noise power and reference correlation",
+  "notebook": "06b_spatial_structure.ipynb",
+  "notebook_source_sha256": "63340daad6f1dd61984c36b9b56b999fad0e814e80cf65a58ca2353389569063",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/spatial_spectra_v01.json": "ace77f1664729d5220a007fb81da4c58c3de03577ebdcb3debb59ec0c977547a"
+  },
+  "settings": {
+    "objects": 1356,
+    "window": "Outside the fixed 2-sigma source mask, with a 3-pixel cosine taper to source/invalid boundaries and the outer Tukey window. Window-energy normalized. Usable if sum(w**2)>16 and effective area sum(w)**2/sum(w**2)>=64. An empirical background proxy, not an unbiased noise PSD; contains faint sources and mask coupling."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_spectral_background_v01.pdf": "c02544e0dc891626cb96803ed47e8e48c2a45d449a5c5dd3910df2c95689ca45",
+    "fig06_spectral_background_v01.svg": "c1f7412e16e36355a98fdb095421ace30350995f5e71504d7a00bbb6875a978c",
+    "fig06_spectral_background_v01.png": "26ddc906ef5de5c2d36b77c5ea9af76bfc3b76b717af9c193a6052e691e86c76"
+  }
+}

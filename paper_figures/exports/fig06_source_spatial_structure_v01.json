@@ -1,0 +1,25 @@
+{
+  "status": "Local exploratory power and phase-correlation comparison; noisy observed reference",
+  "notebook": "06c_source_spatial_structure.ipynb",
+  "notebook_source_sha256": "62c7cb6ec3f475564daa156de8d2c7512b9937eb8c07a97868153ac400fdd0ee",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/spatial_spectra_source_v01.json": "4d93b46b8209fc16522984e819045c18a31e04dceaf70dbd5c05eb70410de1fa"
+  },
+  "settings": {
+    "primary_objects": 1363,
+    "window": "Strict support: fixed 2-sigma JWST source mask intersected with common validity, including all detected neighbours. Exactly zero outside this support. Inward sine-squared distance taper width=3 target pixels times separable Tukey alpha=0.5; subtract each image own weighted mean before FFT; FFT divided by sqrt(sum(window**2)). Same window for every model and JWST.",
+    "power": "Geometric mean over objects of P_model/P_observed_JWST (mean log10 ratio); ideal 1. No image flux fitting, PSF correction or noise subtraction.",
+    "correlation": "Mean over objects of real cross-spectrum / sqrt(P_model*P_observed_JWST), each annularly averaged first. Signed, phase-sensitive r; ideal 1. Not magnitude-squared coherence.",
+    "pixel_scale_arcsec": 0.05934367
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig06_source_spatial_structure_v01.pdf": "bfe5ebe4177c955275cc58845149f7b0d488f061acd14f44c98a72c48ec9efdb",
+    "fig06_source_spatial_structure_v01.svg": "aa970d6d3a3aa54186b4849e3df76aab49a7163b2da5663ed1035f676a5d329e",
+    "fig06_source_spatial_structure_v01.png": "6fe98a97cb0ea2beb7f0eedd24a4cdbd337a61448c6e572c55563be88674dc59"
+  }
+}
