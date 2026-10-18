@@ -4,7 +4,16 @@ Updated 2026-10-17. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
-## Latest update: all nine figures installed in manuscript — 2026-10-17
+## Latest update: all nine figures published to Overleaf — 2026-10-17
+
+User authorized the push. Remote commit `d7dcaecb4a06d5d6a3a98b4441bd5632f8833be4`
+verified; all 49 publication files match, including all nine approved PDFs.
+Preserved the newer remote title-acknowledgement line-wrap edit before publishing.
+`main.tex` is the Overleaf main document. Evidence:
+`paper/diagnostics/overleaf_figures_1_9_v01.json`. The Overleaf compiled PDF has
+not been inspected. Local full compilation still lacks `etex.sty`.
+
+## Previous update: all nine figures installed in manuscript — 2026-10-17
 
 `paper/survey_enhancements.tex` now includes all nine approved Matisse-styled
 figures in order. Added `paper/figs/shape_dependence_v04.pdf` as Figure 8 and

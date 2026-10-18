@@ -1,0 +1,21 @@
+{
+  "published": true,
+  "project": "https://www.overleaf.com/project/6ad2883f967dc592692b8809",
+  "commit": "d7dcaecb4a06d5d6a3a98b4441bd5632f8833be4",
+  "main_document": "main.tex",
+  "manuscript_sha256": "d2075d914da46d937f6a73f1f7cb9f790c35f2c372e0c08eadf4b989a3005a4a",
+  "all_publication_files_verified": 49,
+  "figures": {
+    "figs/sample_overview_v08.pdf": "d0520a13e8f0e80d38408a1755f1b2726bc3784d46be5bdfc5e3ee630d0b4afc",
+    "figs/sample_properties_v06.pdf": "6b24647a7c6efa33e36014eb8492cdbc82d1d10b9d597e805622da153511381a",
+    "figs/diffusion_architecture_v06.pdf": "7ac0f3df0a5d778032c0639d1e9132bc268be3682dccb7b576f65b8b1ab6af13",
+    "figs/residual_architecture_v06.pdf": "376846ae03cdb6248a3f469770c39eaa622c685b6ddd8ce527554d3282f87a06",
+    "figs/galaxy_examples_v08.pdf": "85e4f1e64567741bb77c78a27f9e059f452805f9fa7efda91d5cba8c66c652ea",
+    "figs/model_comparison_v07.pdf": "2d379fcede9fe78f777e35e330ae1f384301804441b19c138dcd64b1949ea53d",
+    "figs/shape_hexbin_v06.pdf": "023a2b6f0b009b60ddbdec285db8386c75a9c2d768338a62cd848bc2d9910ff7",
+    "figs/shape_dependence_v04.pdf": "ed63e3c2bbb7d54dbc51756de482ff5f798d9dc996bf51566d6c3e6914a00b01",
+    "figs/shear_response_v06.pdf": "d1f9414b0a4eacb8eb03cdf0d0db14cdc3f12f966273edc7ab2adf4e5465edeb"
+  },
+  "remote_edit_preserved": "Whitespace-only title acknowledgement line wrapping",
+  "overleaf_pdf_compilation_verified": false
+}

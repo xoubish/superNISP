@@ -59,8 +59,7 @@
 % Put the title and authors of your (Standard Project) paper here
 %
 
-\title{\Euclid\/: Deep-learning super-resolution of NISP imaging and its fidelity for galaxy shape measurement\thanks{This paper is published on
-       behalf of the Euclid Consortium}}
+\title{\Euclid\/: Deep-learning super-resolution of NISP imaging and its fidelity for galaxy shape measurement\thanks{This paper is published on behalf of the Euclid Consortium}}
 
 %% please do not edit the author list once you copy it from the
 %% Publication Portal -- contact ECEB Bureau for changes
@@ -85,32 +84,18 @@
 % Put your abstract here:
 %
 \abstract{
-\Euclid\ measures weak-lensing shapes with VIS at $0\farcs1$ sampling,
-while its near-infrared imager NISP detects red and high-redshift
-galaxies that VIS cannot measure, but at $0\farcs3$ sampling too coarse
-for shapes. Super-resolving NISP imaging could extend weak lensing into
-the near-infrared, raising the effective source density and the
-redshift reach of the lensing sample. Like any shape-measurement
-technique, however, a learned method's biases must be quantified before
-its outputs can inform cosmology. Here we evaluate image fidelity and
-observed-shape agreement for deep-learning super-resolution of NISP imaging. We
-train a conditional diffusion model and two residual-network variants on
-17\,816 NISP \YE-band cutouts of the COSMOS field paired with JWST/NIRCam
-F115W imaging at five times finer sampling.
-Diffusion learns a generative prior, while the residual networks learn
-direct mappings.
-On 2118 validation galaxies, the residual models have lower source-region
-reconstruction errors and stronger signed Fourier correlation with the
-JWST reference, while diffusion retains more observed small-scale power.
-ResNet reconstruction errors are consistent across three independent
-training seeds.
-Observed-shape error reductions are largest in the highest input signal-to-noise bin.
-A controlled simulation with supplied NISP effective PSFs finds greater shear response for the ResNet than for native NISP in the two displayed compact-galaxy cases, but not uniformly over the full size and noise grid.
-These validation diagnostics include noise, instrumental responses, and
-the band difference, and do not establish calibrated shear recovery.
-The 2876-object test sample remains reserved for evaluation of the fixed
-model and measurement choices.
-    }
+\Euclid's near-infrared NISP imaging offers access to galaxy populations relevant to weak lensing, but its coarse sampling limits measurements of galaxy structure.
+We investigate whether learned super-resolution improves image fidelity and observed shapes while preserving sensitivity to applied shear.
+We train a conditional diffusion model and two residual-network variants on 17\,816 NISP \YE-band cutouts paired with JWST/NIRCam F115W images, and evaluate them on 2118 validation galaxies.
+Residual networks achieve lower reconstruction errors and stronger spatial correlation with JWST than diffusion, whereas diffusion retains more observed small-scale power.
+Relative to native NISP, ResNet reduces ellipticity-component RMSE by approximately 19\% with fixed weighted moments and 11\% with adaptive moments on matched successful samples.
+Improvements are largest at high signal-to-noise; low-signal comparisons are limited by measurement selection.
+Reconstruction errors are consistent across three training seeds.
+Controlled simulations using supplied NISP effective point-spread functions show increased ResNet shear response for compact galaxies, but gains depend on size and noise, and responses remain below intrinsic values.
+These results support residual networks as a promising approach to improving observed-shape fidelity in NISP imaging and motivate further investigation for weak lensing.
+Establishing calibrated shear accuracy will require realistic simulations and independent validation that account for noise, instrumental response, cross-band differences, and measurement selection.
+}
+
 %
 % Provide up to five key words:
 %

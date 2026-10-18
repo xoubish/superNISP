@@ -1,5 +1,16 @@
 # Overleaf connection
 
+## Latest manuscript sync — 2026-10-17
+
+Published all nine approved figures and the revised manuscript to the existing
+project, commit `d7dcaecb4a06d5d6a3a98b4441bd5632f8833be4`. `main.tex` and
+`survey_enhancements.tex` match the local manuscript; all 49 publication files
+were hash-checked. Preserved a newer Overleaf edit that only joined the title's
+acknowledgement onto one line. Remote commit verified after pushing.
+Evidence: `paper/diagnostics/overleaf_figures_1_9_v01.json`.
+The Overleaf compiled PDF has not been inspected; the local A&A build still
+requires the missing `etex.sty` package.
+
 Project Git URL: `https://git@git.overleaf.com/6ad2883f967dc592692b8809`
 
 The isolated checkout lives in `.overleaf/project` at the repository root.
