@@ -166,11 +166,22 @@ dense blocks \citep{Wang2018}, which predicts an image in a single pass
 (Sect.~\ref{sc:methods}). We evaluate both on image fidelity, spatial
 structure, and observed ellipticity, examine how shape errors depend on
 input signal-to-noise, and test the response of the residual network to
-an applied shear in controlled simulations (Sect.~\ref{sc:results}).
+an applied shear in controlled simulations (Sects.~\ref{sc:measurement}
+and \ref{sc:results}).
 Our sample is limited to optically selected galaxies with $F814W<25$, so
 the results establish the method on a well-characterized population
 rather than on the fainter sources that motivate the application; we
 return to this in Sect.~\ref{sc:discussion}.
+
+\begin{figure*}[t]
+    \centering
+    % Frozen export from paper_figures/01_sample.ipynb, version v08.
+    \includegraphics[width=\textwidth]{figs/sample_overview_v08.pdf}
+    \caption{Matched \Euclid\ NISP and JWST sample in COSMOS.
+    (a) Positions of training (cobalt circles), validation (orange triangles), and test (green squares) galaxies, assigned by $3\arcmin$ sky blocks.
+    (b) NISP \YE\ and JWST F115W views of a $24\farcs3$ field around the galaxy marked in (a), on the same surface-brightness stretch. Scale bars are $5\arcsec$.}
+    \label{fig:sample_overview}
+\end{figure*}
 
 \section{\label{sc:observations}Observations}
 
@@ -197,32 +208,18 @@ Figure~\ref{fig:sample_overview} shows the spatial distribution and an example p
 
 \begin{figure*}[t]
     \centering
-    % Frozen export from paper_figures/01_sample.ipynb, version v08.
-    \includegraphics[width=\textwidth]{figs/sample_overview_v08.pdf}
-    \caption{Matched \Euclid\ NISP and JWST sample in COSMOS.
-    (a) Positions of training (cobalt circles), validation (orange triangles), and test (green squares) galaxies, assigned by $3\arcmin$ sky blocks.
-    (b) NISP \YE\ and JWST F115W views of a $24\farcs3$ field around the galaxy marked in (a), on the same surface-brightness stretch. Scale bars are $5\arcsec$.}
-    \label{fig:sample_overview}
-\end{figure*}
-
-\begin{figure*}[t]
-    \centering
     \includegraphics[width=\textwidth]{figs/sample_properties_v06.pdf}
     \caption{ACS F814W magnitude (a) and photometric redshift (b) of the training (solid cobalt), validation (dash-dotted orange), and test (dashed green) samples.
     Grey shading shows the full COSMOS2020 catalogue with F814W $<25$ and no other cuts. Histograms are normalized by the total number of valid measurements in each sample.}
     \label{fig:sample_properties}
 \end{figure*}
 
-\section{\label{sc:methods}Methods}
+\section{\label{sc:methods}Super-resolution models}
 
 We compare a conditional diffusion model and two variants of a residual convolutional network for reconstructing JWST F115W images from NISP \YE-band observations.
 The diffusion model generates an image through repeated updates starting from random noise; the residual networks predict an image in a single pass.
 All models learn from the paired training images, so their outputs depend on both the NISP measurements and the galaxy population in the training sample.
-
-Throughout, the reference is the \emph{observed} F115W image.
-It retains the JWST PSF, instrumental noise, resampling, and the \YE--F115W band difference, and we apply no PSF deconvolution or band correction.
-Agreement with this reference therefore measures fidelity to the observed JWST image, not intrinsic galaxy shape or calibrated gravitational shear.
-We state this once here; the shape statistics in Sect.~\ref{sc:results} should all be read in this sense.
+This section describes the data preparation, the two architectures, and their training; Sect.~\ref{sc:measurement} describes how the reconstructions are evaluated.
 
 \begin{figure*}
     \centering
@@ -340,8 +337,8 @@ The selected checkpoints are epoch 35 for diffusion and epoch 49 for both residu
 
 To assess variation with the initial noise, we generate three independently seeded diffusion images per validation galaxy and also evaluate their mean in linear surface brightness as a separate reconstruction.
 To assess variation between training runs, we repeat the full ResNet training with two additional seeds, keeping everything else fixed; the original checkpoint remains the main model regardless of outcome.
-We also tested ten-epoch continuations of ResNet with a reweighted loss and with PSF- and noise-aware inputs.
-These produced no clear improvement and are described in Appendix~\ref{ap:continuations}.
+We also tested four ten-epoch continuations of the selected ResNet: a control with the original loss, a loss giving equal weight to source and outside-source errors, and two variants that add the NISP RMS map, validity mask, and stack PSF as extra inputs through a zero-initialized adapter, one of them also receiving a regularized inverse-filtered image.
+Their outcome is summarized in Sect.~\ref{sc:resnet_selection}.
 
 \begin{table*}[t]
     \caption{Architecture, training, and generation settings.}
@@ -374,13 +371,17 @@ These produced no clear improvement and are described in Appendix~\ref{ap:contin
     \tablefoot{All losses average valid pixels per galaxy before averaging galaxies. $I$ is the background-subtracted intensity divided by the training-set scale.}
 \end{table*}
 
-\subsection{Image and shape comparisons}
-\label{sc:measurement}
+\section{\label{sc:measurement}Image and shape measurements}
 
 We compare each reconstruction with the JWST reference, the native NISP image, and bilinear and bicubic enlargements of NISP on the target grid.
 Interpolation uses background-subtracted linear intensities.
 
-\subsubsection{Regional errors and spatial structure}
+Throughout, the reference is the \emph{observed} F115W image.
+It retains the JWST PSF, instrumental noise, resampling, and the \YE--F115W band difference, and we apply no PSF deconvolution or band correction.
+Agreement with this reference therefore measures fidelity to the observed JWST image, not intrinsic galaxy shape or calibrated gravitational shear.
+We state this once here; the shape statistics in Sect.~\ref{sc:results} should all be read in this sense.
+
+\subsection{Regional errors and spatial structure}
 \label{sc:regional_structure}
 
 We measure reconstruction errors in the central $105\times105$ target pixels (approximately $6\farcs3$) of all 2118 validation objects, separately within and outside source regions.
@@ -396,7 +397,7 @@ within each region, after mean removal and tapering with a common window.
 We report the geometric mean of per-object power ratios and the arithmetic mean of per-object correlations over the 1363 completely valid cutouts.
 The reference spectra include noise, and no noise subtraction, PSF correction, or window deconvolution is applied, so power agreement measures the amount of fine-scale variation rather than its correctness; the correlation statistic supplies that second test.
 
-\subsubsection{Fixed weighted moments}
+\subsection{Fixed weighted moments}
 
 Our primary shape diagnostic uses a circular Gaussian weight of width $\sigma=10$ target pixels, truncated at radius 25 target pixels (approximately $0\farcs6$ and $1\farcs5$), fixed at the cutout centre.
 For intensity $I_p$ and weight $w_p$ at position $\boldsymbol{r}_p$,
@@ -416,14 +417,14 @@ Native NISP positions are expressed in target-pixel units so that the weight has
 A measurement succeeds when the aperture is fully covered, the weighted flux is positive, and the second-moment matrix is positive definite.
 Negative pixels remain in the sums.
 
-\subsubsection{Adaptive moments}
+\subsection{Adaptive moments}
 
 As an independent estimator we use \texttt{GalSim} \texttt{FindAdaptiveMom} \citep{galsim}, which iteratively fits an elliptical Gaussian weight, centroid, and size, without PSF correction.
 The crop is 105 target pixels (21 native pixels) and the initial size is ten target pixels.
 Fits with nonpositive size or amplitude, nonfinite outputs, or a centroid displacement exceeding ten target pixels are rejected.
 Because the two estimators weight the light differently, each method is compared with a JWST reference measured by the same estimator.
 
-\subsubsection{Paired errors and uncertainties}
+\subsection{Paired errors and uncertainties}
 \label{sc:paired}
 
 Within each comparison, all methods are evaluated on the same galaxies, namely those with valid measurements in the reference and in every compared image.
@@ -443,13 +444,14 @@ For the dependence on input signal-to-noise (S/N), we define a proxy as the Gaus
 The proxy neglects correlated noise.
 Bins are $(-\infty,5)$, $[5,10)$, $[10,20)$, $[20,50)$, and $[50,\infty)$.
 
-\subsubsection{Robustness to measurement choices}
+\subsection{Robustness to measurement choices}
 \label{sc:robustness_method}
 
-We test the sensitivity of the ResNet shape results to 21 measurement scenarios defined before inspecting results: changes to the weight width, aperture radius, and centre; background offsets of $\pm0.1$ outer-region RMS applied to each image; alternative adaptive-moment settings; and added input noise.
-The scenarios are listed in Appendix~\ref{ap:robustness}.
+We test the sensitivity of the ResNet shape results to 21 measurement scenarios defined before inspecting results.
+Starting from the nominal fixed moments, these vary the Gaussian width to 8 or 12 target pixels, the aperture radius to 20 or 30 pixels, and the centre by $\pm2$ pixels along either axis; shift the NISP, reconstruction, or JWST intensities by $\pm0.1$ outer-region RMS; use a 155-pixel adaptive-moment crop or an initial size of 15 pixels; and add Gaussian noise of 0.25 times the NISP RMS to the input in three fixed-seed trials before reconstructing.
+Each scenario compares ResNet with native NISP and the interpolations on its own common sample and on the galaxies measurable in all scenarios, with 1000 spatial-block resamples.
 
-\subsubsection{Controlled shear-response experiment}
+\subsection{Controlled shear-response experiment}
 \label{sc:shear_response_method}
 
 We separately test sensitivity to a known applied shear using synthetic exponential galaxies rendered with \texttt{GalSim} and processed by the unchanged ResNet.
@@ -531,7 +533,8 @@ Neither family recovers the full observed fine-scale power.
 \label{sc:resnet_selection}
 
 Three independent 50-epoch ResNet training runs give source RMSE values of 0.0601--0.0602\,MJy\,sr$^{-1}$ and outside-source values of 0.0139--0.0140, a between-seed scatter of 0.09\%.
-The continuation experiments of Appendix~\ref{ap:continuations} reduce source RMSE by at most 2\%, with shape improvements that are either absent or marginal.
+The continuations of Sect.~\ref{sc:training} give small gains: the original-loss control reduces source RMSE by 1.2\% relative to the parent, the reweighted loss by 2.2\% at the cost of a 2.4\% increase outside sources, and the PSF- and noise-aware variants by a further 0.1--0.2\% relative to the control, with intervals including zero.
+The PSF and noise variant reduces fixed-moment shape RMSE by 1.0\% with an interval excluding zero, but none of the continuations clearly improves adaptive shapes.
 We therefore retain the original ResNet as the main model.
 ResNet-D5 has slightly lower source RMSE and comparable shape performance, and we keep it as a comparator.
 
@@ -555,9 +558,9 @@ Slope intervals use 500 resamples.
 A single diffusion realization also steepens the slope, to 0.83 and 0.71, but widens the scatter, so its RMSE exceeds native NISP by 13.8\% and 22.4\%.
 The residual-network gain comes from the steeper relation and from fewer large errors rather than from a narrower core.
 
-Across the 21 measurement scenarios of Appendix~\ref{ap:robustness}, ResNet retains lower shape RMSE than native NISP in every case.
+Across the 21 measurement scenarios of Sect.~\ref{sc:robustness_method}, ResNet retains lower shape RMSE than native NISP in every case.
 On the 1098 galaxies measurable in all scenarios, the reduction ranges from 8.2\% to 25.0\%.
-Background offsets have the largest effect: subtracting 0.1 outer-region RMS from the reconstruction lowers both its success count and its RMSE reduction, from 19.0\% to 8.2\%.
+Background offsets have the largest effect: subtracting 0.1 outer-region RMS from the reconstruction lowers its successful measurements from 2045 to 1759 of 2118 and its RMSE reduction from 19.0\% to 8.2\%.
 The direction of improvement is stable; its size depends on the estimator and background treatment.
 
 \subsection{Shape recovery versus input signal-to-noise}
@@ -601,17 +604,17 @@ Noiseless-input ResNet responses are 0.81, 0.92, and 0.95 at the three radii.
 The two displayed radii were chosen in an earlier pilot for their larger gains and are not an unbiased size selection.
 The experiment uses exponential profiles at fixed pixel phase, independent pixel noise, and no blending, and it conditions on successful measurements.
 
-\section{\label{sc:discussion}Discussion}
+\section{\label{sc:discussion}Discussion and summary}
 
 The residual networks achieve lower image errors and stronger spatial correlation with the observed JWST reference, while diffusion retains more small-scale power (Fig.~\ref{fig:pixel_comp}).
 Apparent sharpness is therefore an incomplete measure of reconstruction quality: a prediction can contain fine-scale variation without placing it where it appears in the reference.
 The residual reconstructions are more accurate under every tested metric, although their reduced power shows that some observed detail is smoothed away.
-Repeated training runs and the continuation experiments support the original ResNet as a reproducible and adequate choice; the small fixed-moment shape gain from PSF and noise conditioning (Appendix~\ref{ap:continuations}) merits further study with more varied PSFs.
+Repeated training runs and the continuation experiments support the original ResNet as a reproducible and adequate choice; the small fixed-moment shape gain from PSF and noise conditioning merits further study with more varied PSFs.
 
 The shape comparisons and controlled simulations show two useful consequences of reconstruction: observed ellipticities agree more closely with JWST, and compact simulated galaxies retain more sensitivity to an applied shear.
 Both gains are conditional.
 Low-S/N shape comparisons include only the subset of galaxies measurable in every image, and the largest simulated galaxies at low S/N show no response improvement.
-As stated in Sect.~\ref{sc:methods}, these are comparisons between observed images in different bands, and the cross-band slopes are not multiplicative shear calibration factors.
+As stated in Sect.~\ref{sc:measurement}, these are comparisons between observed images in different bands, and the cross-band slopes are not multiplicative shear calibration factors.
 Reaching the \Euclid\ requirement on multiplicative bias \citep{Cropper2013} would require a validated treatment of measurement and selection response across realistic morphologies, sizes, noise, blends, and spatially varying PSFs.
 
 The scope of the sample also limits the conclusions.
@@ -624,10 +627,7 @@ The improvements also motivate applications beyond cosmic shear, including morph
 Residual networks have been used to identify strong-lens candidates in the DESI Legacy Imaging Surveys \citep{Huang_et_al_2021}, and learned reconstruction has been explored for deblending and sharpening \citep{superres_1, Reiman_Gohre_2019, Arcelin2021, Hemmati2022, superres_2}.
 Each such task would need its own labelled sample and performance measure.
 
-\section{Conclusions}
-\label{sc:conclusions}
-
-Learned reconstruction improves the fidelity of NISP imaging to the observed JWST F115W reference.
+In summary, learned reconstruction improves the fidelity of NISP imaging to the observed JWST F115W reference.
 Residual networks give lower image errors and stronger spatial correlation than the tested diffusion model, and the original ResNet reduces the observed ellipticity-component RMSE by approximately 19\% with fixed weighted moments and 11\% with adaptive moments.
 Independent training runs reproduce its image errors, and controlled simulations show increased shear response for compact galaxies under the NISP effective PSFs.
 These results support ResNet as a promising starting point for extracting more structural information from NISP imaging.
@@ -665,38 +665,6 @@ The trained model weights, the code for preparing the paired sample, training th
 % in Euclid.bib for all EC publications to ensure that these
 % references are up-to-date and in correct format.
 %
-
-\begin{appendix}
-
-\section{ResNet continuation experiments}
-\label{ap:continuations}
-
-We tested whether short additional training improves the original ResNet.
-All continuations start from the selected epoch-49 checkpoint with its optimizer state, run for ten epochs with identical batches and augmentations and a cosine learning-rate decay from $10^{-5}$ to $10^{-6}$, and select the checkpoint with the lowest validation source-region mean absolute error, with the unchanged parent as a candidate.
-
-Two continuations vary the loss.
-A control retains the original valid-pixel mean absolute error; the other gives equal weight to the source and outside-source errors defined in Sect.~\ref{sc:regional_structure}.
-The control reduces source RMSE by 1.21\% and outside-source RMSE by 0.09\% relative to the parent.
-The reweighted loss reduces source RMSE by 2.19\% but increases outside-source RMSE by 2.40\%, with no clear change in fixed or adaptive shape RMSE.
-
-Two further continuations add PSF and noise information.
-A small adapter after the first convolution receives the NISP RMS map, validity mask, and an $11\times11$ kernel representation of the associated stack PSF; its output is initialized to zero so that the initial prediction equals the parent.
-One variant also receives a regularized inverse-filtered image with transfer function $H^*(1+\lambda)/(|H|^2+\lambda)$, $\lambda=0.05$.
-Relative to the control, these reduce source RMSE by a further 0.12\% and 0.16\%, with 95\% paired intervals including zero.
-The PSF and noise variant reduces fixed-moment shape RMSE by 0.98\% with an interval excluding zero, on 1627 common galaxies; neither variant clearly improves adaptive shapes on 1700 common galaxies.
-The experiment is a warm start from one parent with four stack PSFs, so it does not characterize PSF-aware architectures in general.
-
-\section{Measurement robustness scenarios}
-\label{ap:robustness}
-
-Starting from the nominal fixed moments, the 21 scenarios vary the Gaussian width from 10 to 8 or 12 target pixels, the aperture radius from 25 to 20 or 30 pixels, and the centre by $\pm2$ pixels along either axis.
-Background tests shift the NISP, reconstruction, or JWST intensities by $\pm0.1$ times the outer-region RMS.
-Adaptive-moment checks use the nominal settings, a 155-pixel crop, or an initial size of 15 pixels.
-Three fixed-seed trials add Gaussian noise with standard deviation 0.25 times the NISP RMS to the input and recompute the reconstruction and interpolations.
-Each scenario compares ResNet with native NISP and the interpolations on its own common sample and on the 1098 galaxies measurable in all scenarios; intervals use 1000 spatial-block resamples.
-Subtracting 0.1 outer-region RMS from the reconstruction reduces its successful measurements from 2045 to 1759 of 2118.
-
-\end{appendix}
 
 \label{LastPage}
 \end{document}
