@@ -1,0 +1,128 @@
+{
+  "status": "Figure 7: unchanged measurements; light-to-dark magma count scale, singletons as dots, pooled-component label, no native reference fit",
+  "notebook": "07_model_shapes.ipynb",
+  "notebook_source_sha256": "f3946df8ac30e809aa9f0e6e2aef5ebb72824d3e2799c4ed1b66ff4d4d14294f",
+  "visual_style": {
+    "version": "matisse-inspired-v01",
+    "font_family": [
+      "Nimbus Sans",
+      "Arial",
+      "DejaVu Sans"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F",
+      "native": "#555555",
+      "nisp": "#555555",
+      "bilinear": "#9C6543",
+      "bicubic": "#52A7C1",
+      "legacy": "#2455A4",
+      "sr": "#2455A4",
+      "direct5": "#23836F",
+      "diffusion": "#B58A16",
+      "diffusion_mean3": "#77649B",
+      "jwst": "#D9822B",
+      "reference": "#D9822B"
+    },
+    "markers": {
+      "native": "o",
+      "nisp": "o",
+      "bilinear": "D",
+      "bicubic": "v",
+      "legacy": "s",
+      "sr": "s",
+      "direct5": "^",
+      "diffusion": "o",
+      "diffusion_mean3": "P",
+      "jwst": "D",
+      "reference": "D"
+    },
+    "palette_inspiration": "Custom Matisse-inspired palette; not sampled from a specific artwork"
+  },
+  "helper_sha256": "e8213407084bb9bea7966fbcc69c8825f2c2ae2190c3938ad66bd57d6b164667",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b",
+    "paper_figures/inputs/cached_shapes_v02.npz": "b522ecee1c1d0c704421e89781dfe9f36be2c7cabc392e80a2debc21840801ae"
+  },
+  "settings": {
+    "methods": [
+      "native",
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "estimators": [
+      "fixed",
+      "adaptive"
+    ],
+    "components": "e1 and e2 pooled per galaxy",
+    "fit": "Theil-Sen median slope of measured on JWST ellipticity, galaxies with |e_JWST|<0.5",
+    "fit_range": [
+      -0.5,
+      0.5
+    ],
+    "rmse": "combined e1/e2 component RMSE about the 1:1 line (full sample)",
+    "common_objects": {
+      "fixed": 1446,
+      "adaptive": 1498
+    },
+    "fits": {
+      "fixed/native": {
+        "slope": 0.6780507617765182,
+        "intercept": 0.007688998363981012
+      },
+      "fixed/diffusion": {
+        "slope": 0.8280610836942711,
+        "intercept": 0.00816485659323023
+      },
+      "fixed/legacy": {
+        "slope": 0.7995531653412387,
+        "intercept": 0.010122138638082576
+      },
+      "fixed/direct5": {
+        "slope": 0.8016383021599744,
+        "intercept": 0.011399426092465071
+      },
+      "adaptive/native": {
+        "slope": 0.6067925633610894,
+        "intercept": 0.0023521950407504894
+      },
+      "adaptive/diffusion": {
+        "slope": 0.7055518871916484,
+        "intercept": 0.013010956915132411
+      },
+      "adaptive/legacy": {
+        "slope": 0.730942746314825,
+        "intercept": 0.005295610947527968
+      },
+      "adaptive/direct5": {
+        "slope": 0.7338504341048984,
+        "intercept": 0.004301936094803281
+      }
+    },
+    "axis_limits": [
+      -1.0,
+      1.0
+    ],
+    "population": "All 2118 frozen validation objects attempted. Per-estimator intersection of successful JWST, native NISP, and all six cached methods; same objects in every model panel. Also report the intersection across both estimators and full-denominator failure counts.",
+    "hexbin": {
+      "gridsize": 34,
+      "scale": "log10 count",
+      "mincnt": 2,
+      "singletons": "small pale dots at hexagon centres",
+      "native_reference_fit": false,
+      "shared_vmax": 103.0,
+      "colormap": "magma_r truncated to [0.12,1]"
+    }
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_shape_hexbin_v07.pdf": "8f7788d885f953b106be51830dd91ef5d2bda2c514ef24556c06bbc3024d3f78",
+    "fig07_shape_hexbin_v07.svg": "901bd1224f0da628db6a68cd3d13b7f2516e8d65db9b3be7d6ad38fcdbd94a73",
+    "fig07_shape_hexbin_v07.png": "0a560fb47fbc55c6356018dbd0222084824fcabc76308010d801602c477fb11d"
+  }
+}

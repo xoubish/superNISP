@@ -71,6 +71,18 @@ is now proposed as Figure 9 above. This observed-shape-only
 presentation omits the native PSF-correction curve; its results remain in v01
 and the [pilot report](../paper/shear_response_pilot.md).
 
+## Installation history: Figure 7 — 2026-10-18
+
+[07_model_shapes.ipynb](07_model_shapes.ipynb) v07 is installed as
+`paper/figs/shape_hexbin_v07.pdf`. Measurements, samples, fits and RMSE values are
+unchanged from v06. The count scale is now a light-to-dark magma ramp so the dense ridge
+dominates, hexagons with a single measurement are drawn as small pale dots, and the
+corner label reads "e1 and e2 pooled" so the rows are not mistaken for the two
+components (the rows are the fixed and adaptive estimators), and the dotted
+native-NISP reference fit is dropped from the model panels. Side-by-side proof:
+[v07 versus v06](exports/fig07_shape_hexbin_v07_vs_v06.png). The caption in
+`paper/survey_enhancements.tex` was updated to match.
+
 ## Installation history: Figure 6 — 2026-10-17
 
 The approved three-panel v06 PDF is now `paper/figs/model_comparison_v06.pdf`,

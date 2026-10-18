@@ -117,8 +117,8 @@
     "pandas": "2.3.1"
   },
   "exports": {
-    "fig07_shape_contours_v06.pdf": "b03d36996d5d359a33db801b262ff8b6e0429e5cfde87dc0fe30e4365fe2f3c0",
-    "fig07_shape_contours_v06.svg": "e24bc61b7b9595fc805afee4b5506c12b3591cf528ca9b969d64f3bacd884978",
+    "fig07_shape_contours_v06.pdf": "0fe619f878baf39bf494fa55df24a2db8bd58807d2e83a5e047e22874545c8b5",
+    "fig07_shape_contours_v06.svg": "a2e5d13c7fe540063084b9917c3466cd6b9a031600d9fed6d33c0d2615619a66",
     "fig07_shape_contours_v06.png": "5040ef7d8616d956fb45909c188d8982f9f2532f254ad886129ffdeb8865c74a"
   }
 }

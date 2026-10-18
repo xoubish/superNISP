@@ -1,0 +1,62 @@
+{
+  "status": "Local matched observed-shape comparison and full-denominator measurement success",
+  "notebook": "07_model_shapes.ipynb",
+  "notebook_source_sha256": "f3946df8ac30e809aa9f0e6e2aef5ebb72824d3e2799c4ed1b66ff4d4d14294f",
+  "visual_style": {
+    "version": "matisse-inspired-v01",
+    "font_family": [
+      "Nimbus Sans",
+      "Arial",
+      "DejaVu Sans"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F",
+      "native": "#555555",
+      "nisp": "#555555",
+      "bilinear": "#9C6543",
+      "bicubic": "#52A7C1",
+      "legacy": "#2455A4",
+      "sr": "#2455A4",
+      "direct5": "#23836F",
+      "diffusion": "#B58A16",
+      "diffusion_mean3": "#77649B",
+      "jwst": "#D9822B",
+      "reference": "#D9822B"
+    },
+    "markers": {
+      "native": "o",
+      "nisp": "o",
+      "bilinear": "D",
+      "bicubic": "v",
+      "legacy": "s",
+      "sr": "s",
+      "direct5": "^",
+      "diffusion": "o",
+      "diffusion_mean3": "P",
+      "jwst": "D",
+      "reference": "D"
+    },
+    "palette_inspiration": "Custom Matisse-inspired palette; not sampled from a specific artwork"
+  },
+  "helper_sha256": "e8213407084bb9bea7966fbcc69c8825f2c2ae2190c3938ad66bd57d6b164667",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b"
+  },
+  "settings": {
+    "population": "All 2118 frozen validation objects attempted. Per-estimator intersection of successful JWST, native NISP, and all six cached methods; same objects in every model panel. Also report the intersection across both estimators and full-denominator failure counts.",
+    "fixed": "Existing signed Gaussian-weighted moments: sigma 10 target pixels, central aperture radius 25; intensity-weighted centroid with fixed window. e1=(Qxx-Qyy)/(Qxx+Qyy), e2=2Qxy/(Qxx+Qyy). Require positive flux and positive-definite quadrupoles and full valid aperture.",
+    "adaptive": "Existing GalSim HSM adaptive moments on 105x105 target pixels; guess sigma 10; max centroid displacement 10 target pixels; bad pixels masked, full radius-25 validity required; retain convergence/failure details. Observed distortion e1/e2; no PSF correction.",
+    "summary": "Component RMSE sqrt(mean_over_objects((delta_e1**2+delta_e2**2)/2)); per-component bias, scatter, fraction with vector error>0.2, diagnostic OLS slopes; HSM log-size ratios. Round-control e1=e2=0 is diagnostic only."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_model_shapes_v07.pdf": "e08118172675fb0c63660e37f4f1953275bfcc0bb3190627b885aad9b0e4222c",
+    "fig07_model_shapes_v07.svg": "806d22cd4896228d06c5958f051922e6da611d5fcb7080d6dfeab67b804d5b4a",
+    "fig07_model_shapes_v07.png": "18270aaa23e5f2cc6d1da2838f7a2a223dffea6f13aa7e132a038ad2d34f0124"
+  }
+}

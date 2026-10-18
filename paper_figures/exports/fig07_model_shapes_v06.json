@@ -55,8 +55,8 @@
     "pandas": "2.3.1"
   },
   "exports": {
-    "fig07_model_shapes_v06.pdf": "b43c96f49f45fad727eca2a43ec441bbb541ec6ff7d03a74b9c8d9f4300366d2",
-    "fig07_model_shapes_v06.svg": "0828b5f8261d17d0ed04de1b498bcfd05ec1aa05268d9e3fd68e256c5bc51874",
+    "fig07_model_shapes_v06.pdf": "57387f1711110fbee1551baeba522e3a43226f1e833325f4f8bc241a2bf40274",
+    "fig07_model_shapes_v06.svg": "21a90111202924f22da69fc9a65d417d03c514193d6ca440a5fc21793b259768",
     "fig07_model_shapes_v06.png": "18270aaa23e5f2cc6d1da2838f7a2a223dffea6f13aa7e132a038ad2d34f0124"
   }
 }

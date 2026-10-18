@@ -119,8 +119,8 @@
     "pandas": "2.3.1"
   },
   "exports": {
-    "fig07_shape_hexbin_v06.pdf": "023a2b6f0b009b60ddbdec285db8386c75a9c2d768338a62cd848bc2d9910ff7",
-    "fig07_shape_hexbin_v06.svg": "ee912bd3a9f6ccacad182b4db2a813c6f868ae7f2c067528030b9ee3a43b946e",
+    "fig07_shape_hexbin_v06.pdf": "031cceb101a0f9456c5398e66fb467f255ecd82ea3b03d4eb074b8445136a5a8",
+    "fig07_shape_hexbin_v06.svg": "7d20e24ef11716d2de9fa67b77d7af5c44968cd9f3ce62fe55d4907bf2b1b1fa",
     "fig07_shape_hexbin_v06.png": "662f47b3a2b36fc11882ed8a7ce98685d3d5bfa3293283306210a77418ede698"
   }
 }
