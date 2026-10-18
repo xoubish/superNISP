@@ -1,0 +1,64 @@
+{
+  "status": "Figure 7: model and native NISP ellipticity residual probability contours",
+  "notebook": "07_model_shapes.ipynb",
+  "notebook_source_sha256": "aa81864eaefcb1d8b60d7266e24310d022115d83e9876f4a01c2b2f57946fe7b",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b",
+    "paper_figures/inputs/cached_shapes_v02.npz": "b522ecee1c1d0c704421e89781dfe9f36be2c7cabc392e80a2debc21840801ae"
+  },
+  "settings": {
+    "estimator": "fixed",
+    "objects": 1446,
+    "contours": {
+      "coordinates": "x=observed JWST e; y=method e minus JWST e",
+      "methods": [
+        "native",
+        "diffusion",
+        "legacy",
+        "direct5"
+      ],
+      "probabilities": [
+        0.68,
+        0.95
+      ],
+      "smoothing": "Gaussian KDE, Scott bandwidth, for each method/component; same sample size",
+      "evaluation_grid": "401x401 over [-2,2] on both axes",
+      "display_limits": [
+        -1,
+        1
+      ],
+      "population": "Same fixed-moment common-success sample from frozen cached_shapes_v02",
+      "model_style": "Blue filled 68% and 95% regions; solid 68%, dashed 95%",
+      "native_style": "Orange outlines; identical native contours across each row",
+      "outside_display_counts": {
+        "native": [
+          3,
+          3
+        ],
+        "diffusion": [
+          6,
+          5
+        ],
+        "legacy": [
+          1,
+          0
+        ],
+        "direct5": [
+          1,
+          0
+        ]
+      }
+    },
+    "gain": "100*(1-RMSE_method/RMSE_native), on identical objects; positive means improvement, negative means degradation. Paired spatial-block 95% intervals with 2000 draws, seed 20261017."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_model_shape_residuals_v03.pdf": "dfa6915875c82de2d06fe0fbdedfd929a6085bb690734e2276e59e5496291791",
+    "fig07_model_shape_residuals_v03.svg": "0b5ccf01453466f28f5030a5f161f2e330cfdc637912a841914213875da35de8",
+    "fig07_model_shape_residuals_v03.png": "9fccdf926005fd1434f12af93cd66a82a40b3054e5df11324b89f84309fd85fc"
+  }
+}

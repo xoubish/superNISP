@@ -92,23 +92,25 @@ for shapes. Super-resolving NISP imaging could extend weak lensing into
 the near-infrared, raising the effective source density and the
 redshift reach of the lensing sample. Like any shape-measurement
 technique, however, a learned method's biases must be quantified before
-its outputs can inform cosmology. Here we measure the galaxy shape
-biases introduced by deep-learning super-resolution of NISP imaging. We
-train two architectures on 18\,190 NISP \YE-band cutouts of the COSMOS
-field paired with JWST/NIRCam F115W imaging at five times finer
-sampling: a conditional diffusion model, which learns a generative
-prior, and a residual network, which learns a direct mapping. On 4547
-test galaxies, the residual network outperforms the diffusion model on
-every structural metric and recovers ellipticity and shear with
-regression slopes of 0.64--0.74 against the JWST reference, while the
-diffusion model suppresses shape information below even a bilinear
-interpolation baseline. Neither approaches lensing requirements: the
-residual network still exhibits multiplicative shrinkage of
-$\sim$25--35\,\% in recovered ellipticity, far from the $\sim$$10^{-3}$
-bias control that \Euclid\ cosmology requires. These measurements
-quantify the current gap, identify detail-preserving architectures as
-the more promising path, and show the achieved fidelity is already
-useful for morphology, deblending, and strong-lens identification.
+its outputs can inform cosmology. Here we evaluate image fidelity and
+observed-shape agreement for deep-learning super-resolution of NISP imaging. We
+train a conditional diffusion model and two residual-network variants on
+17\,816 NISP \YE-band cutouts of the COSMOS field paired with JWST/NIRCam
+F115W imaging at five times finer sampling.
+Diffusion learns a generative prior, while the residual networks learn
+direct mappings.
+On 2118 validation galaxies, the residual models have lower source-region
+reconstruction errors and stronger signed Fourier correlation with the
+JWST reference, while diffusion retains more observed small-scale power.
+Three independent ResNet training seeds give closely consistent source
+RMSE, spanning 0.06007--0.06017 MJy\,sr$^{-1}$.
+Source-weighted continuation reduces source RMSE by 2.19\% but increases
+outside-source RMSE by 2.40\%, without a clear observed-shape improvement;
+we therefore retain the original ResNet for the main comparison.
+These validation diagnostics include noise, instrumental responses, and
+the band difference, and do not establish calibrated shear recovery.
+The 2876-object test sample remains reserved for evaluation of the fixed
+model and measurement choices.
     }
 %
 % Provide up to five key words:
@@ -424,8 +426,12 @@ Variation among these draws describes sampling variability, rather than a calibr
 
 Shape measurements support validation-stage analysis and method development but do not select the training checkpoints.
 The 2876 test galaxies remain reserved for a final evaluation after the model and measurement choices are fixed.
-We use one training seed per architecture, so the present comparison does not measure variation between independent training runs.
-The runs use PyTorch 2.6.0 on NVIDIA L40S GPUs, with training seed 20261016 and recorded data, source, and checkpoint hashes.
+The main architecture comparison uses training seed 20261016.
+For ResNet, we additionally repeat the complete 50-epoch training with independent seeds 20261018 and 20261019, keeping the data, architecture, normalization, optimization schedule, and checkpoint criterion fixed.
+These repetitions assess variation between training runs; they do not replace the original checkpoint with the most favourable seed.
+Diffusion and ResNet-D5 retain one training seed each.
+Appendix~\ref{app:resnet_checks} reports the ResNet repetitions and two matched continuation experiments used to assess the model choice.
+The runs use PyTorch 2.6.0 on NVIDIA L40S GPUs, with recorded data, source, and checkpoint hashes.
 Losses, validation metrics, and fixed galaxy examples are monitored with Weights \& Biases \citep{wandb}.
 
 \begin{table*}[t]
@@ -467,11 +473,37 @@ Losses, validation metrics, and fixed galaxy examples are monitored with Weights
 \label{sc:measurement}
 
 We evaluate image fidelity using the mean absolute error over valid JWST pixels, first within each cutout and then across galaxies, in MJy\,sr$^{-1}$.
-For residual-model diagnostics we also record the root mean squared error, taking the square root after averaging the per-galaxy mean squared errors.
+The training monitor also records a root mean squared error (RMSE), taking the square root after averaging the per-galaxy mean squared errors.
+For the regional image comparison in Fig.~\ref{fig:pixel_comp}, we instead compute RMSE within each galaxy and region before averaging galaxies with equal weight; these two aggregation conventions are distinct.
 Training losses from different intensity representations are not compared as physical image errors.
 For shapes, we compare reconstructed images with the JWST reference, native NISP images, and bilinear and bicubic enlargements of NISP on the common target grid.
 Interpolation uses the background-subtracted linear intensities and preserves the pixel-edge alignment of the paired data.
 A zero-ellipticity prediction provides an additional control for an estimator that returns round shapes for every galaxy.
+
+\subsubsection{Regional errors and spatial structure}
+\label{sc:regional_structure}
+
+We measure regional reconstruction errors on the common valid pixels in the central $105\times105$ target-pixel field, approximately $6.3$ arcsec across, for all 2118 validation objects.
+Source masks are defined from the JWST reference and shared by all methods, including all detected neighbours.
+We smooth the full reference cutout with a Gaussian of width one target pixel, estimate a clipped sky median and standard deviation in the annulus at radii 70--95 target pixels, and detect connected regions of at least ten pixels above the median plus twice the standard deviation.
+We fill holes and dilate the detections by three target pixels before intersecting with common validity and taking the central crop.
+The outside-source region is the complement within common validity.
+Smoothing defines the masks only; errors use the original signed, background-subtracted intensities.
+
+To distinguish the amount of spatial variation from its agreement with the reference, we measure both annular Fourier power and the signed correlation
+\begin{equation}
+ r(k)=\frac{\mathrm{Re}\langle F_{\rm model} F_{\rm JWST}^{*}\rangle_k}
+ {\sqrt{\langle |F_{\rm model}|^2\rangle_k\langle |F_{\rm JWST}|^2\rangle_k}}.
+\end{equation}
+Each image has its own window-weighted mean removed and is multiplied by the same regional window as its reference: a three-pixel inward boundary taper times an outer Tukey window with $\alpha=0.5$.
+The window is exactly zero outside the region, and Fourier amplitudes are normalized by the square root of its summed squared weights.
+We report the geometric mean of per-object model/reference power ratios and the arithmetic mean of per-object signed correlations.
+Source spectra use 1363 completely valid cutouts; outside-source spectra use the 1356 of these with summed squared window weights greater than 16 and effective window area at least 64 target pixels.
+The effective area is $(\sum_p w_p)^2/\sum_p w_p^2$.
+Intervals use 2000 paired spatial-block bootstrap resamples over 18 blocks, with equal object weights, and condition on the selected models and validation sample.
+The observed spectra include noise and instrumental responses; no noise subtraction, PSF correction, or window deconvolution is applied.
+Reference-defined masks and their irregular boundaries can mix Fourier modes, and outside-source pixels can contain faint undetected light.
+Power agreement alone therefore does not establish recovery of individual morphological features.
 
 \subsubsection{Fixed weighted moments}
 
@@ -592,68 +624,79 @@ Figure~\ref{fig:galaxy_examples} compares the three models on the same observed 
 The shared display scale within each row allows the reconstructions to be compared directly with the input and reference images.
 These selected examples illustrate differences in source separation and recovered morphology; they do not by themselves establish a population-level ranking or calibrated shape recovery.
 
-\subsection{Diffusion model}
+\subsection{Reconstruction accuracy and spatial structure}
+\label{sc:reconstruction_results}
 
-% The timestep figure and quantitative discussion below retain historical
-% results pending a separate revision against the corrected validation runs.
-\begin{figure*}
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{figs/diffusion_time.png}
-    \vspace{5px}
-    \caption{Evolution of the diffusion super-resolution output as a function of the number of reverse denoising steps. From left to right: an upsampled Euclid input, diffusion reconstructions at 10, 20, 50, and 200 sampling steps, and the high-resolution JWST target. Early steps produce only noise, intermediate steps form a smooth, low-frequency core, and longer trajectories converge to a compact and nearly isotropic morphology. At no timestep do the anisotropic or extended features present in the target image appear, indicating that the compact UNet backbone is not capable of recovering the full structural complexity of the galaxies.}
-    \label{fig:diffusion_time}
-\end{figure*}
-
-The diffusion model reconstructed the overall light distribution of each source with reasonable accuracy according to pixel-wise error metrics, achieving performance comparable to a simple bilinear baseline only on MAE and modestly improving on RMSE.
-However, it did not recover high-frequency or anisotropic features with as much success.
-The current diffusion examples in Figure~\ref{fig:galaxy_examples} reproduce extended and anisotropic light distributions, including neighbouring sources, but retain differences in fine structure and background texture relative to JWST.
-Their appearance alone does not establish the fidelity of the recovered features.
-Adjustments to the perceptual loss weight, the timestep sampling distribution, and the training duration did not alter this behavior.
-Diagnostics at intermediate time steps also show that the missing structure did not emerge during the reverse process (Figure \ref{fig:diffusion_time}).
-
-Because the sweep varied training hyperparameters but not the backbone itself, these results cannot isolate the cause definitively; they are, however, most consistent with a limitation in the expressive capacity of the compact UNet rather than in the optimization or the choice of losses.
-Diffusion models rely on the representation power of the denoising network, and prior studies have shown that high-fidelity generation requires substantially wider or deeper backbones or attention-based mechanisms \citep{Saharia2022, Rombach2022}; compact backbones are known to produce generative priors that favor smooth, low-complexity structure.
-An alternative, not mutually exclusive, contribution is the strength of the conditioning: a weakly conditioned generative model regresses toward the smooth mean of the target distribution, and the JWST reference images themselves contain noise that a pixel-averaged objective rewards smoothing over.
-Testing wider backbones and stronger conditioning is left to future work; at the scale tested here, the practical conclusion stands that the generative approach does not recover the structure the direct mapping does.
-
-\subsection{ResNet model}
-
-The two residual variants in Figure~\ref{fig:galaxy_examples} recover compact sources and separate close neighbours, with smoother backgrounds than the diffusion realization.
-Both simplify some of the internal structure visible in the JWST reference, including the face-on disk in row~(c).
-It consistently performs better than a simple bilinear interpolation on both pixel-wise and structural metrics, as shown in Figure \ref{fig:pixel_comp}.
-This indicates that the RRDB structure allows the model to learn true features from the input images, rather than falling back on upsampling methods.
-Due to the high degree of accuracy, beyond fine-tuning the training hyperparameters with \texttt{W\&B} \citep{wandb}, no major structural changes were needed after the initial model was built.
-The high SSIM score, along with a visual image comparison, shows that the ResNet is able to recover sharp spatial contrast differences and a larger fraction of the target's visible structure.
-
-\subsection{Reconstruction accuracy comparison}
-
-\begin{figure*}
-    \centering
-    \includegraphics[width=\textwidth]{figs/pixel_metrics_histograms.png}
-    \caption{Summary of metrics for super-resolution images compared to JWST NIRCam. Both methods outperform a simple bilinear interpolation. The two networks perform similarly on the L1 (MAE) metric, but the ResNet outperforms the diffusion model on L2 (RMSE), PSNR (Peak Signal-to-Noise Ratio), and SSIM (Structural Similarity).}
+    \includegraphics[width=\textwidth]{figs/model_comparison_v06.pdf}
+    \caption{Reconstruction accuracy and spatial structure in reference-defined source and outside-source regions of the validation sample.
+    Left: mean per-object RMSE against JWST F115W in signed, background-subtracted surface brightness for all 2118 objects, using common valid pixels in the central $105\times105$ target-pixel field.
+    Filled circles indicate source pixels and open squares outside-source pixels; the same two-sigma JWST detection masks, including neighbours, are used for every method (Sect.~\ref{sc:regional_structure}).
+    Middle: geometric mean model/reference power ratio. Right: mean signed annular Fourier correlation.
+    Solid curves use sources in 1363 completely valid cutouts; dashed curves use outside-source pixels in the 1356 with sufficient window area.
+    Each model and reference use identical windows, combining a three-pixel boundary taper and an outer Tukey window, after removal of each image's own weighted mean.
+    Whiskers and shaded bands are 95\% intervals from 2000 paired spatial-block resamples over 18 blocks; they do not include training-seed variation.
+    Colours identify methods; diffusion uses one fixed realization or the linear mean of three realizations.
+    Checkpoints match Fig.~\ref{fig:galaxy_examples}: epoch 49 for ResNet and ResNet-D5, and epoch 35 for diffusion with 50 generation steps.
+    The originally selected ResNet is retained; independent-seed repetitions are shown in Appendix~\ref{app:resnet_checks}.
+    The dotted vertical line marks the NISP pixel Nyquist wavelength, approximately $0\farcs593$, rather than an effective image resolution.
+    Observed reference power includes noise; no noise subtraction, PSF correction, or window deconvolution is applied, and greater power agreement alone does not establish faithful recovery of individual features.}
     \label{fig:pixel_comp}
 \end{figure*}
 
-Figure~\ref{fig:galaxy_examples} provides a qualitative comparison on identical fields and intensity scales; quantitative model comparisons require measurements on a common validation population.
-Both super-resolution methods improve over a simple bilinear interpolation, indicating that the mapping from Euclid to JWST is learned rather than merely smoothed or upsampled.
+Figure~\ref{fig:pixel_comp} compares all methods on the same regional pixel support and separates reconstruction error from the amount and alignment of spatial variation.
+Mean source RMSE is $0.06017$ and $0.05915$ MJy\,sr$^{-1}$ for ResNet and ResNet-D5, respectively, compared with $0.08123$ for a single diffusion realization, $0.06962$ for the mean of three diffusion realizations, and $0.11068$ for bilinear interpolation.
+Outside-source RMSE is approximately $0.01396$ MJy\,sr$^{-1}$ for both residual models, compared with $0.01815$ for single diffusion and $0.01572$ for its mean image.
+These regional averages describe the observed reference, including its noise and the NISP--F115W band difference.
 
-For comparison we use four metrics: (a) the Mean Absolute Error -- the average absolute difference between pixels in the target images and the super-resolution image, (b) the Root Mean Squared Error -- the root average of the squared differences between pixels in the target and SR image, (c) the difference in Peak Signal-to-Noise Ratio (PSNR) between the galaxy in the SR and target images, and (d) the structural similarity (SSIM) between the SR and target images (the latter two are calculated with \texttt{scikit-image}; \citealt{skimage}).
-When evaluated with quantitative pixel-level error metrics, as in Figure \ref{fig:pixel_comp}, the two networks perform comparably on MAE ($\mu$=0.018 for ResNet, $\mu$=0.020 for diffusion), while the ResNet achieves a noticeably lower RMSE ($\mu$=0.110 vs. $\mu$=0.136).
-The similar MAE values indicate that, on a typical pixel, both models deviate from the JWST target by a comparable amount, but the larger RMSE of the diffusion model suggests that its reconstructions contain a heavier tail of larger pixel-wise errors.
+The spectral panels show a complementary trade-off.
+At wavelengths of 6--15 target pixels, the source power ratio is approximately 0.912 for single diffusion and 0.417 for ResNet, whereas the signed correlation is 0.604 and 0.737, respectively.
+Diffusion retains more observed small-scale power, while the residual prediction has stronger agreement with the reference under the phase-sensitive correlation statistic.
+Averaging diffusion realizations reduces power and increases correlation in this band.
+The residual models nevertheless suppress substantial observed fine-scale power, so neither lower image error nor higher correlation should be interpreted as complete recovery of the JWST morphology.
 
-The ResNet also shows stronger performance on metrics designed to capture galaxy properties and structure, PSNR ($\mu$=37.35 for ResNet, $\mu$=34.7 for diffusion), and SSIM ($\mu$=0.77 vs. $\mu$=0.73).
-This is consistent with visual examples: outputs from the diffusion model appear smoother and lose fine detail, while the ResNet model reproduces sharper features and spatial contrast differences more reliably.
-Taken together, these results indicate that the diffusion model, with the compact backbone used here, regresses toward a smoothed approximation of the target that is competitive on average pixel-wise error but fails to recover the structural detail captured by the residual network.
+\subsection{ResNet reproducibility and model choice}
+\label{sc:resnet_selection}
+
+Three independent 50-epoch ResNet trainings yield closely consistent validation errors: the selected checkpoints span $0.06007$--$0.06017$ MJy\,sr$^{-1}$ in source RMSE and $0.01393$--$0.01396$ MJy\,sr$^{-1}$ outside sources.
+The source RMSE has a between-seed sample standard deviation of $5.42\times10^{-5}$ MJy\,sr$^{-1}$, about 0.09\% of its mean.
+The source power and correlation curves are also similar across these seeds (Fig.~\ref{fig:resnet_seeds}).
+This is a reproducibility check within the same training and validation split; three seeds do not establish robustness across surveys or alternative training configurations.
+
+Two matched ten-epoch continuations of the original ResNet assess additional optimization and source weighting (Appendix~\ref{app:resnet_checks}).
+The selected continuation with the original loss reduces source RMSE by 1.21\%, with an outside-source reduction of 0.09\%.
+Giving source and outside-source errors equal weight reduces source RMSE by 2.19\% but increases outside-source RMSE by 2.40\%, without a clear improvement in the fixed or adaptive observed-shape diagnostics.
+The continuation results therefore provide no clear overall improvement that warrants replacing the original model.
+We retain the original two-stage ResNet checkpoint from epoch 49 as the main model, with ResNet-D5 remaining in the architecture comparison.
+This also preserves the common 50-epoch training budget for the primary architecture comparison.
+The model and regional measurement choices are fixed for subsequent held-out evaluation; the results reported here use validation data and do not constitute a test-set result.
 
 \subsection{Shape Preservation}
+\label{sc:shape_preservation}
 
-\begin{figure*}
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{figs/ellipticity_comparison.png}
-    \caption{Ellipticity and shear measured from JWST NIRCam (x-axis) compared to those calculated from super-resolved images (y-axis). Solid lines show orthogonal distance regression (ODR) fits. The ResNet model achieves slopes closest to identity on every component, while the Diffusion model produces the strongest shrinkage toward zero, falling below the bilinear baseline on all four shape parameters.}
+    \includegraphics[width=\textwidth]{figs/shape_hexbin_v05.pdf}
+    \caption{Observed ellipticity measured on native NISP, a single diffusion realization, ResNet, and ResNet-D5 (columns) against the same measurement on JWST F115W, using fixed weighted moments (top) and adaptive moments (bottom).
+    Hexagonal bins are shaded by the logarithm of the number of measurements; both components $e_1$ and $e_2$ enter for every galaxy in each estimator's common successful sample, 1446 galaxies for fixed moments and 1498 for adaptive moments, out of 2118 attempted validation fields.
+    The dashed line is the 1:1 relation.
+    The solid line is a Theil--Sen fit of measured against JWST ellipticity over galaxies with $|e_{\mathrm{JWST}}|<0.5$, drawn over that range; the dotted line in the model panels repeats the native-NISP fit.
+    Each panel lists this slope and the full-sample RMSE about the 1:1 line, combining both components as $\sqrt{\langle(\Delta e_1^2+\Delta e_2^2)/2\rangle}$.
+    Slope intervals and paired spatial-block intervals on the RMSE reduction are given in Sect.~\ref{sc:shape_preservation}.
+    Native NISP is measured on its own pixel grid with the same angular weight and aperture; each model is measured on the $5\times$ target grid.
+    Checkpoints match Fig.~\ref{fig:pixel_comp}.
+    These are observed cross-band shapes that include instrumental PSF and pixel-sampling differences; they are not PSF-corrected morphologies or calibrated shear estimates.}
     \label{fig:ellipticity_comp}
 \end{figure*}
 
+Figure~\ref{fig:ellipticity_comp} compares the ellipticity of each reconstruction with the observed JWST ellipticity of the same galaxy, with native NISP as the reference point.
+For fixed weighted moments, the core slope rises from 0.68 (95\% interval 0.66--0.70) for native NISP to 0.80 (0.77--0.83) for ResNet and ResNet-D5, and the RMSE about the 1:1 line falls from 0.201 to 0.162, a reduction of 19.3\% (16.6--21.9\%) from 2000 paired spatial-block resamples.
+For adaptive moments the corresponding slopes are 0.61 (0.58--0.64) and 0.73 (0.71--0.75), with RMSE falling from 0.242 to 0.217, a reduction of 10.6\% (7.3--13.2\%).
+A single diffusion realization also steepens the slope, to 0.83 and 0.71, but widens the distribution, so its RMSE exceeds native NISP by 13.8\% and 22.4\% for the two estimators.
+The native-NISP core is itself narrow; the residual-model gain comes from the steeper relation and from fewer large errors rather than from a narrower core.
+
+% TODO: the paragraphs below quote ODR slopes from the earlier galsim measurement (ellipticity_comparison.png, ellipticity_plane_residuals.png); revise against the Fig. 7 measurements above before submission.
 To determine how well these models would work for weak lensing studies, we compare the reconstruction of ellipticity \((e_1,e_2)\) and shear \((g_1,g_2)\) metrics, calculated with \texttt{galsim}'s \texttt{FindAdaptiveMom} function \citep{galsim} in Figure \ref{fig:ellipticity_comp}.
 We use an Orthogonal Distance Regression (ODR), minimizing the geometric distance of each point to the fit line, in order to get a better estimate of the shape of each distribution.
 Both super-resolution methods recover ellipticity and shear values on similar orders of magnitude to JWST, as shown by these population-level correlations.
@@ -686,12 +729,11 @@ The systematic offset in the Diffusion residuals is consistent with the uniform 
 
 \section{\label{sc:discussion}Discussion}
 
-The diffusion model under-performs the ResNet model at this architectural scale and at these data volumes.
-While reconstructing smoother and less varied morphologies yields an MAE comparable to that of the ResNet, it does so at the cost of higher RMSE, lower PSNR and SSIM, and a systematic loss of fine structure.
-A potential failure mode of this model is the possibility of de-noising and smoothing images too aggressively, which suppresses the anisotropic features that adaptive-moment shape estimators rely on.
-The uniform shrinkage of all four shape parameters in Figure \ref{fig:ellipticity_comp} supports this interpretation.
-The ResNet model preserves high-frequency features and overall galaxy parameters better, while also matching or exceeding the diffusion model on pixel-wise flux accuracy.
-However, due to the way it learns galaxy features, it could potentially introduce small-scale artifacts where no real structure exists, lowering the fidelity of the reconstruction overall.
+The regional validation comparison favours the residual models in image error and signed agreement with the observed reference, while diffusion retains more small-scale power (Fig.~\ref{fig:pixel_comp}).
+These diagnostics measure different aspects of reconstruction quality; retaining power is insufficient to establish that a feature is recovered at the correct position.
+The residual models also suppress observed fine-scale variation, and the effects of noise, instrumental response, and the band difference remain in the comparison.
+The three-seed ResNet check supports reproducibility under the fixed training recipe, while the matched continuation tests show that emphasizing sources can improve their reconstruction errors at the expense of outside-source accuracy.
+We therefore retain the original ResNet and assess the fixed choice on the held-out sample in the subsequent evaluation stage, without treating these validation findings as calibrated morphological or shear recovery.
 
 The ResNet's stronger recovery of shear and ellipticity, combined with at-least-comparable pixel-wise accuracy, makes it the more promising architecture for further investigation of super-resolution in lensing contexts.
 Precision weak lensing measurements, however, require meeting a substantially higher bar than the model comparison presented here.
@@ -747,5 +789,10 @@ Overall, these findings suggest that architectural choices that prioritize aniso
 % Note that appendices in A\&A come {\it after\/} the references.
 
 
+\clearpage
+\begin{appendix}
+\input{resnet_validation_appendix}
+\clearpage
+\end{appendix}
 \label{LastPage}
 \end{document}

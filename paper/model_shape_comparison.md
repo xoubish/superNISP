@@ -1,4 +1,8 @@
-# Cached model shape comparison and proposed results figures
+# Historical v01 cached model shape comparison and proposed results figures
+
+Superseded figure choice: former 7b is now the single Figure 7, with matched
+native-NISP contours. See [the current v02 report](figure7_native_shapes.md).
+The v01 populations and layout recommendations below are preserved as history.
 
 Local validation experiment requested after the Figure 6 source-only Fourier
 comparison. Frozen v03 predictions are used for all six methods; no inference,
@@ -125,7 +129,7 @@ using these shape results, but checkpoints were already validation-selected.
 - [Shape summary](../paper_figures/exports/fig07_model_shapes_v01.png)
 - [Summary PDF](../paper_figures/exports/fig07_model_shapes_v01.pdf)
 - [Component agreement](../paper_figures/exports/fig07_model_shape_agreement_v01.png)
-- [Notebook](../paper_figures/07b_model_shapes.ipynb)
+- [Archived v01 notebook](../paper_figures/revisions/07b_model_shapes_v01_before_native_contours.ipynb)
 - Frozen result JSON: `paper_figures/inputs/cached_shapes_v01.json`.
 - Local per-object arrays: same stem `.npz`, including shapes, moments, success
   flags, HSM errors/status/centroids/sizes, IDs, blocks and the global intersection.

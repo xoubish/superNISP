@@ -1,12 +1,115 @@
-# Next-machine handoff: paired ResNet refinement experiments
+# Paired ResNet refinement experiments
 
 Prepared 2026-10-17 (user timezone: America/Los_Angeles).
 
-## Current status and user request
+## Latest update: all experiments complete and original model retained
+
+The two new 50-epoch seeds and their automatic comparison also finished with
+exit 0. The user approved keeping the original epoch-49 ResNet and the existing
+three-panel Figure 6, with seed reproducibility in the appendix. This decision
+and the refinement trade-off are now in `survey_enhancements.tex` and
+`resnet_validation_appendix.tex`; the approved PDF is installed unchanged.
+All numerical provenance is frozen in `diagnostics/resnet_model_selection_v01.json`.
+The held-out test remains unevaluated. No further training is queued; the older
+proposed continuation/ablation stages below are historical plans, superseded by
+this decision.
+
+## Previous update: refinements completed, independent-seed tests launched
+
+Both corrected `v03` runs completed all ten epochs and the local comparison
+finished with exit 0. Balanced loss improves selected source RMSE by 2.19%,
+worsens outside RMSE by 2.40%, and does not clearly improve observed shapes.
+See [the results and replication note](resnet_refinement_results.md) for
+paired intervals, plots, success counts and limitations.
+
+Following the user's “continue,” two fresh 50-epoch baseline runs with seeds
+20261018 and 20261019 are running on the now-free GPUs. Their only scientific
+change from the original baseline is the seed. They test reproducibility before
+any further model-selection claim. This supersedes the launch status below.
+
+## Earlier update: full paired shared training launched
+
+The user subsequently said “do it.” The new trainer is implemented and both
+10-epoch refinements are running on the current host:
+
+- GPU 0 control: `runs/resnet-refine-control-v03`, tmux
+  `supernisp-refine-control-v03`, [W&B sap2hiib](https://wandb.ai/AI-Astro/superNISP-corrected/runs/sap2hiib).
+- GPU 1 balanced: `runs/resnet-refine-balanced-v03`, tmux
+  `supernisp-refine-balanced-v03`, [W&B 609wkepy](https://wandb.ai/AI-Astro/superNISP-corrected/runs/609wkepy).
+
+Exact commands and logs are in the corresponding `-console/launch.sh` and
+`console.log`. Both runs use `code/train_residual_refinement.py`, batch 8,
+22,270 extra updates, the same parent weights/Adam/RNG and fresh cosine
+schedule. Epoch zero is saved as an eligible best checkpoint. All five CPU
+loss, mask/augmentation, schedule and resume tests passed. CPU diagnostics
+reproduced the frozen Figure 6 baseline statistics. Both GPU startup checks
+passed finite losses/gradients, exact model/Adam/scheduler/RNG restoration and
+numerical equivalence of the next update. Parent inference exactly reproduced
+all cached validation predictions on common support.
+
+The first `v01` attempts stopped before experiment training because the check
+incorrectly demanded bitwise equality of repeated CUDA gradients. The unchanged
+historical model ends with bilinear interpolation; PyTorch documents its CUDA
+backward nondeterminism. The revised test separately requires exact saved-state
+restoration and next-update agreement at rtol 2e-6, atol 1e-8. Observed maximum
+weight differences were 3.73e-9 in both branches, with identical
+loss and LR. The historical kernels and trainer were not changed. Failed-run
+artifacts are retained. The `v02` runs were subsequently stopped after the first
+epoch: preflight updates had advanced aliased CPU Adam step counters by three.
+Those runs are marked invalid and must not be used for comparison. The parent
+on disk was unchanged. `restore_parent()` now deep-copies optimizer state; a
+regression test and runtime assertions verify the exact inherited counter.
+The corrected `v03` runs are the actual experiments.
+Read-back checks of both saved `v03` epoch-zero checkpoints confirmed exact
+agreement with every parent model/Adam state tensor, including step 109,123.
+
+Each allocator is capped at 1 GiB; peak reserved at startup 814 MiB and sampled
+free device memory 972 MiB. Both Ray workers continue. The trainer checks free
+memory every 200 updates and before validation, and stops below 256 MiB while
+retaining completed epoch checkpoints. There is no guaranteed compute share.
+
+Use each run's `live.json`, `progress.json`, `status.json` and console exit status
+to establish current progress/completion. Resumption is at an epoch boundary:
+use the exact original command with `--resume` in a **new** tmux/console session.
+Do not change the trainer/source snapshots, GPU UUID or configuration mid-run;
+the saved signature must match.
+
+`code/compare_residual_refinements.py --wait` provides automatic local CPU
+analysis after both statuses report completion. Output:
+`runs/resnet-refinement-comparison-v01/`, containing `report.md`,
+`comparison.json`, shape arrays, source snapshots, and `comparison`,
+`learning_curves`, `shapes`, `fixed_examples` PNG/PDF files. It verifies equal
+batch/augmentation stream hashes across all ten epochs and compares selected
+best and final weights with the parent. Confidence intervals use the frozen
+2,000 paired spatial-block draws. Shape comparisons use common successes
+across reference and all five evaluated variants and report failure counts.
+Example fields/display scales reuse the existing observed-image-selected
+Figure 5 v06 set; they are illustrative, not a population performance sample.
+Approved Figure 6 inputs/exports remain unchanged and local-only.
+The waiting comparison process is in tmux `supernisp-refine-comparison-v02`,
+console `runs/resnet-refinement-comparison-v02-console/`. The first comparison
+watcher exited on the deliberately stopped invalid runs and produced no report.
+The comparison's analytic paired-RMSE check, adaptive-shape smoke check and
+four PNG/PDF plot exports passed using cached baseline data in `/tmp`.
+
+## Previous update: shared-GPU trial passed
+
+The user subsequently authorized a short sharing trial. It completed 100
+batch-eight ResNet training steps on occupied GPU 0: median 0.05955 s/step,
+peak sampled total process memory 1,308 MiB, and minimum free memory 982 MiB.
+PyTorch's allocator was capped at 1 GiB. All losses/gradients were finite;
+trial weights were discarded and the original checkpoint is unchanged.
+Both Ray workers remained running; their throughput impact was not measured.
+GPU memory returned to its pre-trial level after exit. See
+[the measured trial report](shared_gpu_probe.md) for evidence and limitations.
+At this stage no full refinements were running; the trainer and checks were
+still pending. Shared execution became feasible under the observed load.
+
+## Earlier status and user request (superseded by launch above)
 
 The user approved testing the suggested ResNet improvements with two GPUs in
 parallel, then asked to write the plan in notes because they will move to another
-machine. **No new GPU training has started and no training jobs are queued.**
+machine. **No full refinement training has started and no refinement jobs are queued.**
 On the current host, both L40S GPUs were occupied by Ray workers at 100%
 utilization and approximately 43 GB each. Do not stop those workers.
 
@@ -146,7 +249,7 @@ are **not** independent training-seed replicates. Only after that should a small
 multiscale/gradient-loss ablation be considered. Do not launch an unrestricted
 architecture/loss search or evaluate the held-out test set at this stage.
 
-## Required implementation and checks before training
+## Implementation/check contract (completed for the launch above)
 
 - Add a separate refinement trainer/runner rather than altering the historical
   trainer used by checkpoint source-hash verification.
@@ -159,8 +262,11 @@ architecture/loss search or evaluate the held-out test set at this stage.
 - Run a small finite-loss/gradient and checkpoint-reload check before both full
   refinements. Preserve the preflight and parent states so these checks cannot
   consume the actual experiment's RNG sequence or alter its starting weights.
-- Verify GPU availability immediately before launch. Pin one experiment to each
-  free GPU. Do not share an occupied GPU or stop other users' processes.
+- Recheck available memory immediately before launch and pin each experiment
+  to its assigned GPU. The user authorized the bounded sharing probe described
+  above; retain memory limits and free-memory monitoring for any shared run.
+  Do not stop or reconfigure other workloads. Full paired shared training has
+  not yet been launched or validated.
 - **Existing user requirement:** launch model executions inside tmux/screen,
   with online W&B initialized before model execution. Use the established
   `AI-Astro/superNISP-corrected` project. Log new training diagnostics/gallery;

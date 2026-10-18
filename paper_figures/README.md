@@ -1,5 +1,22 @@
 # Paper figures workspace
 
+## Figure 6 installed in the local manuscript — 2026-10-17
+
+The approved three-panel v06 PDF is now `paper/figs/model_comparison_v06.pdf`,
+included as Figure 6 in `paper/survey_enhancements.tex`. Its artwork and model
+predictions are unchanged. The caption now accompanies regional measurement
+definitions, current validation results, and the decision to retain the original
+epoch-49 ResNet. The historical diffusion-step and pixel-metric figures were
+removed from this Results passage; their files remain available.
+
+The independent-seed plot is installed as an appendix figure, with the seed
+and continuation tables in `paper/resnet_validation_appendix.tex`. All runs and
+comparisons completed successfully. Notebook caption notes are synchronized;
+the pre-install notebook is archived in `revisions/`. Numerical provenance and
+installed PDF hashes are in `paper/diagnostics/resnet_model_selection_v01.json`.
+The held-out test has not been evaluated. This is a local manuscript update,
+not an external upload or a revision of the remaining historical shape results.
+
 One notebook per proposed figure. Start with the figure, agree on its content
 and visual choices, then refine the caption and manuscript text. Figure 2 contains the sample distributions; the diffusion and residual
 architectures follow as Figures 3 and 4. The architecture notebooks are now `03_diffusion_architecture.ipynb` and
@@ -21,8 +38,8 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
 | 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, ResNet/ResNet-D5 heads, dense-block detail | Named variants; v05 |
 | 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Isolated source first, then pairs/disk/crowded field; v07 |
-| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Source/outside RMSE, power and Fourier correlation | Three panels in one row; local-only v06 |
-| 7 | [07_observed_shapes.ipynb](07_observed_shapes.ipynb) | Observed e1/e2 recovery and residual distributions | Frozen legacy validation preview |
+| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Source/outside RMSE, power and Fourier correlation | Three panels in one row; v06 installed in local manuscript |
+| 7 | [07_model_shapes.ipynb](07_model_shapes.ipynb) | Hexbin density of measured ellipticity vs JWST with 1:1 and robust fit lines; gain bars as companion | Executed v05; installed in local manuscript as `paper/figs/shape_hexbin_v05.pdf`; alternatives kept in notebook |
 | 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
 | 9 | [09_shape_robustness.ipynb](09_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Frozen legacy validation preview |
 
@@ -183,7 +200,7 @@ methods/results prose still needs revision. These changes await an Overleaf push
 `paper/figs/` and updating the manuscript's figure reference/caption.
 
 The legacy-only validation previews are
-[Figure 7: observed shapes](exports/fig07_observed_shapes_v01.png),
+[Archived Figure 7: observed shapes](exports/fig07_observed_shapes_v01.png),
 [Figure 8: property dependence](exports/fig08_shape_dependence_v01.png), and
 [Figure 9: measurement robustness](exports/fig09_shape_robustness_v01.png).
 Their input analyses are frozen; rerunning these notebooks will not silently
@@ -512,12 +529,50 @@ finest-scale values depend on the mask taper. See the
 [full protocol and interpretation](../paper/figure6_source_spatial_structure.md).
 All outputs remain local; the main Figure 6 and previous companion are preserved.
 
-## Matched observed shapes for all models (local v01)
+## Figure 7: hexbin density against JWST with best-fit lines (current v05)
+
+[Main Figure 7](exports/fig07_shape_hexbin_v05.png) shows a log-scaled hexbin
+density of measured ellipticity (e1 and e2 pooled) against JWST F115W for native NISP, diffusion (1 sample),
+ResNet and ResNet-D5, with fixed and adaptive moments in two rows. Each panel has
+a 1:1 line, a robust Theil-Sen fit to galaxies with |e_JWST| < 0.5 (full-sample
+least squares sat below the cloud's ridge), the native-NISP fit for reference,
+and the core slope and full-sample RMSE about 1:1. Core slopes move from
+0.68/0.61 (native, fixed/adaptive) to 0.80/0.73 (ResNet) with lower RMSE; diffusion steepens the slope but adds
+scatter. The hexbin was chosen over three alternatives that stay in the notebook:
+[points only](exports/fig07_shape_scatter_v05.png),
+[contours on points](exports/fig07_shape_contours_v05.png) and
+[regions only](exports/fig07_shape_regions_v05.png). The v04 gain bars are kept as a companion
+([fig07_shape_improvement_v05](exports/fig07_shape_improvement_v05.png)), the
+summary as [fig07_model_shapes_v05](exports/fig07_model_shapes_v05.png). Slope
+bootstrap intervals and the caption are in `paper/figure7_native_shapes.md`.
+The v04 notebook is archived in `revisions/`. Measurements are unchanged.
+
+## Figure 7: direct improvement relative to native NISP (archived v04)
+
+The single active notebook is [07_model_shapes.ipynb](07_model_shapes.ipynb).
+[Main Figure 7](exports/fig07_shape_improvement_v04.png) shows percentage reduction
+in combined e1/e2 RMSE relative to native NISP, with fixed and adaptive moments
+side by side. Zero is native performance; right means lower error, left higher
+error. Whiskers are paired spatial-block 95% intervals on the reduction itself.
+The figure uses the same frozen `cached_shapes_v02` measurements: 1,446 common
+successes for fixed moments and 1,498 for adaptive moments.
+
+ResNet reduces RMSE by 19.3% (fixed) and 10.6% (adaptive). Single-sample diffusion
+increases it by 13.8% and 22.4%. The [companion summary](exports/fig07_model_shapes_v04.png)
+retains native NISP, all six cached methods, and success counts over all 2,118
+attempts. See [the current caption and results](../paper/figure7_native_shapes.md).
+
+The user found both contour layouts difficult to read. The direct improvement
+view replaces them as the main figure; the agreement v02 and residual v03 views,
+with their executed notebooks, remain in `exports/` and `revisions/`. No numerical
+results or measurement choices changed. Local figure revision only.
+
+## Historical all-model comparison (v01, before native NISP)
 
 [Shape error and success summary](exports/fig07_model_shapes_v01.png) and
 [component agreement](exports/fig07_model_shape_agreement_v01.png) compare the
 frozen Figure 6 predictions using fixed and adaptive moments. Notebook:
-[07b_model_shapes.ipynb](07b_model_shapes.ipynb). ResNet and ResNet-D5 have nearly
+[archived 07b notebook](revisions/07b_model_shapes_v01_before_native_contours.ipynb). ResNet and ResNet-D5 have nearly
 identical errors and outperform single diffusion and the mean-of-3 image with
 both estimators. The primary common-success populations contain 1,447 and 1,546
 objects; the shared 1,313-object check preserves the ordering. Full success counts

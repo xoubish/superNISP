@@ -1,0 +1,31 @@
+{
+  "status": "Figure 7: observed shape agreement with matched native NISP contours",
+  "notebook": "07_model_shapes.ipynb",
+  "notebook_source_sha256": "0270a464e8219aaa7b95f766d0bc4cabe3bb9fa735edca6b3333622208809288",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b",
+    "paper_figures/inputs/cached_shapes_v02.npz": "b522ecee1c1d0c704421e89781dfe9f36be2c7cabc392e80a2debc21840801ae"
+  },
+  "settings": {
+    "estimator": "fixed",
+    "objects": 1446,
+    "methods": [
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "contours": "Native-versus-JWST joint density, separately for e1 and e2 on the fixed-estimator common sample. Gaussian KDE with Scott bandwidth; 401x401 uniform grid over [-2,2] in both axes. Highest-density contours enclose 68% and 95% of integrated grid probability; same density and levels reused in every column. Display limits [-1,1].",
+    "gain": "100*(1-RMSE_method/RMSE_native), on identical objects; positive means improvement, negative means degradation. Paired spatial-block 95% intervals with 2000 draws, seed 20261017.",
+    "population": "All 2118 frozen validation objects attempted. Per-estimator intersection of successful JWST, native NISP, and all six cached methods; same objects in every model panel. Also report the intersection across both estimators and full-denominator failure counts."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_model_shape_agreement_v02.pdf": "1a073ccc7f5e6cf63fcca469de7440023255fcb5317d30c62a025f4ffa9e2362",
+    "fig07_model_shape_agreement_v02.svg": "fbac683811fe489918009acff367c8de0277edfa640e1f3a4f07d573261f36ec",
+    "fig07_model_shape_agreement_v02.png": "23cc2865cd2d450c2014213437be0b497b9a8c6cc2940af4703148e3272f3af2"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "status": "Figure 7 alternative A: points only",
+  "notebook": "07_model_shapes.ipynb",
+  "notebook_source_sha256": "78eb1e512149e9e33699f09703c5937f2eb33b59b33f5771795912ea1e569435",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b",
+    "paper_figures/inputs/cached_shapes_v02.npz": "b522ecee1c1d0c704421e89781dfe9f36be2c7cabc392e80a2debc21840801ae"
+  },
+  "settings": {
+    "methods": [
+      "native",
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "estimators": [
+      "fixed",
+      "adaptive"
+    ],
+    "components": "e1 and e2 pooled per galaxy",
+    "fit": "Theil-Sen median slope of measured on JWST ellipticity, galaxies with |e_JWST|<0.5",
+    "fit_range": [
+      -0.5,
+      0.5
+    ],
+    "core_points": {
+      "fixed/native": 2636,
+      "fixed/diffusion": 2636,
+      "fixed/legacy": 2636,
+      "fixed/direct5": 2636,
+      "adaptive/native": 2328,
+      "adaptive/diffusion": 2328,
+      "adaptive/legacy": 2328,
+      "adaptive/direct5": 2328
+    },
+    "rmse": "combined e1/e2 component RMSE about the 1:1 line",
+    "common_objects": {
+      "fixed": 1446,
+      "adaptive": 1498
+    },
+    "fits": {
+      "fixed/native": {
+        "slope": 0.6780507617765182,
+        "intercept": 0.007688998363981012
+      },
+      "fixed/diffusion": {
+        "slope": 0.8280610836942711,
+        "intercept": 0.00816485659323023
+      },
+      "fixed/legacy": {
+        "slope": 0.7995531653412387,
+        "intercept": 0.010122138638082576
+      },
+      "fixed/direct5": {
+        "slope": 0.8016383021599744,
+        "intercept": 0.011399426092465071
+      },
+      "adaptive/native": {
+        "slope": 0.6067925633610894,
+        "intercept": 0.0023521950407504894
+      },
+      "adaptive/diffusion": {
+        "slope": 0.7055518871916484,
+        "intercept": 0.013010956915132411
+      },
+      "adaptive/legacy": {
+        "slope": 0.730942746314825,
+        "intercept": 0.005295610947527968
+      },
+      "adaptive/direct5": {
+        "slope": 0.7338504341048984,
+        "intercept": 0.004301936094803281
+      }
+    },
+    "axis_limits": [
+      -1.0,
+      1.0
+    ],
+    "points_outside_axes": {
+      "fixed/native": 0,
+      "fixed/diffusion": 0,
+      "fixed/legacy": 0,
+      "fixed/direct5": 0,
+      "adaptive/native": 0,
+      "adaptive/diffusion": 0,
+      "adaptive/legacy": 0,
+      "adaptive/direct5": 0
+    },
+    "population": "All 2118 frozen validation objects attempted. Per-estimator intersection of successful JWST, native NISP, and all six cached methods; same objects in every model panel. Also report the intersection across both estimators and full-denominator failure counts."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_shape_scatter_v05.pdf": "67aa71dd831be27a5b34554177d838cdfa13676d859d4b84fe5ebe49cbd1c452",
+    "fig07_shape_scatter_v05.svg": "5e4540dd47988cda86bb3676b1cc2a829b1ed4496d0dab653ae32f703065dad0",
+    "fig07_shape_scatter_v05.png": "9920182d51fcc3548df73518072f3e767654a1bc2eaec04b73bbf5fd2631da29"
+  }
+}

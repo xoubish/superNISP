@@ -164,7 +164,7 @@ estimator and cross-estimator common-success summaries/IDs, full success counts,
 overlapping failure reasons, paired block RMSE differences and provenance hashes.
 NPZ retains all per-object measurements and fit statuses. Primary plots use the
 matched sample within each estimator and report full-denominator success beside
-errors. Notebook `07b_model_shapes.ipynb`; local-only analysis with no W&B usage.
+errors. Original notebook archived as `revisions/07b_model_shapes_v01_before_native_contours.ipynb`; local-only analysis with no W&B usage.
 
 ## Exploratory PSNR and SSIM (v01)
 
@@ -181,3 +181,16 @@ the benchmark's regional RMSE with a shared per-object reference range. SSIM
 is averaged only over fully contained windows, without zero-masking sources.
 The consolidated `06_model_comparison.ipynb` reads this optional bundle to
 produce the separate `fig06_psnr_ssim_v01` review plot. No inference or uploads.
+
+
+## Figure 7 native NISP extension (v02)
+
+`cached_shapes_v02.json` and `.npz` retain the exact v01 JWST/model arrays and
+add native NISP fixed/adaptive measurements, rematched summaries, paired native
+RMSE reductions and saved 68%/95% joint-density contours. Active notebook:
+`07_model_shapes.ipynb`. The fixed common sample has 1,446 objects, adaptive 1,498,
+and both-estimator intersection 1,297; all 2,118 validation fields are attempted.
+Native uses its own validity mask and original pixel grid with matched angular
+settings. Contract and source snapshots: `runs/cached-shapes-native-v02/`.
+Generator: `code/add_native_shape_comparison.py`. No inference or test data.
+Copy the git-ignored NPZ alongside its JSON when transferring the workspace.

@@ -1,0 +1,86 @@
+{
+  "status": "Figure 7 alternative B: points with 68/95% KDE regions",
+  "notebook": "07_model_shapes.ipynb",
+  "notebook_source_sha256": "78eb1e512149e9e33699f09703c5937f2eb33b59b33f5771795912ea1e569435",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b",
+    "paper_figures/inputs/cached_shapes_v02.npz": "b522ecee1c1d0c704421e89781dfe9f36be2c7cabc392e80a2debc21840801ae"
+  },
+  "settings": {
+    "methods": [
+      "native",
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "estimators": [
+      "fixed",
+      "adaptive"
+    ],
+    "components": "e1 and e2 pooled per galaxy",
+    "fit": "Theil-Sen median slope of measured on JWST ellipticity, galaxies with |e_JWST|<0.5",
+    "fit_range": [
+      -0.5,
+      0.5
+    ],
+    "rmse": "combined e1/e2 component RMSE about the 1:1 line (full sample)",
+    "common_objects": {
+      "fixed": 1446,
+      "adaptive": 1498
+    },
+    "fits": {
+      "fixed/native": {
+        "slope": 0.6780507617765182,
+        "intercept": 0.007688998363981012
+      },
+      "fixed/diffusion": {
+        "slope": 0.8280610836942711,
+        "intercept": 0.00816485659323023
+      },
+      "fixed/legacy": {
+        "slope": 0.7995531653412387,
+        "intercept": 0.010122138638082576
+      },
+      "fixed/direct5": {
+        "slope": 0.8016383021599744,
+        "intercept": 0.011399426092465071
+      },
+      "adaptive/native": {
+        "slope": 0.6067925633610894,
+        "intercept": 0.0023521950407504894
+      },
+      "adaptive/diffusion": {
+        "slope": 0.7055518871916484,
+        "intercept": 0.013010956915132411
+      },
+      "adaptive/legacy": {
+        "slope": 0.730942746314825,
+        "intercept": 0.005295610947527968
+      },
+      "adaptive/direct5": {
+        "slope": 0.7338504341048984,
+        "intercept": 0.004301936094803281
+      }
+    },
+    "axis_limits": [
+      -1.0,
+      1.0
+    ],
+    "population": "All 2118 frozen validation objects attempted. Per-estimator intersection of successful JWST, native NISP, and all six cached methods; same objects in every model panel. Also report the intersection across both estimators and full-denominator failure counts.",
+    "density": "Gaussian KDE, Scott bandwidth, 161x161 grid on [-1,1]^2",
+    "regions": [
+      0.95,
+      0.68
+    ]
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_shape_contours_v05.pdf": "7e1797ea71cd008ff37aac1c958ac313174ccf05151c7547c39f2a0eb1dfae44",
+    "fig07_shape_contours_v05.svg": "2ff865666d2bacf44002d9ec7e1341cd68f4d970009db00cd7747ab0971d37ca",
+    "fig07_shape_contours_v05.png": "8d63e126427bc68e408b841fa3c14963eb3d0288582aa67ce8a0581f8e1bc6a1"
+  }
+}

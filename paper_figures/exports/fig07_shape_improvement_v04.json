@@ -1,0 +1,42 @@
+{
+  "status": "Figure 7: paired shape RMSE reduction relative to native NISP",
+  "notebook": "07_model_shapes.ipynb",
+  "notebook_source_sha256": "8d1ed78b136319ca1ee2e21fc10443d9134bec8cf7f7a6555a95075c2e78b87b",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b",
+    "paper_figures/inputs/cached_shapes_v02.npz": "b522ecee1c1d0c704421e89781dfe9f36be2c7cabc392e80a2debc21840801ae"
+  },
+  "settings": {
+    "methods": [
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "estimators": [
+      "fixed",
+      "adaptive"
+    ],
+    "metric": "100*(1-RMSE_model/RMSE_native), combined e1/e2 component RMSE",
+    "intervals": "100*(1-RMSE_method/RMSE_native), on identical objects; positive means improvement, negative means degradation. Paired spatial-block 95% intervals with 2000 draws, seed 20261017.",
+    "population": "All 2118 frozen validation objects attempted. Per-estimator intersection of successful JWST, native NISP, and all six cached methods; same objects in every model panel. Also report the intersection across both estimators and full-denominator failure counts.",
+    "common_objects": {
+      "fixed": 1446,
+      "adaptive": 1498
+    },
+    "axis_limits": [
+      -42,
+      42
+    ],
+    "native_baseline_percent": 0
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_shape_improvement_v04.pdf": "3272416f4e36f9dc38e75d145df036f2b112ec2ede71f2216ebd170eb7d660c8",
+    "fig07_shape_improvement_v04.svg": "e420a18bf1e12fadffd23c936409cfc8b76ae53d4549fc81deb9001fc43d9208",
+    "fig07_shape_improvement_v04.png": "80eb0fc04a47acb30a8fe498009aea5fc18cbd1a7170c48ee45a2e26226c5b5c"
+  }
+}

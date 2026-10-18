@@ -4,11 +4,163 @@ Updated 2026-10-17. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
-## Latest next-machine plan — 2026-10-17
+## Latest update: Figure 7 directly shows improvement — 2026-10-17
+
+User still found contour differences unclear. The active executed
+`paper_figures/07_model_shapes.ipynb` now exports `fig07_shape_improvement_v04`:
+two panels (fixed/adaptive moments), three model rows, percentage RMSE reduction
+relative to native NISP, zero baseline and paired spatial-block 95% intervals.
+ResNet: +19.3% fixed, +10.6% adaptive; single diffusion: -13.8%, -22.4%.
+Same frozen `cached_shapes_v02` data and matched populations, no new measurements.
+Companion export: `fig07_model_shapes_v04`. The v03 notebook is preserved as
+`revisions/07_model_shapes_v03_before_gain_view.ipynb`; all older exports remain.
+Current caption and checks: `paper/figure7_native_shapes.md`. Local draft only.
+
+## Previous update: Figure 7 residual view — 2026-10-17
+
+User found the native-contour/hexbin overlap difficult to read. The active
+`paper_figures/07_model_shapes.ipynb` now exports `fig07_model_shape_residuals_v03`:
+2x3 panels of delta-e relative to JWST, with blue model 68%/95% probability regions,
+orange native NISP 68%/95% contours, and a zero-error horizontal line. Same frozen
+`cached_shapes_v02` measurements and 1,446 common successes; no changed results.
+The v02 notebook and agreement exports are archived/preserved. Companion summary
+is now exported as `fig07_model_shapes_v03`. Local figure revision only.
+
+## Previous update: consolidated Figure 7 with native NISP contours — 2026-10-17
+
+Active notebook: `paper_figures/07_model_shapes.ipynb` (executed). Former 7 and
+7b are archived in `paper_figures/revisions/*_v01_before_native_contours.ipynb`.
+Main export `fig07_model_shape_agreement_v02`; companion `fig07_model_shapes_v02`.
+CPU-only native measurements extend frozen v01 arrays in `cached_shapes_v02`;
+contract/source snapshots in `runs/cached-shapes-native-v02`. No inference.
+Same 1,446 fixed-moment successes in all panels, with native 68%/95% KDE contours.
+ResNet RMSE reduction versus native: 19.3% fixed, 10.6% adaptive (1,498 objects).
+Single diffusion is worse than native: 13.8% fixed and 22.4% adaptive.
+Full-denominator success counts, paired block intervals, both-estimator common
+sample (1,297), caption and checks: `paper/figure7_native_shapes.md`.
+Local draft only; manuscript shape Results/Discussion still await revision.
+
+## Previous update: all runs complete; model choice added to paper — 2026-10-17
+
+Both corrected refinement runs (10 epochs each), both independent baseline
+seeds (50 epochs each), and both automatic comparisons finished with exit 0.
+The user approved retaining the original epoch-49 ResNet as the main model,
+keeping Figure 6's three panels and placing seed reproducibility in the appendix.
+Source RMSE across the three selected seeds is 0.0600667–0.0601735 MJy/sr.
+No further training experiment is queued.
+
+The local manuscript now includes the approved Figure 6 PDF, current regional
+comparison and model-choice prose, a corrected validation-only abstract,
+three-seed methods/caption notes, and `paper/resnet_validation_appendix.tex`
+with the seed plot and selected/final checkpoint tables. Frozen numerical
+provenance: `paper/diagnostics/resnet_model_selection_v01.json`.
+The original model and regional analysis choices are retained for the next
+held-out evaluation, which has **not yet been run**. Remaining historical
+shape Results/Discussion sections still need their own revision; this update
+does not validate their old shear claims. The full journal-class build is
+blocked by missing `etex.sty`; the changed sections compile in an isolated
+two-column preview and were visually checked. No Overleaf push performed.
+
+## Previous update: refinements complete; two new seeds launched — 2026-10-17
+
+Both corrected refinement runs completed 10 epochs / 22,270 updates with exit
+0, matching batch/augmentation streams and the original parent unchanged.
+The automatic local comparison also exited 0. Balanced-best source RMSE is
+2.19% lower, outside RMSE 2.40% higher; neither fixed nor adaptive shapes show
+a clear improvement. This is a trade-off, not an overall replacement decision.
+Full findings and artifacts: [refinement results](paper/resnet_refinement_results.md).
+
+The user asked for more tests and said “continue.” Two independent baseline
+replications now run with the **unchanged original 50-epoch training recipe**:
+
+- GPU 0: `runs/residual-full50-s20261018`, tmux
+  `supernisp-residual-full50-s20261018`, [W&B l0kbzuub](https://wandb.ai/AI-Astro/superNISP-corrected/runs/l0kbzuub).
+- GPU 1: `runs/residual-full50-s20261019`, tmux
+  `supernisp-residual-full50-s20261019`, [W&B 8vh9u6nb](https://wandb.ai/AI-Astro/superNISP-corrected/runs/8vh9u6nb).
+
+Both first epochs passed. Each is planned for 111,350 updates; source/data
+hashes match the original. Contract: `runs/resnet-seed-replication-v01/contract.json`.
+The follow-up evaluator `code/evaluate_residual_seed_replicates.py --wait`
+compares best/last predictions across all three seeds; output will be
+`runs/resnet-seed-replication-v01/evaluation/`. No test-set access or new
+architecture/loss sweep. Inspect live progress/status rather than assuming
+these timestamped notes establish completion.
+Evaluator queue: tmux `supernisp-seed-replication-eval-v01`, console
+`runs/resnet-seed-replication-eval-v01-console/`. Post-launch configuration,
+source/data hash and exact train/validation selection checks passed for both
+seeds; both reached epoch 3/50.
+
+## Earlier update: full refinements launched — 2026-10-17
+
+The user authorized full shared execution after the successful probe. Both
+10-epoch jobs are now training in persistent tmux sessions, with online W&B:
+
+| Branch | GPU | Run directory / tmux suffix | W&B |
+|---|---|---|---|
+| Original masked-L1 control | 0 | `resnet-refine-control-v03` / `supernisp-refine-control-v03` | [sap2hiib](https://wandb.ai/AI-Astro/superNISP-corrected/runs/sap2hiib) |
+| Equal source/outside L1 | 1 | `resnet-refine-balanced-v03` / `supernisp-refine-balanced-v03` | [609wkepy](https://wandb.ai/AI-Astro/superNISP-corrected/runs/609wkepy) |
+
+Both reproduced the frozen parent validation predictions and metrics exactly.
+Both passed finite-gradient and exact checkpoint/RNG/optimizer restoration
+checks. Repeated CUDA updates agree within float32 roundoff (maximum parameter
+differences 3.73e-9 / 3.73e-9); historical bilinear CUDA backward is not bitwise
+deterministic. Initial `v01` launches stopped at that overly strict preflight
+assertion before any experiment epochs. The `v02` runs were then stopped after
+one epoch because preflight had advanced aliased Adam step counters by three.
+Those runs are explicitly marked invalid. Deep-copying the optimizer state and
+a new regression test fix this in `v03`; the disk parent remains untouched.
+All failed/stopped logs and source snapshots are retained.
+
+Each process has a 1,024 MiB PyTorch allocator cap; initial peak reserved memory
+814 MiB, sampled remaining device memory about 972 MiB. The unrelated Ray
+workers remain active. Sharing has no guaranteed compute percentage.
+
+Trainer: `code/train_residual_refinement.py`; five CPU tests in
+`code/test_residual_refinement.py` passed. Each run saves `progress.json`,
+`live.json`, `status.json`, last/best full-state checkpoints, measurements,
+predictions and fixed galaxy galleries. Console directories have `-console`
+appended and contain the exact `launch.sh`, log and eventual exit status.
+Inspect live status rather than treating this timestamped note as completion.
+For corrected `v03`, a separate read-back of both saved epoch-zero checkpoints
+confirmed every model and Adam state tensor exactly matches the on-disk parent,
+including all Adam step counters at 109,123.
+
+The local-only automatic comparison entrypoint is
+`code/compare_residual_refinements.py --wait`; it is waiting in tmux
+`supernisp-refine-comparison-v02`, with console
+`runs/resnet-refinement-comparison-v02-console/`. Planned output is
+`runs/resnet-refinement-comparison-v01/report.md` and four PNG/PDF plots.
+It checks matched training streams and compares original/best/last predictions,
+paired spatial-bootstrap errors and spectra, fixed/adaptive observed shapes,
+and the pre-existing Figure 5 examples. See the detailed experiment note below.
+Its analytic paired-RMSE check, adaptive-shape smoke check and all four plot
+exports passed on cached baseline data in a temporary directory.
+The approved Figure 6 and original model remain unchanged.
+
+## Previous update: sharing trial passed — 2026-10-17
+
+User authorized a bounded trial on an occupied GPU. `code/probe_shared_gpu.py`
+completed 100 batch-eight ResNet training updates on GPU 0 in tmux with online
+W&B. Median steady-state step 0.05955 s; peak sampled process memory 1,308 MiB;
+PyTorch allocator cap 1,024 MiB; peak allocated/reserved 593.76/804 MiB;
+minimum sampled device-free memory 982 MiB. No OOM/nonfinite results.
+After exit, memory returned to the original 43,165 MiB used / 2,296 MiB free.
+The original Ray workers remain running; their throughput impact was not measured.
+
+Trial updates were discarded and the parent checkpoint hash is unchanged.
+Artifacts: `runs/shared-gpu-probe-v01/`, console `runs/shared-gpu-probe-v01-console/`,
+exit 0, tmux `supernisp-shared-gpu-probe-v01`, W&B `24xwfbn4`.
+[Measured trial report](paper/shared_gpu_probe.md) gives timing definitions and
+limits. One shared run is feasible under the observed load; no percentage is
+reserved. At this stage full refinements had not been launched and their trainer
+was not implemented. This superseded the earlier assumption that occupied
+GPUs categorically require moving machines. The paired experiment plan below remains.
+
+## Earlier next-machine plan — 2026-10-17 (superseded by shared launch above)
 
 The user approved a paired ResNet refinement experiment, then asked to move
 machines after both GPUs were found occupied by unrelated Ray workers.
-**No new GPU training has started or been queued.** The concrete plan and
+**No full refinement training has started or been queued.** The concrete plan and
 transfer list are in [ResNet refinement handoff](paper/resnet_refinement_handoff.md).
 Implement a separate trainer for two matched 10-epoch forks of the epoch-49
 ResNet: original masked-L1 control versus 50/50 source/outside L1, with inherited
@@ -38,7 +190,7 @@ User asked which recent Figure 6 diagnostics belong in the paper and requested
 shapes for diffusion, ResNet and ResNet-D5. CPU-only `code/analyze_cached_shapes.py`
 used v03 cached predictions, including bilinear/bicubic and diffusion mean3.
 Run `runs/cached-shapes-v01`; frozen summary/arrays `cached_shapes_v01.json/.npz`.
-Notebook `paper_figures/07b_model_shapes.ipynb`; exports `fig07_model_shapes_v01`
+Archived notebook `paper_figures/revisions/07b_model_shapes_v01_before_native_contours.ipynb`; exports `fig07_model_shapes_v01`
 and `fig07_model_shape_agreement_v01`. No inference, upload or manuscript edits.
 
 Fixed moments: same 1,447 successes, single diffusion/mean3/ResNet/D5 RMSE
