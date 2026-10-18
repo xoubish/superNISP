@@ -1,0 +1,48 @@
+{
+  "manuscript_sha256": "5220cc9ecef3e3d2e5eff342d0e5f0b2f08d7a31e686a65796444ab4ebb5a5de",
+  "bibliography_sha256": "56dcb24608188a87325bf8cf8dbbd9d98bc38f94b05c43f4d3b7d972e725afcf",
+  "before_manuscript_sha256": "9bdd4044567498e8f1ff324cb098611499e4e1d8aeaeae74832acfb38bc034b3",
+  "checks": {
+    "references_resolve": true,
+    "balanced_tex": true,
+    "approved_abstract_unchanged": true,
+    "nine_figure_blocks_unchanged": true,
+    "stale_passages_removed": true,
+    "bibtex": "passed without warnings"
+  },
+  "figures": {
+    "figs/sample_overview_v08.pdf": "d0520a13e8f0e80d38408a1755f1b2726bc3784d46be5bdfc5e3ee630d0b4afc",
+    "figs/sample_properties_v06.pdf": "6b24647a7c6efa33e36014eb8492cdbc82d1d10b9d597e805622da153511381a",
+    "figs/diffusion_architecture_v06.pdf": "7ac0f3df0a5d778032c0639d1e9132bc268be3682dccb7b576f65b8b1ab6af13",
+    "figs/residual_architecture_v06.pdf": "376846ae03cdb6248a3f469770c39eaa622c685b6ddd8ce527554d3282f87a06",
+    "figs/galaxy_examples_v08.pdf": "85e4f1e64567741bb77c78a27f9e059f452805f9fa7efda91d5cba8c66c652ea",
+    "figs/model_comparison_v07.pdf": "2d379fcede9fe78f777e35e330ae1f384301804441b19c138dcd64b1949ea53d",
+    "figs/shape_hexbin_v06.pdf": "023a2b6f0b009b60ddbdec285db8386c75a9c2d768338a62cd848bc2d9910ff7",
+    "figs/shape_dependence_v04.pdf": "ed63e3c2bbb7d54dbc51756de482ff5f798d9dc996bf51566d6c3e6914a00b01",
+    "figs/shear_response_v06.pdf": "d1f9414b0a4eacb8eb03cdf0d0db14cdc3f12f966273edc7ab2adf4e5465edeb"
+  },
+  "accepted_image_counts": {
+    "nisp_image": 4,
+    "jwst_image": 18
+  },
+  "robustness": {
+    "common_objects": 1098,
+    "scenarios": 21,
+    "rmse_gain_range_percent": [
+      8.225190426394246,
+      25.02710605449714
+    ]
+  },
+  "psf_aware": {
+    "source_rmse_gains_over_control_percent": [
+      0.1216498498697427,
+      0.16014910990891362
+    ],
+    "fixed_shape_gain_percent": 0.9834114914370473,
+    "fixed_common": 1627,
+    "adaptive_common": 1700
+  },
+  "scope": "Manuscript and bibliography revision; no new model evaluation or changes to frozen figure inputs",
+  "availability": "User approved public release of code and weights with publication; persistent archive link pending",
+  "full_compile": "in progress"
+}
