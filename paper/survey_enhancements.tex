@@ -417,6 +417,17 @@ Native NISP positions are expressed in target-pixel units so that the weight has
 A measurement succeeds when the aperture is fully covered, the weighted flux is positive, and the second-moment matrix is positive definite.
 Negative pixels remain in the sums.
 
+\begin{figure*}[t]
+    \centering
+    % Approved styled examples, v08; frozen v06 predictions and selected galaxies.
+    \includegraphics[width=\textwidth]{figs/galaxy_examples_v08.pdf}
+    \caption{Five validation fields: (a) an isolated galaxy, (b) a close projected pair, (c) a face-on disc, (d) overlapping extended sources, and (e) a crowded field.
+    Columns: native NISP \YE, JWST F115W, bilinear interpolation of NISP, and the diffusion, ResNet, and ResNet-D5 reconstructions.
+    Each row spans approximately $6\farcs3$ on a common asinh stretch; scale bars are $2\arcsec$.
+    Diffusion shows one realization. The selection is illustrative.}
+    \label{fig:galaxy_examples}
+\end{figure*}
+
 \subsection{Adaptive moments}
 
 As an independent estimator we use \texttt{GalSim} \texttt{FindAdaptiveMom} \citep{galsim}, which iteratively fits an elliptical Gaussian weight, centroid, and size, without PSF correction.
@@ -471,17 +482,6 @@ The four per-PSF ratios are averaged equally.
 This pilot provides point estimates without uncertainty intervals and does not include the selection response needed for shear calibration.
 
 \section{\label{sc:results}Results}
-
-\begin{figure*}[t]
-    \centering
-    % Approved styled examples, v08; frozen v06 predictions and selected galaxies.
-    \includegraphics[width=\textwidth]{figs/galaxy_examples_v08.pdf}
-    \caption{Five validation fields: (a) an isolated galaxy, (b) a close projected pair, (c) a face-on disc, (d) overlapping extended sources, and (e) a crowded field.
-    Columns: native NISP \YE, JWST F115W, bilinear interpolation of NISP, and the diffusion, ResNet, and ResNet-D5 reconstructions.
-    Each row spans approximately $6\farcs3$ on a common asinh stretch; scale bars are $2\arcsec$.
-    Diffusion shows one realization. The selection is illustrative.}
-    \label{fig:galaxy_examples}
-\end{figure*}
 
 Figure~\ref{fig:galaxy_examples} compares the three models on the same observed fields, from an isolated galaxy to a crowded field.
 The residual networks recover the source separation and overall morphology of the reference; diffusion produces sharper but more variable structure.
