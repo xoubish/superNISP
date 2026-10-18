@@ -46,8 +46,10 @@ orange identifies the F115W target/prediction.
 Keep astronomical images grayscale with the original stretches and masks.
 Signed residual images keep their established symmetric `RdBu_r` scale; these
 colors encode residual sign rather than categorical model identity. Figure 7
-uses one common logarithmic count scale and a `cividis_r` colorbar for every
-hexbin panel. Counts, binning, fits, ranges, and scientific populations are
+uses one common logarithmic count scale and a light-to-dark `magma_r` colorbar
+(truncated to [0.12, 1]; sparse bins light, the ridge near black) for every hexbin
+panel; bins holding a single measurement are small dots in the lightest color.
+Counts, binning, fits, ranges, and scientific populations are
 unchanged. Do not independently normalize each panel's density colors.
 
 ## Review and reproduction
