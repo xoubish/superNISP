@@ -1,0 +1,3005 @@
+{
+  "complete": true,
+  "original_report_sha256": "8ddf519c9fc3e569b13a953a10ed0d376a41e6885bacd648a1959e63113922b6",
+  "measurements_sha256": "fea8720963a1c5bd1ebd56ab490bf841a3c35348451ee014664b1df8d119461d",
+  "source_sha256": "f02786b404500ef63fc05559b63f9c33e82ffc87f29289cc8be877e489a835e4",
+  "original_primary_comparison_reproduced": true,
+  "checkpoint_unchanged": true,
+  "secondary_comparison": "Added after the primary run: compare native, ResNet, and target observed moments on their joint five-branch success sample. Show native REGAUSS only where it succeeds on exactly that entire same sample; no substitution or clipping.",
+  "reason": "All native REGAUSS measurements fail for FWHM 0.45 arcsec; the original four-method intersection is empty there. Preserve that primary failure and display the separately valid observed-shape comparison.",
+  "attempted_base_objects": 624,
+  "attempted_shear_images": 3120,
+  "original_all_method_common": 312,
+  "observed_common": 622,
+  "cells": [
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.18,
+      "snr": null,
+      "attempted": 8,
+      "all_method_common": 0,
+      "observed_common": 8,
+      "truth_response": [
+        [
+          1.8773567551675365,
+          -3.469446951953614e-16
+        ],
+        [
+          1.734723475976807e-16,
+          1.8773567551675363
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              0.8440403849817812,
+              -9.040813893079758e-05
+            ],
+            [
+              -0.00026006018742936315,
+              0.6928085262188683
+            ]
+          ],
+          "relative_trace_response": 0.4093118974244989,
+          "zero_shear_mean_e": [
+            0.02000445849262178,
+            0.010144898435100915
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 40
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.5995783382095403,
+              0.010474480222910643
+            ],
+            [
+              -0.008204730693250548,
+              1.6207455581024988
+            ]
+          ],
+          "relative_trace_response": 0.8576749963606827,
+          "zero_shear_mean_e": [
+            0.03214937122538686,
+            0.021511193132027984
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.703240373171866,
+              -1.734723475976807e-16
+            ],
+            [
+              3.469446951953614e-16,
+              1.7033869400620463
+            ]
+          ],
+          "relative_trace_response": 0.9072935402013942,
+          "zero_shear_mean_e": [
+            -5.3028816927869205e-09,
+            3.469446951953614e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.18,
+      "snr": 20,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 30,
+      "truth_response": [
+        [
+          1.881438247318057,
+          -0.004082208531579895
+        ],
+        [
+          -0.004082208531580676,
+          1.8732752630170157
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            30,
+            30,
+            30,
+            30,
+            30
+          ],
+          "status_counts": {
+            "-1": 10,
+            "0": 150
+          },
+          "response": [
+            [
+              0.8628770548966713,
+              0.0002031587064266335
+            ],
+            [
+              0.0041264481842516465,
+              0.6737049226164041
+            ]
+          ],
+          "relative_trace_response": 0.4092408044671163,
+          "zero_shear_mean_e": [
+            0.0032846563185254733,
+            0.012916584017996986
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.0229768663217935,
+              0.002722432836890212
+            ],
+            [
+              0.0057426395748429865,
+              1.065070558106527
+            ]
+          ],
+          "relative_trace_response": 0.55611364720127,
+          "zero_shear_mean_e": [
+            0.005965750757604834,
+            0.02115490008921673
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.7065247893333437,
+              -0.003285656372706107
+            ],
+            [
+              -0.0032858053843179674,
+              1.7001013333598787
+            ]
+          ],
+          "relative_trace_response": 0.9072932231224249,
+          "zero_shear_mean_e": [
+            0.017943796993013923,
+            -0.007433249056339263
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.18,
+      "snr": 50,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              0.8594609516876517,
+              -0.000794840525486333
+            ],
+            [
+              0.00023076136130839586,
+              0.6899352676555282
+            ]
+          ],
+          "relative_trace_response": 0.4126536458982489,
+          "zero_shear_mean_e": [
+            0.014973253673815634,
+            0.01737209908606019
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.4305077791505028,
+              -0.013114090711496829
+            ],
+            [
+              -0.012863307074439945,
+              1.4407815870072227
+            ]
+          ],
+          "relative_trace_response": 0.7647159652139452,
+          "zero_shear_mean_e": [
+            0.02217834374823724,
+            0.04050843870663812
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.7032403731718655,
+              -4.336808689942018e-17
+            ],
+            [
+              8.673617379884035e-17,
+              1.7033869400620463
+            ]
+          ],
+          "relative_trace_response": 0.9072935402013943,
+          "zero_shear_mean_e": [
+            -5.302881690184835e-09,
+            8.673617379884035e-19
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.18,
+      "snr": 100,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              0.8420275529715582,
+              0.002613580727484077
+            ],
+            [
+              0.0017083297279896215,
+              0.6913437407092713
+            ]
+          ],
+          "relative_trace_response": 0.40838569692737775,
+          "zero_shear_mean_e": [
+            0.021194241242483258,
+            0.009889771856251173
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.6013806176488288,
+              -0.016229512038989924
+            ],
+            [
+              -0.032753386767581105,
+              1.590724819925526
+            ]
+          ],
+          "relative_trace_response": 0.8501595205034671,
+          "zero_shear_mean_e": [
+            0.0268114257560228,
+            0.02163414648384787
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.7032403731718655,
+              -4.336808689942018e-17
+            ],
+            [
+              8.673617379884035e-17,
+              1.7033869400620463
+            ]
+          ],
+          "relative_trace_response": 0.9072935402013943,
+          "zero_shear_mean_e": [
+            -5.302881690184835e-09,
+            8.673617379884035e-19
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.35,
+      "snr": null,
+      "attempted": 8,
+      "all_method_common": 0,
+      "observed_common": 8,
+      "truth_response": [
+        [
+          1.8773567551675365,
+          -3.469446951953614e-16
+        ],
+        [
+          1.734723475976807e-16,
+          1.8773567551675363
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.1970309482421724,
+              3.731111064726733e-06
+            ],
+            [
+              -4.243338480765246e-06,
+              1.188918892876245
+            ]
+          ],
+          "relative_trace_response": 0.6354545651887816,
+          "zero_shear_mean_e": [
+            0.009670029394328601,
+            0.006320273911114782
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 40
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.7586781390718897,
+              -0.007551012095064098
+            ],
+            [
+              -0.027180876350030823,
+              1.6887618316104636
+            ]
+          ],
+          "relative_trace_response": 0.9181632529866978,
+          "zero_shear_mean_e": [
+            0.015469278674572703,
+            0.006394562657078495
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.823513256385923,
+              1.4224732503009818e-14
+            ],
+            [
+              -1.734723475976807e-16,
+              1.8235375173389912
+            ]
+          ],
+          "relative_trace_response": 0.9713259783166386,
+          "zero_shear_mean_e": [
+            7.015935252902006e-09,
+            -6.938893903907228e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.35,
+      "snr": 20,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.1824121029349044,
+              0.014753220602870074
+            ],
+            [
+              0.012876666733063931,
+              1.2210917586344296
+            ]
+          ],
+          "relative_trace_response": 0.6401297608868284,
+          "zero_shear_mean_e": [
+            -0.007916734786704181,
+            0.013515812577679753
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.38423569551378,
+              -0.015126775542739649
+            ],
+            [
+              -0.030722955125384033,
+              1.3300448754307581
+            ]
+          ],
+          "relative_trace_response": 0.7228995137640514,
+          "zero_shear_mean_e": [
+            0.0029315733991097624,
+            0.02372872014530003
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8235128605738289,
+              -5.5077470362263625e-15
+            ],
+            [
+              4.336808689942018e-17,
+              1.8235377967357635
+            ]
+          ],
+          "relative_trace_response": 0.9713259473115242,
+          "zero_shear_mean_e": [
+            1.0387354950139316e-08,
+            8.673617379884035e-19
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.35,
+      "snr": 50,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.181195158233095,
+              0.0032025276595960307
+            ],
+            [
+              0.004992456524632784,
+              1.1796196544310078
+            ]
+          ],
+          "relative_trace_response": 0.6287603051912801,
+          "zero_shear_mean_e": [
+            0.00857529385757516,
+            -0.0023561623820569358
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.6085160008515231,
+              -0.006502658288809471
+            ],
+            [
+              -0.042101636063307565,
+              1.5770211217386527
+            ]
+          ],
+          "relative_trace_response": 0.8484101686644788,
+          "zero_shear_mean_e": [
+            0.021541193666053005,
+            0.0018695782637223619
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8235132563859235,
+              1.3964523981613297e-14
+            ],
+            [
+              -4.336808689942018e-17,
+              1.8235375173389912
+            ]
+          ],
+          "relative_trace_response": 0.9713259783166387,
+          "zero_shear_mean_e": [
+            7.0159352607082615e-09,
+            -1.734723475976807e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.35,
+      "snr": 100,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.1980529875017965,
+              -0.0013228747775427194
+            ],
+            [
+              -0.0009001381840789691,
+              1.1883256147484644
+            ]
+          ],
+          "relative_trace_response": 0.6355687579575944,
+          "zero_shear_mean_e": [
+            0.007323615745917778,
+            0.010481159588380244
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.6923049505294332,
+              -0.0168117989232993
+            ],
+            [
+              -0.050916525651700795,
+              1.6250610617134953
+            ]
+          ],
+          "relative_trace_response": 0.8835204079117305,
+          "zero_shear_mean_e": [
+            0.017144711026048753,
+            0.027272084087599076
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8235132563859235,
+              1.3964523981613297e-14
+            ],
+            [
+              -4.336808689942018e-17,
+              1.8235375173389912
+            ]
+          ],
+          "relative_trace_response": 0.9713259783166387,
+          "zero_shear_mean_e": [
+            7.0159352607082615e-09,
+            -1.734723475976807e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.65,
+      "snr": null,
+      "attempted": 8,
+      "all_method_common": 0,
+      "observed_common": 8,
+      "truth_response": [
+        [
+          1.8773567551675365,
+          -3.469446951953614e-16
+        ],
+        [
+          1.734723475976807e-16,
+          1.8773567551675363
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.5480453730560844,
+              1.0669464245438576e-05
+            ],
+            [
+              1.0151416064869967e-05,
+              1.5482911781873556
+            ]
+          ],
+          "relative_trace_response": 0.8246532106166261,
+          "zero_shear_mean_e": [
+            0.004623021988663822,
+            0.003079764632275328
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 40
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.810534240212291,
+              -0.01754872027959209
+            ],
+            [
+              -0.010116645717062056,
+              1.789597363676876
+            ]
+          ],
+          "relative_trace_response": 0.9588299064574676,
+          "zero_shear_mean_e": [
+            0.0038275026890914818,
+            0.0011608340282691608
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.8609730410389602,
+              -5.7245874707234634e-15
+            ],
+            [
+              -1.734723475976807e-16,
+              1.8609754741191864
+            ]
+          ],
+          "relative_trace_response": 0.9912736364341145,
+          "zero_shear_mean_e": [
+            -1.1009753980023573e-08,
+            -1.8626451422920631e-09
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.65,
+      "snr": 20,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.4822160861513107,
+              -0.042615259008016264
+            ],
+            [
+              -0.04142031830269843,
+              1.4989489998697536
+            ]
+          ],
+          "relative_trace_response": 0.793979374941718,
+          "zero_shear_mean_e": [
+            -0.006841995564172972,
+            -0.004805127973668276
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.294895026512677,
+              -0.02353039158151677
+            ],
+            [
+              -0.06766864826204255,
+              1.3476502386765794
+            ]
+          ],
+          "relative_trace_response": 0.7037941131634926,
+          "zero_shear_mean_e": [
+            0.011281131403165992,
+            0.033826715050963685
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.860972936265172,
+              0.0
+            ],
+            [
+              -8.673617379884035e-17,
+              1.86097570694983
+            ]
+          ],
+          "relative_trace_response": 0.9912736705397408,
+          "zero_shear_mean_e": [
+            -1.0201467060856617e-08,
+            2.6020852139652106e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.65,
+      "snr": 50,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.554211254369875,
+              0.01662680442677828
+            ],
+            [
+              0.013419994502327729,
+              1.5443836426129565
+            ]
+          ],
+          "relative_trace_response": 0.825254680138382,
+          "zero_shear_mean_e": [
+            -0.007942256779642776,
+            -9.514350676908742e-05
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.655738418048714,
+              0.004383846680866468
+            ],
+            [
+              -0.007703625306021422,
+              1.623312103038188
+            ]
+          ],
+          "relative_trace_response": 0.8733157701808995,
+          "zero_shear_mean_e": [
+            0.00440234383859206,
+            0.008895154169294981
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8609730410389604,
+              -6.114900252818245e-15
+            ],
+            [
+              -4.336808689942018e-17,
+              1.8609754741191864
+            ]
+          ],
+          "relative_trace_response": 0.9912736364341146,
+          "zero_shear_mean_e": [
+            -1.1009753982625659e-08,
+            -1.8626451474962336e-09
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.45,
+      "half_light_radius": 0.65,
+      "snr": 100,
+      "attempted": 32,
+      "all_method_common": 0,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.5439921861798214,
+              -0.0023136308300312353
+            ],
+            [
+              -0.0008989554771686534,
+              1.5485300005138924
+            ]
+          ],
+          "relative_trace_response": 0.8236373236417006,
+          "zero_shear_mean_e": [
+            0.008343779249116777,
+            0.004916515183140289
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": false,
+          "success_by_branch": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "status_counts": {
+            "-1": 160
+          }
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.7396451363310923,
+              -0.01595387548149977
+            ],
+            [
+              -0.010849292993953073,
+              1.7194334635860287
+            ]
+          ],
+          "relative_trace_response": 0.9212629912763788,
+          "zero_shear_mean_e": [
+            0.01212453405605629,
+            0.002406949311989583
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8609730410389604,
+              -6.114900252818245e-15
+            ],
+            [
+              -4.336808689942018e-17,
+              1.8609754741191864
+            ]
+          ],
+          "relative_trace_response": 0.9912736364341146,
+          "zero_shear_mean_e": [
+            -1.1009753982625659e-08,
+            -1.8626451474962336e-09
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.18,
+      "snr": null,
+      "attempted": 8,
+      "all_method_common": 8,
+      "observed_common": 8,
+      "truth_response": [
+        [
+          1.8773567551675365,
+          -3.469446951953614e-16
+        ],
+        [
+          1.734723475976807e-16,
+          1.8773567551675363
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              0.5476254737004639,
+              -2.0966399460857488e-05
+            ],
+            [
+              -3.476743586361408e-05,
+              0.5417088919784875
+            ]
+          ],
+          "relative_trace_response": 0.29012449623133524,
+          "zero_shear_mean_e": [
+            0.01975934440270067,
+            0.012960197636857629
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.9890191731974483,
+              -2.1617961465381086e-05
+            ],
+            [
+              -0.0004647077730624005,
+              1.9308423157781363
+            ]
+          ],
+          "relative_trace_response": 1.0439841756730392,
+          "zero_shear_mean_e": [
+            0.0017793964143493213,
+            -0.0009771321565494873
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.0412364965304732,
+              0.012346752919256687
+            ],
+            [
+              -0.024178651801775967,
+              0.9334763686638325
+            ]
+          ],
+          "relative_trace_response": 0.5259290381966003,
+          "zero_shear_mean_e": [
+            0.044459082186222076,
+            0.007829703448805955
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.7032405361533165,
+              5.551115123125783e-15
+            ],
+            [
+              0.0,
+              1.7033872893080126
+            ]
+          ],
+          "relative_trace_response": 0.9072936766238976,
+          "zero_shear_mean_e": [
+            3.8662761533969636e-10,
+            3.469446951953614e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.18,
+      "snr": 20,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              0.5498031075148901,
+              -0.014041766917216592
+            ],
+            [
+              -0.014159733109408816,
+              0.5503013725501659
+            ]
+          ],
+          "relative_trace_response": 0.292992921307299,
+          "zero_shear_mean_e": [
+            0.037503038307477254,
+            0.01426644411549205
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              2.25114140266669,
+              -0.005671285180142149
+            ],
+            [
+              0.411136366892606,
+              1.9052849034778774
+            ]
+          ],
+          "relative_trace_response": 1.1069889339636052,
+          "zero_shear_mean_e": [
+            0.023660126520553604,
+            0.16824192111380398
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              0.725686137957382,
+              -0.020917529036523774
+            ],
+            [
+              -0.0454614928457886,
+              0.7127348573703784
+            ]
+          ],
+          "relative_trace_response": 0.3830974031356643,
+          "zero_shear_mean_e": [
+            0.04713685948809143,
+            0.022219817066797987
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.703240117058158,
+              0.0
+            ],
+            [
+              4.336808689942018e-17,
+              1.703386683948338
+            ]
+          ],
+          "relative_trace_response": 0.907293403778891,
+          "zero_shear_mean_e": [
+            -1.6697305760260406e-09,
+            -8.673617379884035e-19
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.18,
+      "snr": 50,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              0.5447845222079195,
+              -0.0006084391770855291
+            ],
+            [
+              -0.00012985428838874213,
+              0.5409586308815051
+            ]
+          ],
+          "relative_trace_response": 0.28916804174295907,
+          "zero_shear_mean_e": [
+            0.020713132045784732,
+            0.00718534886254929
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.9770910217630444,
+              0.002562774170655757
+            ],
+            [
+              0.005833992690895684,
+              1.9575715967221186
+            ]
+          ],
+          "relative_trace_response": 1.0479261886838425,
+          "zero_shear_mean_e": [
+            0.007073583459714428,
+            -0.013512422781786881
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              0.9408518468262628,
+              -0.01309805957134813
+            ],
+            [
+              -0.024337060312973356,
+              0.8401672615946154
+            ]
+          ],
+          "relative_trace_response": 0.474342211068439,
+          "zero_shear_mean_e": [
+            0.05002173646062147,
+            0.004116848023841161
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.7032405361533165,
+              5.204170427930421e-15
+            ],
+            [
+              0.0,
+              1.7033872893080129
+            ]
+          ],
+          "relative_trace_response": 0.9072936766238978,
+          "zero_shear_mean_e": [
+            3.866276179417816e-10,
+            8.673617379884035e-19
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.18,
+      "snr": 100,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              0.5472014418046456,
+              0.0010326228220947087
+            ],
+            [
+              0.000763438583817333,
+              0.5430036322650267
+            ]
+          ],
+          "relative_trace_response": 0.29035639365528637,
+          "zero_shear_mean_e": [
+            0.02150932705262676,
+            0.010266937948472332
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.992009671357664,
+              0.011899882883881219
+            ],
+            [
+              0.004427540261531249,
+              1.9543923423043452
+            ]
+          ],
+          "relative_trace_response": 1.0510527641587841,
+          "zero_shear_mean_e": [
+            0.005789407139673131,
+            -0.005295013848808594
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.001670014920819,
+              0.005116360625834204
+            ],
+            [
+              -0.027152652546647005,
+              0.8973830663308036
+            ]
+          ],
+          "relative_trace_response": 0.5057784238462845,
+          "zero_shear_mean_e": [
+            0.05264867061487166,
+            0.017226507578016026
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.7032405361533165,
+              5.204170427930421e-15
+            ],
+            [
+              0.0,
+              1.7033872893080129
+            ]
+          ],
+          "relative_trace_response": 0.9072936766238978,
+          "zero_shear_mean_e": [
+            3.866276179417816e-10,
+            8.673617379884035e-19
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.35,
+      "snr": null,
+      "attempted": 8,
+      "all_method_common": 8,
+      "observed_common": 8,
+      "truth_response": [
+        [
+          1.8773567551675365,
+          -3.469446951953614e-16
+        ],
+        [
+          1.734723475976807e-16,
+          1.8773567551675363
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.0130538968951446,
+              3.25962901375626e-07
+            ],
+            [
+              2.561137080192566e-07,
+              1.0133607254829258
+            ]
+          ],
+          "relative_trace_response": 0.5396988656525307,
+          "zero_shear_mean_e": [
+            0.012825368437916046,
+            0.008549300720915191
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.8881152383983135,
+              3.755080797418486e-05
+            ],
+            [
+              2.8149372610641876e-05,
+              1.8862487631849945
+            ]
+          ],
+          "relative_trace_response": 1.0052335527581922,
+          "zero_shear_mean_e": [
+            -0.00015066562900756253,
+            -8.27384587864799e-05
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.2840327268349936,
+              0.0019738217815755063
+            ],
+            [
+              -0.01740834559313901,
+              1.2837281843530945
+            ]
+          ],
+          "relative_trace_response": 0.6838766537367428,
+          "zero_shear_mean_e": [
+            0.018474186537787318,
+            0.009781516680959612
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.8235127441585066,
+              -2.42861286636753e-15
+            ],
+            [
+              5.204170427930421e-16,
+              1.8235373543575406
+            ]
+          ],
+          "relative_trace_response": 0.971325798486975,
+          "zero_shear_mean_e": [
+            7.086425481139802e-09,
+            -3.469446951953614e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.35,
+      "snr": 20,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              0.9950223880878184,
+              0.00534708597115241
+            ],
+            [
+              0.006938871229067445,
+              0.9953661108738743
+            ]
+          ],
+          "relative_trace_response": 0.530103959591865,
+          "zero_shear_mean_e": [
+            0.044446840285672806,
+            -0.014999670325778425
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8843553629267262,
+              0.03723672889464069
+            ],
+            [
+              0.01585391873959452,
+              1.8569813494650589
+            ]
+          ],
+          "relative_trace_response": 0.9964373319278643,
+          "zero_shear_mean_e": [
+            0.055862619694380555,
+            -0.027834838954731822
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.014705438137753,
+              0.015450719502041466
+            ],
+            [
+              -0.014802350779064086,
+              0.9726313233841212
+            ]
+          ],
+          "relative_trace_response": 0.5292911845475324,
+          "zero_shear_mean_e": [
+            0.04877742270127783,
+            -0.009804721863474702
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8235130934044725,
+              5.637851296924623e-15
+            ],
+            [
+              -4.336808689942018e-17,
+              1.823537633754313
+            ]
+          ],
+          "relative_trace_response": 0.9713259659145929,
+          "zero_shear_mean_e": [
+            7.223737939418551e-09,
+            -2.6020852139652106e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.35,
+      "snr": 50,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.0119212503923336,
+              -0.00550378390471451
+            ],
+            [
+              -0.00417497212765721,
+              1.0285023090546017
+            ]
+          ],
+          "relative_trace_response": 0.5434298925418806,
+          "zero_shear_mean_e": [
+            0.022213286225451156,
+            0.007912998666142809
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8978062915266491,
+              -0.010044071314041503
+            ],
+            [
+              -0.0059882877394557,
+              1.908554140391061
+            ]
+          ],
+          "relative_trace_response": 1.0137552229858489,
+          "zero_shear_mean_e": [
+            0.015045442109112628,
+            -0.004375104530481622
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.2106421929274802,
+              -0.00978212192421779
+            ],
+            [
+              -0.021564764028880745,
+              1.1856682423967868
+            ]
+          ],
+          "relative_trace_response": 0.6382139219752133,
+          "zero_shear_mean_e": [
+            0.03568264906061813,
+            0.011228262883378193
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.823512744158507,
+              -2.168404344971009e-15
+            ],
+            [
+              1.3010426069826053e-16,
+              1.8235373543575406
+            ]
+          ],
+          "relative_trace_response": 0.9713257984869753,
+          "zero_shear_mean_e": [
+            7.0864254759356315e-09,
+            -8.673617379884035e-19
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.35,
+      "snr": 100,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.0166904041398084,
+              -0.0010244722943749535
+            ],
+            [
+              -0.0005697841515937482,
+              1.0153820458526752
+            ]
+          ],
+          "relative_trace_response": 0.5412057256563206,
+          "zero_shear_mean_e": [
+            0.01045269888709299,
+            0.00508917128900066
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.9048962865781505,
+              0.0003045744961127639
+            ],
+            [
+              0.0001006432285066694,
+              1.8993996094650356
+            ]
+          ],
+          "relative_trace_response": 1.0132053712145108,
+          "zero_shear_mean_e": [
+            -0.005171021577552892,
+            -0.006208655784575967
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.2580768598127177,
+              -0.0027143905754201114
+            ],
+            [
+              -0.014041206304682419,
+              1.2530920179415261
+            ]
+          ],
+          "relative_trace_response": 0.668804389693675,
+          "zero_shear_mean_e": [
+            0.018868831772124395,
+            0.014258175666327588
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.823512744158507,
+              -2.168404344971009e-15
+            ],
+            [
+              1.3010426069826053e-16,
+              1.8235373543575406
+            ]
+          ],
+          "relative_trace_response": 0.9713257984869753,
+          "zero_shear_mean_e": [
+            7.0864254759356315e-09,
+            -8.673617379884035e-19
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.65,
+      "snr": null,
+      "attempted": 8,
+      "all_method_common": 8,
+      "observed_common": 8,
+      "truth_response": [
+        [
+          1.8773567551675365,
+          -3.469446951953614e-16
+        ],
+        [
+          1.734723475976807e-16,
+          1.8773567551675363
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.421219279291108,
+              1.3771932571605972e-05
+            ],
+            [
+              1.4482066034576802e-05,
+              1.4214889553841203
+            ]
+          ],
+          "relative_trace_response": 0.7571038980338992,
+          "zero_shear_mean_e": [
+            0.006875895080156628,
+            0.004585072514601045
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.8790398025885224,
+              9.538871381664649e-06
+            ],
+            [
+              1.2258988846269858e-05,
+              1.879053097218275
+            ]
+          ],
+          "relative_trace_response": 1.0009000392339982,
+          "zero_shear_mean_e": [
+            -4.338092912803404e-05,
+            -1.4289832110492284e-05
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.6170691174920644,
+              -0.013354670954868024
+            ],
+            [
+              -0.004177592791166154,
+              1.6055930580478173
+            ]
+          ],
+          "relative_trace_response": 0.8582977547206497,
+          "zero_shear_mean_e": [
+            0.006714191520586603,
+            0.001463164713641163
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "status_counts": {
+            "0": 40
+          },
+          "response": [
+            [
+              1.860973343718798,
+              1.231653667943533e-14
+            ],
+            [
+              -3.469446951953614e-16,
+              1.8609760096296668
+            ]
+          ],
+          "relative_trace_response": 0.9912738596709383,
+          "zero_shear_mean_e": [
+            -1.4093472142789887e-08,
+            1.0408340855860843e-17
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.65,
+      "snr": 20,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.4281711148214526,
+              0.03762010010177636
+            ],
+            [
+              0.03532734117470682,
+              1.4545950303727295
+            ]
+          ],
+          "relative_trace_response": 0.7677725976320688,
+          "zero_shear_mean_e": [
+            -0.023848042075769627,
+            -0.0009336711955256734
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.9210216734791175,
+              0.05750538985012099
+            ],
+            [
+              0.05255832220427692,
+              1.9575177120714216
+            ]
+          ],
+          "relative_trace_response": 1.032978781170555,
+          "zero_shear_mean_e": [
+            -0.04109250463079661,
+            -0.008387173875235021
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.2274026768864132,
+              0.015702420205343515
+            ],
+            [
+              -0.019315558893140405,
+              1.2198094356790536
+            ]
+          ],
+          "relative_trace_response": 0.6517706626163008,
+          "zero_shear_mean_e": [
+            -0.021409621738712303,
+            -0.00010150801972486079
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8609733786433935,
+              2.5023386140965442e-14
+            ],
+            [
+              -4.336808689942018e-17,
+              1.8609755206853151
+            ]
+          ],
+          "relative_trace_response": 0.991273738750992,
+          "zero_shear_mean_e": [
+            -1.1260506109153634e-08,
+            2.6020852139652106e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.65,
+      "snr": 50,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.437882628306397,
+              0.0023614384190297558
+            ],
+            [
+              0.004075345350429416,
+              1.4231003337044967
+            ]
+          ],
+          "relative_trace_response": 0.761971040969136,
+          "zero_shear_mean_e": [
+            0.012984387230972061,
+            0.010413435404188931
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.913651029462926,
+              0.003328837192384526
+            ],
+            [
+              0.0020764535292983055,
+              1.8953123973915353
+            ]
+          ],
+          "relative_trace_response": 1.0144484835847165,
+          "zero_shear_mean_e": [
+            0.006462905053922441,
+            0.009009049215819687
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.4864914624922678,
+              0.004602194530889392
+            ],
+            [
+              -0.003751477925106883,
+              1.4577051439118804
+            ]
+          ],
+          "relative_trace_response": 0.7841334893594603,
+          "zero_shear_mean_e": [
+            0.022178886327310465,
+            0.011612876201979816
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8609733437187976,
+              1.2446640940133591e-14
+            ],
+            [
+              -8.673617379884035e-17,
+              1.8609760096296668
+            ]
+          ],
+          "relative_trace_response": 0.9912738596709384,
+          "zero_shear_mean_e": [
+            -1.4093472140187802e-08,
+            2.6020852139652106e-18
+          ]
+        }
+      }
+    },
+    {
+      "psf_fwhm": 0.6,
+      "half_light_radius": 0.65,
+      "snr": 100,
+      "attempted": 32,
+      "all_method_common": 32,
+      "observed_common": 32,
+      "truth_response": [
+        [
+          1.8773567551675363,
+          -8.673617379884035e-17
+        ],
+        [
+          -1.3010426069826053e-16,
+          1.8773567551675359
+        ]
+      ],
+      "methods": {
+        "native_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.4196235741110286,
+              -0.0012121425243092829
+            ],
+            [
+              -0.004076036202604969,
+              1.419594704748306
+            ]
+          ],
+          "relative_trace_response": 0.7561744114548866,
+          "zero_shear_mean_e": [
+            0.006782817828934641,
+            0.0010860791335289876
+          ]
+        },
+        "native_regauss": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8762915746265207,
+              -0.0002936954842880368
+            ],
+            [
+              -0.004716132934845518,
+              1.8768557985822554
+            ]
+          ],
+          "relative_trace_response": 0.9995828877164702,
+          "zero_shear_mean_e": [
+            -0.0007643205462954938,
+            -0.004269003593435627
+          ]
+        },
+        "resnet_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.5354903118975471,
+              -0.010616512736305768
+            ],
+            [
+              -0.01381337633574748,
+              1.53106802572438
+            ]
+          ],
+          "relative_trace_response": 0.8167223222706721,
+          "zero_shear_mean_e": [
+            0.008443017664831135,
+            0.0017642034363234364
+          ]
+        },
+        "target_observed": {
+          "same_sample_available": true,
+          "success_by_branch": [
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "status_counts": {
+            "0": 160
+          },
+          "response": [
+            [
+              1.8609733437187976,
+              1.2446640940133591e-14
+            ],
+            [
+              -8.673617379884035e-17,
+              1.8609760096296668
+            ]
+          ],
+          "relative_trace_response": 0.9912738596709384,
+          "zero_shear_mean_e": [
+            -1.4093472140187802e-08,
+            2.6020852139652106e-18
+          ]
+        }
+      }
+    }
+  ]
+}

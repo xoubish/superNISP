@@ -9,11 +9,14 @@ definitions, current validation results, and the decision to retain the original
 epoch-49 ResNet. The historical diffusion-step and pixel-metric figures were
 removed from this Results passage; their files remain available.
 
-The independent-seed plot is installed as an appendix figure, with the seed
-and continuation tables in `paper/resnet_validation_appendix.tex`. All runs and
-comparisons completed successfully. Notebook caption notes are synchronized;
+At the user's request, the appendix has been removed. Essential seed and
+continuation methods/results remain in the main text; the detailed tables and
+seed plot are archived in `paper/diagnostics/resnet_validation_archive/`. All
+runs and comparisons completed successfully. The original notebook caption notes
+record the earlier installation;
 the pre-install notebook is archived in `revisions/`. Numerical provenance and
-installed PDF hashes are in `paper/diagnostics/resnet_model_selection_v01.json`.
+installed PDF hashes were recorded in `paper/diagnostics/resnet_model_selection_v01.json`.
+The current manuscript revision is recorded in `paper/diagnostics/appendix_removal_v01.json`.
 The held-out test has not been evaluated. This is a local manuscript update,
 not an external upload or a revision of the remaining historical shape results.
 
@@ -40,12 +43,13 @@ verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 | 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Isolated source first, then pairs/disk/crowded field; v07 |
 | 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Source/outside RMSE, power and Fourier correlation | Three panels in one row; v06 installed in local manuscript |
 | 7 | [07_model_shapes.ipynb](07_model_shapes.ipynb) | Hexbin density of measured ellipticity vs JWST with 1:1 and robust fit lines; gain bars as companion | Executed v05; installed in local manuscript as `paper/figs/shape_hexbin_v05.pdf`; alternatives kept in notebook |
-| 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Shape gains versus input S/N, magnitude and redshift; success counts | Frozen legacy validation preview |
-| 9 | [09_shape_robustness.ipynb](09_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Frozen legacy validation preview |
+| 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Current-model shape gains versus input S/N, fixed/adaptive moments and matched coverage | Executed v03 local draft; estimator names on y-axes |
+| Supporting checks | [09_shape_robustness.ipynb](09_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Retained analysis; no standalone Figure 9 planned |
 
-Figures 8–9 may move to an appendix or be combined. Diffusion sample variability
-and the individual-versus-mean-image comparison can become an additional figure
-after the full run finishes; their place in the story is not fixed yet.
+The user selected a compact updated Figure 8 and retained notebook 9 as supporting
+analysis rather than a paper figure. The current Figure 8 draft has fixed/adaptive
+S/N trends and matched measurement coverage; its mean-of-three and interpolation
+checks remain in the notebook tables.
 
 The sample overview and property distributions are now **two separate figures**,
 each in one row, without figure/panel titles, numbered Figures 1 and 2.
@@ -201,10 +205,12 @@ methods/results prose still needs revision. These changes await an Overleaf push
 
 The legacy-only validation previews are
 [Archived Figure 7: observed shapes](exports/fig07_observed_shapes_v01.png),
-[Figure 8: property dependence](exports/fig08_shape_dependence_v01.png), and
+[Archived Figure 8: property dependence](exports/fig08_shape_dependence_v01.png), and
 [Figure 9: measurement robustness](exports/fig09_shape_robustness_v01.png).
-Their input analyses are frozen; rerunning these notebooks will not silently
-switch to newer model results. Figure 6 now reads its completed matched benchmark and spectral bundles. Figure 5 now uses
+Their input analyses are frozen; the original Figure 8 notebook is archived in
+`revisions/08_shape_dependence_v01_before_current_models.ipynb`. The active Figure 8
+now uses the current Figure 7 measurement bundle. Figure 6 reads its completed
+matched benchmark and spectral bundles. Figure 5 now uses
 versioned best-checkpoint exports; its earlier waiting notebook is archived.
 
 Figure 4 v02 uses the same simplified style as Figure 3: common feature
@@ -579,3 +585,25 @@ objects; the shared 1,313-object check preserves the ordering. Full success coun
 use all 2,118 attempted fields. These are observed cross-band shapes, not shear.
 See [the report and proposed figure selection](../paper/model_shape_comparison.md).
 Older shape notebooks/results remain preserved; no manuscript changes or uploads.
+
+
+## Figure 8: current-model S/N dependence (v03)
+
+[Figure 8 preview](exports/fig08_shape_dependence_v03.png) uses the same frozen
+checkpoints and per-object shape measurements as Figures 6 and 7. The three
+panels show fixed-moment RMSE reduction, adaptive-moment RMSE reduction, and
+common-success fractions versus input-only NISP weighted S/N. Estimator names
+now appear on the y-axes, with no panel titles; v02 is preserved in `revisions/`. The original bins
+are unchanged. All 2,118 validation galaxies are assigned; shape comparisons use
+identical successful objects within each estimator/bin. The low-S/N bin has only
+179/626 fixed and 297/626 adaptive common successes, which the coverage panel
+makes explicit. ResNet improves in every bin; high-S/N gains are larger, while
+single-draw diffusion behaves differently between estimators.
+
+Inputs: `shape_snr_v02.json/.npz`, generated by `code/analyze_shape_snr.py` with
+contract/source snapshots in `runs/shape-snr-v02/`. All original shape arrays are
+unchanged. Binwise errors recombine exactly to Figure 7's RMSE, and independent
+object-level paired bootstraps reproduce every displayed confidence interval.
+[Protocol, numerical results and caption](../paper/figure8_shape_snr.md).
+The revised notebook is executed; PDF/SVG/PNG are local review exports. The new
+Figure 8 has not yet replaced the historical residual-plane figure in the paper.

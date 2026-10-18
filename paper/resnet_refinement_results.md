@@ -10,7 +10,9 @@ The balanced loss improves source errors but worsens outside-source errors.
 It does not establish an overall better model or a shape improvement. Keep
 the approved paper model and Figure 6 unchanged. The completed seed check and
 the user's subsequent decision confirm this choice; the manuscript now includes
-Figure 6 and an appendix documenting these tests.
+Figure 6 and a concise main-text summary of these tests. The appendix was later
+removed at the user's request; its detail is preserved in
+`diagnostics/resnet_validation_archive/`.
 
 | Variant | Selected extra epoch | Source MAE | Source RMSE | Outside RMSE |
 |---|---:|---:|---:|---:|
@@ -100,5 +102,6 @@ MJy/sr (mean 0.0601145; sample standard deviation 0.0000542). Outside RMSE is
 0.0139575, 0.0139342 and 0.0139416 MJy/sr. This supports reproducibility under
 the fixed recipe. The user approved retaining the original model, ending the
 training experiments, and adding the evidence to the paper. Figure 6 is installed
-unchanged, with the seed plot and selected/final checkpoint tables in
-`resnet_validation_appendix.tex`. The held-out test evaluation remains pending.
+unchanged. The seed plot and selected/final checkpoint tables were subsequently
+archived in `diagnostics/resnet_validation_archive/`, with essential methods and
+results retained in the main text. The held-out test evaluation remains pending.

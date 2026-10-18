@@ -1,0 +1,37 @@
+{
+  "complete": true,
+  "local_only": true,
+  "manuscript": "paper/survey_enhancements.tex",
+  "manuscript_sha256": "b00cff97700d846c5d0502a8b7f8b308ccd1ebc1aa4ee2ca1395b699dd084c90",
+  "archived_directory": "paper/diagnostics/resnet_validation_archive",
+  "archive_hashes": {
+    "paper/diagnostics/resnet_validation_archive/resnet_validation_appendix.tex": "72a5538cf316cdf456b692992bcfbb34dc9aa81835096a6daddd8506ac860720",
+    "paper/diagnostics/resnet_validation_archive/survey_enhancements_before_appendix_removal.tex": "c84c41b07f869de7e5f160c7e8484962138e6601e25613d01430beafa0fefe6c",
+    "paper/diagnostics/resnet_validation_archive/resnet_seed_comparison_v01.pdf": "337624050c1117d61471bc56f555ff9d6b5030f45763158d8eba1fa9af8d2df7"
+  },
+  "checks": {
+    "no_appendix_or_dangling_references": true,
+    "unique_labels": true,
+    "balanced_environments": true,
+    "figure6_and_7_preserved": true,
+    "preview_two_pass_compile": true,
+    "preview_undefined_references": false,
+    "preview_overfull_boxes": false,
+    "preview_visual_review": true,
+    "bundle_has_no_appendix": true,
+    "bundle_matches_manuscript": true,
+    "git_diff_check": true
+  },
+  "installed_figure_hashes": {
+    "figs/model_comparison_v06.pdf": "8bff8af5bf3b9585e0b460f1dc1cc09d7b7ae4e1ef4f3bd02756ca02fffa227a",
+    "figs/shape_hexbin_v05.pdf": "af975c7b1af377d7050421c530f8452f64a2e6e52ff21e1c50b8d784314e5212"
+  },
+  "preview_directory": "/tmp/supernisp-no-appendix-yl1y65fj",
+  "full_manuscript_build": "Blocked by existing missing etex.sty; journal layout not verified.",
+  "preview_pages": 3,
+  "bundle": {
+    "path": ".overleaf/superNISP-paper.zip",
+    "sha256": "edeedc7cc51f2706f1c372483fa52b9ec351e976803bada53459220b54f075b0",
+    "file_count": 40
+  }
+}

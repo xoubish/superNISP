@@ -1,0 +1,140 @@
+{
+  "nisp": [
+    {
+      "path": "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/nisp_psf/EUC_NIR_W-STK-PSF-I_Y-4907_20250423T232759.861260Z.fits.gz",
+      "sha256": "02e9ce181081b3d581dd963c671122d4a216bf8349eac8d9dc25116428ec39df",
+      "hdu_names": [
+        "PRIMARY",
+        "STACKED.PSF"
+      ],
+      "shape": [
+        61,
+        61
+      ],
+      "oversampling": 6.0,
+      "scale_arcsec": [
+        0.049453504076800804,
+        0.04945501259565408
+      ],
+      "sum": 36.48364423228003,
+      "minimum": -0.00015545163478236645,
+      "negative_pixels": 2,
+      "negative_absolute_flux_fraction": 7.140494684106782e-06,
+      "header_ree50_arcsec": 0.2665064561741048,
+      "header_ree80_arcsec": 0.4039358802550614,
+      "adaptive_status": 0,
+      "adaptive_e": [
+        0.006427151151001453,
+        -0.0007569505251012743
+      ],
+      "adaptive_sigma_arcsec": 0.20768846787549952,
+      "manifest_sha256_verified": true
+    },
+    {
+      "path": "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/nisp_psf/EUC_NIR_W-STK-PSF-I_Y-4910_20250424T000156.010214Z.fits.gz",
+      "sha256": "d78496ee0784cac0752e1b719359612900c74bfe4771df1ce7e8e7350d80cff6",
+      "hdu_names": [
+        "PRIMARY",
+        "STACKED.PSF"
+      ],
+      "shape": [
+        61,
+        61
+      ],
+      "oversampling": 6.0,
+      "scale_arcsec": [
+        0.04945429693179864,
+        0.04945440485241216
+      ],
+      "sum": 36.42664286902698,
+      "minimum": -0.00042439866228960454,
+      "negative_pixels": 6,
+      "negative_absolute_flux_fraction": 3.658633797905828e-05,
+      "header_ree50_arcsec": 0.2667937160153162,
+      "header_ree80_arcsec": 0.4041937464875276,
+      "adaptive_status": 0,
+      "adaptive_e": [
+        -0.0008845755364745855,
+        0.00026620482094585896
+      ],
+      "adaptive_sigma_arcsec": 0.20805177853211587,
+      "manifest_sha256_verified": true
+    },
+    {
+      "path": "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/nisp_psf/EUC_NIR_W-STK-PSF-I_Y-4911_20250423T231840.182112Z.fits.gz",
+      "sha256": "daef22a5b16fe37a12860c1635121fbf746da591178cecff38310d5ad58389fd",
+      "hdu_names": [
+        "PRIMARY",
+        "STACKED.PSF"
+      ],
+      "shape": [
+        61,
+        61
+      ],
+      "oversampling": 6.0,
+      "scale_arcsec": [
+        0.04945412031533316,
+        0.0494528474755944
+      ],
+      "sum": 36.48462764972231,
+      "minimum": -0.0003629332932177931,
+      "negative_pixels": 5,
+      "negative_absolute_flux_fraction": 2.6482735231190577e-05,
+      "header_ree50_arcsec": 0.2665460193257839,
+      "header_ree80_arcsec": 0.4043726358341279,
+      "adaptive_status": 0,
+      "adaptive_e": [
+        0.0019178723450750113,
+        0.0015163901261985302
+      ],
+      "adaptive_sigma_arcsec": 0.20754559090242392,
+      "manifest_sha256_verified": true
+    },
+    {
+      "path": "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/nisp_psf/EUC_NIR_W-STK-PSF-I_Y-4932_20250424T021642.305490Z.fits.gz",
+      "sha256": "e08a9e9fd0ed9fda8eba0c988e0c7e5865e0e96bcc7a1712cebd1786347b4c3b",
+      "hdu_names": [
+        "PRIMARY",
+        "STACKED.PSF"
+      ],
+      "shape": [
+        61,
+        61
+      ],
+      "oversampling": 6.0,
+      "scale_arcsec": [
+        0.04945853398335408,
+        0.0494523160518492
+      ],
+      "sum": 36.47287299276809,
+      "minimum": -0.0003319731040392071,
+      "negative_pixels": 11,
+      "negative_absolute_flux_fraction": 2.485303524234012e-05,
+      "header_ree50_arcsec": 0.2661986588007935,
+      "header_ree80_arcsec": 0.4029359059827447,
+      "adaptive_status": 0,
+      "adaptive_e": [
+        0.012225612998008731,
+        -0.0014548560138791804
+      ],
+      "adaptive_sigma_arcsec": 0.20758554934645307,
+      "manifest_sha256_verified": true
+    }
+  ],
+  "local_jwst_psf_candidates": [],
+  "searched_roots": [
+    "/home/shemmati/Work/Projects/superNISP/data",
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1"
+  ],
+  "findings": [
+    "Four NISP stack-level 61x61 PSFs, oversampling 6, approximately 0.04945 arcsec per PSF pixel.",
+    "The existing EuclidPSF loader expects HDU 2 plus STMPSIZE and a spatial atlas; these files have only PRIMARY and STACKED.PSF. It cannot load these products.",
+    "PSF array sums are approximately 36.5, not one. Preserve signed pixels and explicitly normalize any experimental use.",
+    "Header spatial parameter count POLNAXIS=0: no spatially varying PSF supplied by these files.",
+    "Pixel-response and stack-resampling conventions require provenance documentation before deciding whether/how to add pixel integration. Do not double-convolve the detector response.",
+    "No corresponding local F115W PSF found. A historical filename in clipping.py is not an available calibrated mosaic PSF.",
+    "No single effective PSF is established for the nonlinear learned reconstruction."
+  ],
+  "source_sha256": "d9323ec806f76aa71819963167400c5ac013678500ed460aa4fa2a7fb1956dd9",
+  "manifest_sha256": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53"
+}

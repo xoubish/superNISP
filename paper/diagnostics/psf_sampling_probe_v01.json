@@ -1,0 +1,87 @@
+{
+  "galsim": "2.7.1",
+  "native_scale_arcsec": 0.29672,
+  "galaxy_half_light_radius_arcsec": 0.35,
+  "rows": [
+    {
+      "psf_fwhm": 0.45,
+      "initial_psf_sigma_pixels": 0.6,
+      "psf_moment_status": -1,
+      "psf_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n",
+      "correction_status": -1,
+      "correction_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n"
+    },
+    {
+      "psf_fwhm": 0.45,
+      "initial_psf_sigma_pixels": 0.8,
+      "psf_moment_status": -1,
+      "psf_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n",
+      "correction_status": -1,
+      "correction_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n"
+    },
+    {
+      "psf_fwhm": 0.45,
+      "initial_psf_sigma_pixels": 1.0,
+      "psf_moment_status": -1,
+      "psf_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n",
+      "correction_status": -1,
+      "correction_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n"
+    },
+    {
+      "psf_fwhm": 0.45,
+      "initial_psf_sigma_pixels": 2.0,
+      "psf_moment_status": -1,
+      "psf_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n",
+      "correction_status": -1,
+      "correction_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n"
+    },
+    {
+      "psf_fwhm": 0.45,
+      "initial_psf_sigma_pixels": 3.0,
+      "psf_moment_status": -1,
+      "psf_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n",
+      "correction_status": -1,
+      "correction_error": "Error: HSM collapsed to singular moment matrix. Object is too small.\n"
+    },
+    {
+      "psf_fwhm": 0.6,
+      "initial_psf_sigma_pixels": 0.6,
+      "psf_moment_status": 0,
+      "psf_error": "",
+      "correction_status": 0,
+      "correction_error": ""
+    },
+    {
+      "psf_fwhm": 0.6,
+      "initial_psf_sigma_pixels": 0.8,
+      "psf_moment_status": 0,
+      "psf_error": "",
+      "correction_status": 0,
+      "correction_error": ""
+    },
+    {
+      "psf_fwhm": 0.6,
+      "initial_psf_sigma_pixels": 1.0,
+      "psf_moment_status": 0,
+      "psf_error": "",
+      "correction_status": 0,
+      "correction_error": ""
+    },
+    {
+      "psf_fwhm": 0.6,
+      "initial_psf_sigma_pixels": 2.0,
+      "psf_moment_status": 0,
+      "psf_error": "",
+      "correction_status": 0,
+      "correction_error": ""
+    },
+    {
+      "psf_fwhm": 0.6,
+      "initial_psf_sigma_pixels": 3.0,
+      "psf_moment_status": 0,
+      "psf_error": "",
+      "correction_status": 0,
+      "correction_error": ""
+    }
+  ]
+}

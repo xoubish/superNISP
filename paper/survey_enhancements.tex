@@ -102,11 +102,8 @@ direct mappings.
 On 2118 validation galaxies, the residual models have lower source-region
 reconstruction errors and stronger signed Fourier correlation with the
 JWST reference, while diffusion retains more observed small-scale power.
-Three independent ResNet training seeds give closely consistent source
-RMSE, spanning 0.06007--0.06017 MJy\,sr$^{-1}$.
-Source-weighted continuation reduces source RMSE by 2.19\% but increases
-outside-source RMSE by 2.40\%, without a clear observed-shape improvement;
-we therefore retain the original ResNet for the main comparison.
+ResNet reconstruction errors are consistent across three independent
+training seeds.
 These validation diagnostics include noise, instrumental responses, and
 the band difference, and do not establish calibrated shear recovery.
 The 2876-object test sample remains reserved for evaluation of the fixed
@@ -430,9 +427,13 @@ The main architecture comparison uses training seed 20261016.
 For ResNet, we additionally repeat the complete 50-epoch training with independent seeds 20261018 and 20261019, keeping the data, architecture, normalization, optimization schedule, and checkpoint criterion fixed.
 These repetitions assess variation between training runs; they do not replace the original checkpoint with the most favourable seed.
 Diffusion and ResNet-D5 retain one training seed each.
-Appendix~\ref{app:resnet_checks} reports the ResNet repetitions and two matched continuation experiments used to assess the model choice.
 The runs use PyTorch 2.6.0 on NVIDIA L40S GPUs, with recorded data, source, and checkpoint hashes.
 Losses, validation metrics, and fixed galaxy examples are monitored with Weights \& Biases \citep{wandb}.
+
+We also compare two matched ten-epoch continuations from the original epoch-49 ResNet checkpoint, preserving its optimizer state and using identical batches and augmentations with a cosine learning-rate decay from $10^{-5}$ to $10^{-6}$.
+One retains the original valid-pixel mean absolute error; the other gives equal weight to the per-object source and outside-source mean absolute errors, using the detection prescription in Sect.~\ref{sc:regional_structure}.
+Both continuations select the lowest source-region validation mean absolute error, including the unchanged parent as a candidate; this differs from the full-field criterion used for the primary comparison.
+These checks inform the model choice discussed in Sect.~\ref{sc:resnet_selection}.
 
 \begin{table*}[t]
     \caption{Architecture, training, and generation settings.}
@@ -639,7 +640,7 @@ These selected examples illustrate differences in source separation and recovere
     Whiskers and shaded bands are 95\% intervals from 2000 paired spatial-block resamples over 18 blocks; they do not include training-seed variation.
     Colours identify methods; diffusion uses one fixed realization or the linear mean of three realizations.
     Checkpoints match Fig.~\ref{fig:galaxy_examples}: epoch 49 for ResNet and ResNet-D5, and epoch 35 for diffusion with 50 generation steps.
-    The originally selected ResNet is retained; independent-seed repetitions are shown in Appendix~\ref{app:resnet_checks}.
+    The originally selected ResNet is retained; reproducibility and model-choice checks are summarized in Sect.~\ref{sc:resnet_selection}.
     The dotted vertical line marks the NISP pixel Nyquist wavelength, approximately $0\farcs593$, rather than an effective image resolution.
     Observed reference power includes noise; no noise subtraction, PSF correction, or window deconvolution is applied, and greater power agreement alone does not establish faithful recovery of individual features.}
     \label{fig:pixel_comp}
@@ -659,18 +660,15 @@ The residual models nevertheless suppress substantial observed fine-scale power,
 \subsection{ResNet reproducibility and model choice}
 \label{sc:resnet_selection}
 
-Three independent 50-epoch ResNet trainings yield closely consistent validation errors: the selected checkpoints span $0.06007$--$0.06017$ MJy\,sr$^{-1}$ in source RMSE and $0.01393$--$0.01396$ MJy\,sr$^{-1}$ outside sources.
-The source RMSE has a between-seed sample standard deviation of $5.42\times10^{-5}$ MJy\,sr$^{-1}$, about 0.09\% of its mean.
-The source power and correlation curves are also similar across these seeds (Fig.~\ref{fig:resnet_seeds}).
-This is a reproducibility check within the same training and validation split; three seeds do not establish robustness across surveys or alternative training configurations.
+Three independent 50-epoch ResNet trainings yield source RMSE values of $0.06007$--$0.06017$ MJy\,sr$^{-1}$ and outside-source values of $0.01393$--$0.01396$ MJy\,sr$^{-1}$ at their selected checkpoints.
+The between-seed sample standard deviation of source RMSE is 0.09\% of its mean, distinct from the spatial-block uncertainty for any one trained model.
+This supports reproducibility under the fixed recipe and data split, rather than robustness across surveys or training configurations.
 
-Two matched ten-epoch continuations of the original ResNet assess additional optimization and source weighting (Appendix~\ref{app:resnet_checks}).
-The selected continuation with the original loss reduces source RMSE by 1.21\%, with an outside-source reduction of 0.09\%.
-Giving source and outside-source errors equal weight reduces source RMSE by 2.19\% but increases outside-source RMSE by 2.40\%, without a clear improvement in the fixed or adaptive observed-shape diagnostics.
-The continuation results therefore provide no clear overall improvement that warrants replacing the original model.
-We retain the original two-stage ResNet checkpoint from epoch 49 as the main model, with ResNet-D5 remaining in the architecture comparison.
-This also preserves the common 50-epoch training budget for the primary architecture comparison.
-The model and regional measurement choices are fixed for subsequent held-out evaluation; the results reported here use validation data and do not constitute a test-set result.
+The selected original-loss continuation reduces source RMSE by 1.21\% and outside-source RMSE by 0.09\% relative to the parent.
+Equal source/outside-source weighting reduces source RMSE by 2.19\% but increases outside-source RMSE by 2.40\%, with no clear reduction in fixed or adaptive observed-shape RMSE on matched successful objects.
+These validation checks provide no clear overall improvement that warrants replacing the original epoch-49 ResNet.
+We retain it as the main model, with ResNet-D5 as a comparator and a common 50-epoch budget for the primary architecture comparison.
+The fixed model and measurement choices await held-out evaluation; these findings use validation data.
 
 \subsection{Shape Preservation}
 \label{sc:shape_preservation}
@@ -782,17 +780,5 @@ Overall, these findings suggest that architectural choices that prioritize aniso
 %
 
 
-%
-% Now you can add appendices.
-% In this example, the appendices are in one column mode.
-% If that is not requires, comment out \onecolumn
-% Note that appendices in A\&A come {\it after\/} the references.
-
-
-\clearpage
-\begin{appendix}
-\input{resnet_validation_appendix}
-\clearpage
-\end{appendix}
 \label{LastPage}
 \end{document}

@@ -1,0 +1,64 @@
+{
+  "status": "Current-model Figure 8: S/N dependence and common measurement coverage",
+  "notebook": "08_shape_dependence.ipynb",
+  "notebook_source_sha256": "40dc8467b94783fbdc8d7d7160cd8b1be09e14badb7defd346c6390dd097676e",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper_figures/inputs/shape_snr_v02.json": "dffb9f79be6f8fda3bb4bceb40339c6eee34f0ba68ec5118835e089a6cb54df6",
+    "paper_figures/inputs/shape_snr_v02.npz": "f4cb386324fc0a8a2b86f907b9d8036898c2cb87e499ca287d2a767921ad955a",
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b",
+    "paper_figures/inputs/cached_shapes_v02.npz": "b522ecee1c1d0c704421e89781dfe9f36be2c7cabc392e80a2debc21840801ae"
+  },
+  "settings": {
+    "methods": [
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "estimators": [
+      "fixed",
+      "adaptive"
+    ],
+    "bins": {
+      "edges": [
+        "-inf",
+        5,
+        10,
+        20,
+        50,
+        "inf"
+      ],
+      "closure": "left closed, right open",
+      "labels": [
+        "<5",
+        "5\u201310",
+        "10\u201320",
+        "20\u201350",
+        "\u226550"
+      ],
+      "rule": "Existing predeclared Figure 8 edges, unchanged before looking at current results; negative finite S/N enters the first bin. Nonfinite values excluded and counted."
+    },
+    "population": "All 2118 validation fields attempted. Within each S/N bin and estimator, the identical Figure 7 intersection of successful JWST, native NISP and all six cached methods; full-denominator success counts retained. Also report the intersection shared by both estimators.",
+    "metric": "100*(1-RMSE_model/RMSE_native), combining both e components; positive means smaller error. Native and model errors use identical objects.",
+    "uncertainty": "2000 paired spatial-block draws, seed 20261017, equal object weights; conditional on the successful sample and this field. Marginal intervals for each bin/method, not a simultaneous trend test or training-seed uncertainty.",
+    "axis_limits_percent": [
+      -45,
+      75
+    ],
+    "horizontal_offsets": {
+      "diffusion": -0.16,
+      "legacy": 0.0,
+      "direct5": 0.16
+    },
+    "coverage": "Common successful images: JWST, native NISP, bilinear, bicubic, diffusion, diffusion mean3, ResNet, ResNet-D5; denominator all attempted objects in each bin."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig08_shape_dependence_v02.pdf": "9fec5abfa16271de5fa4e57cf552f7076ba0a4f6354488266eaffae254623051",
+    "fig08_shape_dependence_v02.svg": "bd9d3764769445e5eab1a811aa08c355cc91812720c62f0d9e8071e3ec16adcf",
+    "fig08_shape_dependence_v02.png": "fd7993389134c2fe0b262f732547079d10c767f2cc0d4c0adf3d3a3457491fdb"
+  }
+}

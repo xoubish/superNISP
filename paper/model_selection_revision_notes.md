@@ -3,7 +3,27 @@
 Updated 2026-10-17 following the user's approval to retain the original ResNet
 and add the decision and reproducibility evidence to the paper.
 
-## Manuscript changes
+## Current revision: appendix removed — 2026-10-17
+
+The user requested a shorter paper without this appendix. The abstract now keeps
+one sentence about seed reproducibility. Essential continuation protocol details
+have moved into Methods, including the shared parent/optimizer state, matched
+batches/augmentations, schedule, equal-region loss and distinct checkpoint rule.
+Results retain the seed RMSE ranges and 0.09% relative sample standard deviation,
+the continuation trade-off, and the decision to keep the original ResNet.
+Appendix/seed-figure references are removed or redirected to the Results subsection.
+Figures 6 v06 and 7 v05 remain in the main manuscript.
+
+The former appendix, seed plot and pre-removal manuscript are preserved in
+`diagnostics/resnet_validation_archive/`, outside the publication-file selection.
+The new manifest is `diagnostics/appendix_removal_v01.json`; the v01 model-selection
+manifest below describes the historical installation, whose paths are now archived.
+Structural/reference checks passed. The changed sections compiled in a two-column
+article preview without unresolved references or overfull boxes. A full A&A build
+still stops at the existing missing `etex.sty` dependency. The local upload ZIP
+was refreshed; no remote publish was performed.
+
+## Historical manuscript changes
 
 - Installed the approved, unchanged Figure 6 v06 PDF as
   `figs/model_comparison_v06.pdf`. It is the sixth figure in the manuscript.

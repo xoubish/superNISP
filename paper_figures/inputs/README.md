@@ -194,3 +194,17 @@ Native uses its own validity mask and original pixel grid with matched angular
 settings. Contract and source snapshots: `runs/cached-shapes-native-v02/`.
 Generator: `code/add_native_shape_comparison.py`. No inference or test data.
 Copy the git-ignored NPZ alongside its JSON when transferring the workspace.
+
+
+## Figure 8 current-model S/N dependence (v02)
+
+`shape_snr_v02.json` stores the input-only S/N protocol, unchanged historical bin
+edges, per-estimator/bin common IDs, all method success/failure counts, paired
+native-relative gains, confidence intervals, cross-estimator matched checks and
+input/source hashes. Its `.npz` holds IDs, rows, spatial blocks, recomputed native
+S/N, bin assignments and the two current Figure 7 common-success masks.
+Both shape estimators read the frozen `cached_shapes_v02` arrays; old shape errors
+are not reused. Original S/N assignments are reproduced on all 2,118 galaxies.
+No new inference or training. Generator: `code/analyze_shape_snr.py`; frozen
+contract/source snapshots and independent verification: `runs/shape-snr-v02/`.
+The NPZ is git-ignored; transfer it with the JSON and referenced shape bundle.

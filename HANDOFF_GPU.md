@@ -4,7 +4,67 @@ Updated 2026-10-17. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
-## Latest update: Figure 7 directly shows improvement — 2026-10-17
+## Latest update: PSF audit and synthetic shear-response pilot — 2026-10-17
+
+User authorized the PSF audit and controlled shear-response pilot. Completed all
+24 cells / 3,120 frozen original-ResNet inputs in tmux
+`supernisp-shear-response-pilot-v01`, exit 0, with online
+[W&B 0r3dbbqc](https://wandb.ai/AI-Astro/superNISP-corrected/runs/0r3dbbqc).
+No training, checkpoint writes, or real/test galaxy images. Contract, immutable
+source snapshots, per-object shapes/statuses, and primary results are in
+`runs/shear-response-pilot-v01/`; launcher `code/launch_shear_response_pilot.sh`.
+All three physics/selection controls passed; independent response/count/hash
+checks passed. Full report: [paper/shear_response_pilot.md](paper/shear_response_pilot.md).
+Review plot: `paper/diagnostics/shear_response_review_v01.png` (also PDF/JSON).
+
+The four NISP PSFs match manifest hashes but use a different format from the old
+`EuclidPSF` loader. Their pixel-response/stacking conventions need confirmation;
+no local corresponding JWST PSF or learned-output effective PSF is established.
+Pilot uses explicitly analytic PSFs. Native REGAUSS fails for every narrow-PSF
+case (0.45 arcsec on 0.29672-arcsec pixels); independently reproduced as a PSF-fit
+undersampling failure, not repaired by changing initial guesses. Preserve this
+primary failure. The secondary review plot uses the common observed-shape sample
+(622/624 objects), and includes correction only where it succeeds on that exact
+sample. Broader-PSF correction is more faithful in trace response than uncorrected
+ResNet; ResNet usually improves over native observed response but has size/noise/
+PSF dependence and some worse low-S/N cases. This is not a shear calibration or
+precision claim. Figures 7–8 and manuscript unchanged by this pilot. Next research
+steps: validated native sampling treatment, documented empirical/mosaic PSFs,
+realistic independent calibration/validation simulations with selection.
+
+## Previous update: Figure 8 updated to current models — 2026-10-17
+
+User approved a compact Figure 8 focused on input S/N and measurement success;
+notebook 9 stays supporting analysis, not a standalone paper figure.
+`paper_figures/08_shape_dependence.ipynb` is executed v03, with fixed/adaptive
+shape gains and common-success coverage in one row. Export: `fig08_shape_dependence_v03`.
+At user request, estimator names are on the y-axes; panel titles are removed.
+The v02 notebook/export is preserved, with numerical inputs unchanged.
+Inputs: `shape_snr_v02.json/.npz`; current `cached_shapes_v02` shape arrays unchanged.
+Same model checkpoints as Figures 6/7, no new training/inference. Original S/N bins
+and all 2,118 assignments reproduced; fixed common counts 179/441/387/322/117,
+adaptive 297/419/363/304/115. Gains recombine to Figure 7 aggregate errors.
+Three S/N tests and independent object-level bootstrap checks of all 40 displayed
+method/bin combinations passed. Source/contract/verification: `runs/shape-snr-v02/`.
+Report/caption: `paper/figure8_shape_snr.md`. Old notebook is archived. This is a
+local review draft; the old residual-plane Figure 8 in the manuscript is not yet
+replaced. No Overleaf upload. Prior appendix-removal edits remain intact.
+
+## Previous update: appendix removed from paper — 2026-10-17
+
+User requested removing the appendix and retaining essential information in the
+main text. `paper/survey_enhancements.tex` now has no appendix or dangling appendix
+references. Abstract: one seed-reproducibility sentence. Methods: concise matched
+continuation protocol, including its different selection rule. Results: seed RMSE
+ranges/0.09% relative sample SD and continuation trade-off supporting original ResNet.
+Figures 6 v06 and 7 v05 remain installed. Detailed tables, seed plot and the previous
+manuscript are archived in `paper/diagnostics/resnet_validation_archive/`, excluded
+from the publication bundle. Manifest: `paper/diagnostics/appendix_removal_v01.json`.
+Reference/environment checks and a two-column preview compile passed; full A&A
+build still lacks `etex.sty`. Local upload ZIP refreshed; no Overleaf publish.
+The unrelated historical shape/Discussion paragraphs still need their own revision.
+
+## Previous update: Figure 7 directly shows improvement — 2026-10-17
 
 User still found contour differences unclear. The active executed
 `paper_figures/07_model_shapes.ipynb` now exports `fig07_shape_improvement_v04`:
