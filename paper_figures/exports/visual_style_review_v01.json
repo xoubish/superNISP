@@ -1,0 +1,105 @@
+{
+  "figures": {
+    "fig01_sample_v08": {
+      "pdf": "d0520a13e8f0e80d38408a1755f1b2726bc3784d46be5bdfc5e3ee630d0b4afc",
+      "png": "d7e4a4871bd43f31bac65e37728a4cc57a68d12cfc0216f51acddca428c4c7b9",
+      "svg": "68cb7564146bea2bffab212012bb344cd9ae81b3450c3c0007c69ea4a1103493"
+    },
+    "fig02_sample_properties_v06": {
+      "pdf": "6b24647a7c6efa33e36014eb8492cdbc82d1d10b9d597e805622da153511381a",
+      "png": "0b3b2cdac16a40e03a355f5f8563f37fa2cdc90fb75e320537380d8138e8c2f5",
+      "svg": "ea8db1df283f687169a9d4b7ef6533edf197975fb22a6c76c11b1e70b4dfa860"
+    },
+    "fig03_diffusion_architecture_v06": {
+      "pdf": "7ac0f3df0a5d778032c0639d1e9132bc268be3682dccb7b576f65b8b1ab6af13",
+      "png": "8d1fe1d7676749191ceb4106d07dd38febe09b0458e76bfe86e910c1759cea1b",
+      "svg": "9813d42346e79ad0356f0e84380a8ca23822ad732528bbb9e1a13ce2b391b1a2"
+    },
+    "fig04_residual_architecture_v06": {
+      "pdf": "376846ae03cdb6248a3f469770c39eaa622c685b6ddd8ce527554d3282f87a06",
+      "png": "ac4f917ae307c93083c80c25dfd56beac963c29896554a0350642b6a3f937244",
+      "svg": "db88eb1dc2e6989e062ec58e8154033986d25559e040c7f26d486b98e2075fa2"
+    },
+    "fig05_galaxy_examples_v08": {
+      "pdf": "85e4f1e64567741bb77c78a27f9e059f452805f9fa7efda91d5cba8c66c652ea",
+      "png": "9685caf5ae66aeabdc98565497d42aa070debf125f1657a2c53ff13cb9f06679",
+      "svg": "e51e36fa3f79e529e9d1a61fe7796610d1f4cb4d20ad7f7fbbe3424d1c7bef9e"
+    },
+    "fig06_model_comparison_v07": {
+      "pdf": "2d379fcede9fe78f777e35e330ae1f384301804441b19c138dcd64b1949ea53d",
+      "png": "d477f692a23b321a0b7fe57c5cf782b35da4a646756b6ce631df5185178bf3f1",
+      "svg": "a8f3bc4f12229ffefe3d489c27fc25264e89f11295366ee45f17a6c554609069"
+    },
+    "fig07_shape_hexbin_v06": {
+      "pdf": "023a2b6f0b009b60ddbdec285db8386c75a9c2d768338a62cd848bc2d9910ff7",
+      "png": "662f47b3a2b36fc11882ed8a7ce98685d3d5bfa3293283306210a77418ede698",
+      "svg": "ee912bd3a9f6ccacad182b4db2a813c6f868ae7f2c067528030b9ee3a43b946e"
+    },
+    "fig08_shape_dependence_v04": {
+      "pdf": "ed63e3c2bbb7d54dbc51756de482ff5f798d9dc996bf51566d6c3e6914a00b01",
+      "png": "10b5d460b4122bd0eed783d9655d0eb18730248f207045d8013376fa9f26694d",
+      "svg": "68aa1b50a4d18da688d868f1a60555b5fa622ee3b34d3bc7ee23ade2bdc2341c"
+    },
+    "fig09_shear_response_v06": {
+      "pdf": "d1f9414b0a4eacb8eb03cdf0d0db14cdc3f12f966273edc7ab2adf4e5465edeb",
+      "png": "b096cf7c8ad2178cef8fc5223f1a7a083a4023bb29d1bba9750833ae7771dcab",
+      "svg": "9dcf8f91ba928f65eae64359800fa5cb27f98d008544510bfab18e230eb7496e"
+    }
+  },
+  "source_sha256": "2578ea3e59e8e266b329bcf223f446caa1e42cfc53da306d8185d29ea43331da",
+  "color_simulation": "Machado et al. 2009 severity 100 on linear sRGB; out-of-gamut clipped for display",
+  "matrices": {
+    "Protanopia": [
+      [
+        0.152286,
+        1.052583,
+        -0.204868
+      ],
+      [
+        0.114503,
+        0.786281,
+        0.099216
+      ],
+      [
+        -0.003882,
+        -0.048116,
+        1.051998
+      ]
+    ],
+    "Deuteranopia": [
+      [
+        0.367322,
+        0.860646,
+        -0.227968
+      ],
+      [
+        0.280085,
+        0.672501,
+        0.047413
+      ],
+      [
+        -0.01182,
+        0.04294,
+        0.968881
+      ]
+    ],
+    "Tritanopia": [
+      [
+        1.255528,
+        -0.076749,
+        -0.178779
+      ],
+      [
+        -0.078411,
+        0.930809,
+        0.147602
+      ],
+      [
+        0.004733,
+        0.691367,
+        0.3039
+      ]
+    ]
+  },
+  "scope": "Visual proof, not a universal accessibility certification"
+}

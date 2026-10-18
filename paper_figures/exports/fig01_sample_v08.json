@@ -1,0 +1,86 @@
+{
+  "status": "sample overview: real matched ~24-arcsec validation region with a large spiral galaxy",
+  "notebook": "01_sample.ipynb",
+  "notebook_source_sha256": "5f8d2af46e2f64d57b228b48d6ba6d0015dd18e915f483df480c060545a3977b",
+  "visual_style": {
+    "version": "matisse-inspired-v01",
+    "font_family": [
+      "Nimbus Sans",
+      "Arial",
+      "DejaVu Sans"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F",
+      "native": "#555555",
+      "nisp": "#555555",
+      "bilinear": "#9C6543",
+      "bicubic": "#52A7C1",
+      "legacy": "#2455A4",
+      "sr": "#2455A4",
+      "direct5": "#23836F",
+      "diffusion": "#B58A16",
+      "diffusion_mean3": "#77649B",
+      "jwst": "#D9822B",
+      "reference": "#D9822B"
+    },
+    "markers": {
+      "native": "o",
+      "nisp": "o",
+      "bilinear": "D",
+      "bicubic": "v",
+      "legacy": "s",
+      "sr": "s",
+      "direct5": "^",
+      "diffusion": "o",
+      "diffusion_mean3": "P",
+      "jwst": "D",
+      "reference": "D"
+    },
+    "palette_inspiration": "Custom Matisse-inspired palette; not sampled from a specific artwork"
+  },
+  "helper_sha256": "e8213407084bb9bea7966fbcc69c8825f2c2ae2190c3938ad66bd57d6b164667",
+  "inputs": {
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/exports/fig01_sample_v07.svg": "11d7ec760487910affaeb6b4ca66adc4a30ff86be41c0cef9a65ebf53269cd98",
+    "paper_figures/exports/fig01_sample_v07.json": "0dd4b0ebccc907a158124df2e261fc9ae472deed642e179e6622a17f9430a4c3",
+    "paper_figures/inputs/sample_region_v06.json": "eba5af4743684837b3c1162bfc32c90acb914ab07a2f518fe380b4e741eb54c4"
+  },
+  "settings": {
+    "frozen_display_reuse": true,
+    "figsize": [
+      7.2,
+      2.65
+    ],
+    "layout": "three adjacent axes",
+    "footprint_annotation": "true WCS footprint with two corner connectors",
+    "scale_bar_arcsec": 5,
+    "display_reference": "v05 shared stretch retained",
+    "sample_count": 22810,
+    "split_counts": {
+      "train": 17816,
+      "test": 2876,
+      "validation": 2118
+    },
+    "zoom_block": "3:2",
+    "center_object_id": 734405,
+    "zoom_split": "validation",
+    "selection": "Illustrative large spiral; selected by catalog size/brightness and observed morphology in train/validation, without model outputs",
+    "zoom_field_arcsec": 24.33022959731128,
+    "display_low": -0.03,
+    "display_high": 0.9432567954063416,
+    "asinh_softening": 0.04,
+    "test_access": "positions/counts only; image footprint contained in validation block"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig01_sample_v08.pdf": "d0520a13e8f0e80d38408a1755f1b2726bc3784d46be5bdfc5e3ee630d0b4afc",
+    "fig01_sample_v08.svg": "68cb7564146bea2bffab212012bb344cd9ae81b3450c3c0007c69ea4a1103493",
+    "fig01_sample_v08.png": "d7e4a4871bd43f31bac65e37728a4cc57a68d12cfc0216f51acddca428c4c7b9"
+  }
+}

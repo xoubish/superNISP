@@ -1,0 +1,289 @@
+{
+  "status": "Figure 2 style revision; identical histogram counts and sample",
+  "notebook": "02_sample_properties.ipynb",
+  "notebook_source_sha256": "30a45ba17a2fe121a26bfac58689a96660154aeee2a452a4f9a9cb72cc180811",
+  "visual_style": {
+    "version": "matisse-inspired-v01",
+    "font_family": [
+      "Nimbus Sans",
+      "Arial",
+      "DejaVu Sans"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F",
+      "native": "#555555",
+      "nisp": "#555555",
+      "bilinear": "#9C6543",
+      "bicubic": "#52A7C1",
+      "legacy": "#2455A4",
+      "sr": "#2455A4",
+      "direct5": "#23836F",
+      "diffusion": "#B58A16",
+      "diffusion_mean3": "#77649B",
+      "jwst": "#D9822B",
+      "reference": "#D9822B"
+    },
+    "markers": {
+      "native": "o",
+      "nisp": "o",
+      "bilinear": "D",
+      "bicubic": "v",
+      "legacy": "s",
+      "sr": "s",
+      "direct5": "^",
+      "diffusion": "o",
+      "diffusion_mean3": "P",
+      "jwst": "D",
+      "reference": "D"
+    },
+    "palette_inspiration": "Custom Matisse-inspired palette; not sampled from a specific artwork"
+  },
+  "helper_sha256": "e8213407084bb9bea7966fbcc69c8825f2c2ae2190c3938ad66bd57d6b164667",
+  "inputs": {
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/manifest.json": "57c82dbdf1a92c9a51b502acd377e90e5322acc01323616147949eb3e5f76b53",
+    "/home/shemmati/Work/Projects/supernisp_nir_y_f115w_v1/objects.csv": "ae30300684cb515deb2b165419379f6836a117ba9bcd962502762c337f03eefd",
+    "paper_figures/inputs/parent_histograms_v05.json": "d99dd399a7efe7e157e66a392f27e4d568fb3e0f6b29f2d5bd3e9db34c5b2d2a",
+    "paper_figures/inputs/parent_sample_v05.json": "26d8c259ce6236c2b5d8b816cac7bce8802e6770441b82ceebea65020c597868"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      2.8
+    ],
+    "property_splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F"
+    },
+    "parent_color": "#BDBDBD",
+    "legend": "left panel only",
+    "magnitude_bins": [
+      16.0,
+      16.333333333333332,
+      16.666666666666668,
+      17.0,
+      17.333333333333332,
+      17.666666666666668,
+      18.0,
+      18.333333333333332,
+      18.666666666666668,
+      19.0,
+      19.333333333333332,
+      19.666666666666668,
+      20.0,
+      20.333333333333332,
+      20.666666666666664,
+      21.0,
+      21.333333333333332,
+      21.666666666666664,
+      22.0,
+      22.333333333333332,
+      22.666666666666664,
+      23.0,
+      23.333333333333332,
+      23.666666666666664,
+      24.0,
+      24.333333333333332,
+      24.666666666666664,
+      25.0
+    ],
+    "redshift_bins": [
+      0.0,
+      0.12,
+      0.24,
+      0.36,
+      0.48,
+      0.6,
+      0.72,
+      0.84,
+      0.96,
+      1.08,
+      1.2,
+      1.3199999999999998,
+      1.44,
+      1.56,
+      1.68,
+      1.7999999999999998,
+      1.92,
+      2.04,
+      2.16,
+      2.28,
+      2.4,
+      2.52,
+      2.6399999999999997,
+      2.76,
+      2.88,
+      3.0,
+      3.12,
+      3.2399999999999998,
+      3.36,
+      3.48,
+      3.5999999999999996,
+      3.7199999999999998,
+      3.84,
+      3.96,
+      4.08,
+      4.2,
+      4.32,
+      4.4399999999999995,
+      4.56,
+      4.68,
+      4.8,
+      4.92,
+      5.04,
+      5.16,
+      5.279999999999999,
+      5.3999999999999995,
+      5.52,
+      5.64,
+      5.76,
+      5.88,
+      6.0
+    ],
+    "histogram_accounting": {
+      "ACS_F814W_MAG": {
+        "parent": {
+          "objects": 233784,
+          "valid_measurements": 233784,
+          "invalid_measurements": 0,
+          "outside_display": 534
+        },
+        "train": {
+          "objects": 17816,
+          "valid_measurements": 17816,
+          "invalid_measurements": 0,
+          "outside_display": 0
+        },
+        "validation": {
+          "objects": 2118,
+          "valid_measurements": 2118,
+          "invalid_measurements": 0,
+          "outside_display": 0
+        },
+        "test": {
+          "objects": 2876,
+          "valid_measurements": 2876,
+          "invalid_measurements": 0,
+          "outside_display": 0
+        }
+      },
+      "ez_z_phot": {
+        "parent": {
+          "objects": 233784,
+          "valid_measurements": 225567,
+          "invalid_measurements": 8217,
+          "outside_display": 10322
+        },
+        "train": {
+          "objects": 17816,
+          "valid_measurements": 17816,
+          "invalid_measurements": 0,
+          "outside_display": 0
+        },
+        "validation": {
+          "objects": 2118,
+          "valid_measurements": 2118,
+          "invalid_measurements": 0,
+          "outside_display": 0
+        },
+        "test": {
+          "objects": 2876,
+          "valid_measurements": 2876,
+          "invalid_measurements": 0,
+          "outside_display": 0
+        }
+      }
+    },
+    "normalization": "All valid measurements including tails outside axes",
+    "parent": {
+      "catalog_rows": 1720700,
+      "parent_rows": 233784,
+      "selection": "ACS_F814W_MAG < 25; valid magnitude required",
+      "magnitude_limit": 25.0,
+      "invalid_catalog_magnitudes": 1016291,
+      "valid_catalog_magnitudes_at_or_above_limit": 470625,
+      "footprint": "Full COSMOS2020 catalog; no mosaic-footprint restriction.",
+      "classification": "All lp_type values included; no galaxy-class restriction.",
+      "parent_class_counts": {
+        "-99": 3339,
+        "0": 212186,
+        "1": 15967,
+        "2": 2292
+      },
+      "catalog_path": "/Users/shemmati/Dropbox/superNISP/catalog/COSMOS2020_CLASSIC_R1_v2.2_p3.fits",
+      "catalog_sha256": "42ea2f1b2ac12fbd9ab199b631909e010b7811fdf353b0e89f3c4e8ccef6c5c1",
+      "histogram_accounting": {
+        "ACS_F814W_MAG": {
+          "parent": {
+            "objects": 233784,
+            "valid_measurements": 233784,
+            "invalid_measurements": 0,
+            "outside_display": 534
+          },
+          "train": {
+            "objects": 17816,
+            "valid_measurements": 17816,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "validation": {
+            "objects": 2118,
+            "valid_measurements": 2118,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "test": {
+            "objects": 2876,
+            "valid_measurements": 2876,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          }
+        },
+        "ez_z_phot": {
+          "parent": {
+            "objects": 233784,
+            "valid_measurements": 225567,
+            "invalid_measurements": 8217,
+            "outside_display": 10322
+          },
+          "train": {
+            "objects": 17816,
+            "valid_measurements": 17816,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "validation": {
+            "objects": 2118,
+            "valid_measurements": 2118,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          },
+          "test": {
+            "objects": 2876,
+            "valid_measurements": 2876,
+            "invalid_measurements": 0,
+            "outside_display": 0
+          }
+        }
+      }
+    },
+    "counts_source": "Verified integer counts from frozen v05 SVG",
+    "test_access": "Catalog properties only; no images or performance evaluation"
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig02_sample_properties_v06.pdf": "6b24647a7c6efa33e36014eb8492cdbc82d1d10b9d597e805622da153511381a",
+    "fig02_sample_properties_v06.svg": "ea8db1df283f687169a9d4b7ef6533edf197975fb22a6c76c11b1e70b4dfa860",
+    "fig02_sample_properties_v06.png": "0b3b2cdac16a40e03a355f5f8563f37fa2cdc90fb75e320537380d8138e8c2f5"
+  }
+}

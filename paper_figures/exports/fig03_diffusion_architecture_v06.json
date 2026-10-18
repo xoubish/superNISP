@@ -1,0 +1,100 @@
+{
+  "status": "Figure 3 review draft: source-verified training, architecture and generation",
+  "notebook": "03_diffusion_architecture.ipynb",
+  "notebook_source_sha256": "02f95105f3a4cc65eb1ccbe6b72ed3a31133311a289f9940f032ce08fc4650d8",
+  "visual_style": {
+    "version": "matisse-inspired-v01",
+    "font_family": [
+      "Nimbus Sans",
+      "Arial",
+      "DejaVu Sans"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F",
+      "native": "#555555",
+      "nisp": "#555555",
+      "bilinear": "#9C6543",
+      "bicubic": "#52A7C1",
+      "legacy": "#2455A4",
+      "sr": "#2455A4",
+      "direct5": "#23836F",
+      "diffusion": "#B58A16",
+      "diffusion_mean3": "#77649B",
+      "jwst": "#D9822B",
+      "reference": "#D9822B"
+    },
+    "markers": {
+      "native": "o",
+      "nisp": "o",
+      "bilinear": "D",
+      "bicubic": "v",
+      "legacy": "s",
+      "sr": "s",
+      "direct5": "^",
+      "diffusion": "o",
+      "diffusion_mean3": "P",
+      "jwst": "D",
+      "reference": "D"
+    },
+    "palette_inspiration": "Custom Matisse-inspired palette; not sampled from a specific artwork"
+  },
+  "helper_sha256": "e8213407084bb9bea7966fbcc69c8825f2c2ae2190c3938ad66bd57d6b164667",
+  "inputs": {
+    "paper_figures/architecture_style.py": "1aa772c1073ae987befb9b0f2a1040e97d7aa5902a228684fb3504a55c2f40bd",
+    "code/diffusion_corrected.py": "aebd5ffd41eef6eb583604e07a273dd69c9f94a31dea93d8a0ec40d3cbe6ab61",
+    "code/diffusion/model_sr3.py": "251fc8caecae29278e8b5cd6fda3068278bd7c058bf5c37a54896b555ce6b090",
+    "code/train_diffusion_full.py": "7c3587528b2dfc8b1dc1c27252f1ec494c1caf04bef7e4dae7b057f59de18286",
+    "runs/diffusion-full50-s20261016/provenance.json": "ae932c1969740add67ecb9cd5c87c88149f1d64122d77c67b31de94a326b1401"
+  },
+  "settings": {
+    "figsize": [
+      7.2,
+      5.6
+    ],
+    "display": "simplified labels; channel counts only; equations in implementation notes",
+    "parameters": 4910593,
+    "prediction": "v",
+    "timesteps": 1000,
+    "conditioning": "NISP intensity and validity mask; FiLM in every residual block",
+    "encoder_shapes": [
+      "208x208x32",
+      "104x104x64",
+      "52x52x128"
+    ],
+    "bottleneck_shape": "26x26x128",
+    "residual_blocks": 14,
+    "timestep_embedding": 256,
+    "inference_steps": 50,
+    "ddim_eta": 0,
+    "loss": "valid-pixel velocity MSE + 0.1 reconstructed-target L1 in model coordinates",
+    "padding": "reflect 205 to 208; output cropped to 205",
+    "colors": {
+      "learned": "#2455A4",
+      "nisp_condition": "#555555",
+      "jwst_image": "#D9822B",
+      "diffusion": "#B58A16",
+      "direct5": "#23836F",
+      "neutral": "#F0F0F0",
+      "ink": "#222222"
+    },
+    "borders": {
+      "#2455A4": "#193b73",
+      "#555555": "#3b3b3b",
+      "#D9822B": "#985b1e",
+      "#B58A16": "#7f610f",
+      "#23836F": "#185c4e",
+      "#F0F0F0": "#a8a8a8"
+    }
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig03_diffusion_architecture_v06.pdf": "7ac0f3df0a5d778032c0639d1e9132bc268be3682dccb7b576f65b8b1ab6af13",
+    "fig03_diffusion_architecture_v06.svg": "9813d42346e79ad0356f0e84380a8ca23822ad732528bbb9e1a13ce2b391b1a2",
+    "fig03_diffusion_architecture_v06.png": "8d1fe1d7676749191ceb4106d07dd38febe09b0458e76bfe86e910c1759cea1b"
+  }
+}

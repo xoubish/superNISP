@@ -1,0 +1,485 @@
+{
+  "status": "Figure 9 draft; synthetic pilot; original ResNet; not calibrated shear",
+  "notebook": "09_shear_response.ipynb",
+  "notebook_source_sha256": "ff71806b3e342aadc8fe9270920594fc4cd82980750dc5bf981df14cf0e6366d",
+  "helper_sha256": "b4675c887e659337d51c8fb401b442224f7542470011a8ee84f82de1087fa5b3",
+  "inputs": {
+    "paper/diagnostics/shear_response_review_v01.json": "10c06875e67a6c15fe08ac94e4f9323d702d78d4e83c08777e0864dd611579ca"
+  },
+  "settings": {
+    "version": "v02",
+    "panels": "native PSF width",
+    "displayed_methods": [
+      "native_observed",
+      "resnet_observed",
+      "target_observed"
+    ],
+    "sizes": [
+      0.18,
+      0.35
+    ],
+    "snr_order": [
+      20,
+      50,
+      100,
+      null
+    ],
+    "categorical_positions": [
+      0.0,
+      1.0,
+      2.0,
+      3.2
+    ],
+    "size_selection": "Post hoc: retain 0.18 and 0.35 arcsec, where ResNet response gains are larger.",
+    "omitted_sizes": [
+      0.65
+    ],
+    "full_comparison": "fig09_shear_response_v01",
+    "response": "trace(R) / trace(R_intrinsic)",
+    "values": [
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "native_observed",
+        "response_ratio": 0.4092408044671163,
+        "common": 30,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "native_observed",
+        "response_ratio": 0.4126536458982489,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "native_observed",
+        "response_ratio": 0.40838569692737775,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": null,
+        "method": "native_observed",
+        "response_ratio": 0.4093118974244989,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "native_observed",
+        "response_ratio": 0.6401297608868284,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "native_observed",
+        "response_ratio": 0.6287603051912801,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "native_observed",
+        "response_ratio": 0.6355687579575944,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": null,
+        "method": "native_observed",
+        "response_ratio": 0.6354545651887816,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "resnet_observed",
+        "response_ratio": 0.55611364720127,
+        "common": 30,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "resnet_observed",
+        "response_ratio": 0.7647159652139452,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "resnet_observed",
+        "response_ratio": 0.8501595205034671,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": null,
+        "method": "resnet_observed",
+        "response_ratio": 0.8576749963606827,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "resnet_observed",
+        "response_ratio": 0.7228995137640514,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "resnet_observed",
+        "response_ratio": 0.8484101686644788,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "resnet_observed",
+        "response_ratio": 0.8835204079117305,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": null,
+        "method": "resnet_observed",
+        "response_ratio": 0.9181632529866978,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "target_observed",
+        "response_ratio": 0.9072932231224249,
+        "common": 30,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "target_observed",
+        "response_ratio": 0.9072935402013943,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "target_observed",
+        "response_ratio": 0.9072935402013943,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.18,
+        "snr": null,
+        "method": "target_observed",
+        "response_ratio": 0.9072935402013942,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "target_observed",
+        "response_ratio": 0.9713259473115242,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "target_observed",
+        "response_ratio": 0.9713259783166387,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "target_observed",
+        "response_ratio": 0.9713259783166387,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.45,
+        "half_light_radius": 0.35,
+        "snr": null,
+        "method": "target_observed",
+        "response_ratio": 0.9713259783166386,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "native_observed",
+        "response_ratio": 0.292992921307299,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "native_observed",
+        "response_ratio": 0.28916804174295907,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "native_observed",
+        "response_ratio": 0.29035639365528637,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": null,
+        "method": "native_observed",
+        "response_ratio": 0.29012449623133524,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "native_observed",
+        "response_ratio": 0.530103959591865,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "native_observed",
+        "response_ratio": 0.5434298925418806,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "native_observed",
+        "response_ratio": 0.5412057256563206,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": null,
+        "method": "native_observed",
+        "response_ratio": 0.5396988656525307,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "resnet_observed",
+        "response_ratio": 0.3830974031356643,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "resnet_observed",
+        "response_ratio": 0.474342211068439,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "resnet_observed",
+        "response_ratio": 0.5057784238462845,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": null,
+        "method": "resnet_observed",
+        "response_ratio": 0.5259290381966003,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "resnet_observed",
+        "response_ratio": 0.5292911845475324,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "resnet_observed",
+        "response_ratio": 0.6382139219752133,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "resnet_observed",
+        "response_ratio": 0.668804389693675,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": null,
+        "method": "resnet_observed",
+        "response_ratio": 0.6838766537367428,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "target_observed",
+        "response_ratio": 0.907293403778891,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "target_observed",
+        "response_ratio": 0.9072936766238978,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "target_observed",
+        "response_ratio": 0.9072936766238978,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.18,
+        "snr": null,
+        "method": "target_observed",
+        "response_ratio": 0.9072936766238976,
+        "common": 8,
+        "attempted": 8
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "target_observed",
+        "response_ratio": 0.9713259659145929,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "target_observed",
+        "response_ratio": 0.9713257984869753,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "target_observed",
+        "response_ratio": 0.9713257984869753,
+        "common": 32,
+        "attempted": 32
+      },
+      {
+        "psf_fwhm": 0.6,
+        "half_light_radius": 0.35,
+        "snr": null,
+        "method": "target_observed",
+        "response_ratio": 0.971325798486975,
+        "common": 8,
+        "attempted": 8
+      }
+    ],
+    "unchanged_numerical_results": true,
+    "native_psf_correction_displayed": false
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig09_shear_response_v02.pdf": "3c6ab2a8447a06394f6a6aba8bdfe10f74d8f8914e779d4bc43067e072814e20",
+    "fig09_shear_response_v02.svg": "11a25f22c6dfe75a60e29e4f759d131b6cb0711d9fcbcfe5d6fd71fa3ca2a660",
+    "fig09_shear_response_v02.png": "c1975f7665bc00685838843681d5a5adc941bbe0eaed141982390d13efa4e2f9"
+  }
+}

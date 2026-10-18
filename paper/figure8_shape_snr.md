@@ -1,15 +1,15 @@
 # Figure 8: current-model shape recovery versus input NISP S/N
 
 The user selected a compact Figure 8 on input quality and measurement coverage,
-with notebook 9 retained as supporting checks. The executed
+with the earlier shape-robustness notebook now archived and the controlled shear response presented as Figure 9. The executed
 [Figure 8 notebook](../paper_figures/08_shape_dependence.ipynb) and
-[preview](../paper_figures/exports/fig08_shape_dependence_v03.png) replace the
-legacy-only magnitude/redshift/S/N notebook as the active draft. Presentation v03
+[preview](../paper_figures/exports/fig08_shape_dependence_v04.png) replace the
+legacy-only magnitude/redshift/S/N notebook as the active figure. Presentation v03
 moves the estimator names to the y-axes and removes panel titles, reusing the
 unchanged v02 measurements. The v02 notebook is archived in `revisions/`. PDF and editable
 SVG exports share the same stem. The old notebook and exports are preserved.
-This new figure is not yet installed in the manuscript; its current Figure 8 is
-still the historical residual-plane plot. No external upload was performed.
+The approved Matisse-styled v04 figure is installed as Figure 8 in
+`survey_enhancements.tex`, replacing the historical residual-plane plot. No external upload was performed.
 
 ## Frozen measurement protocol
 
@@ -96,7 +96,7 @@ within each categorical bin for visibility; connecting lines guide the eye.
 Whiskers are conditional 95% intervals from 2,000 paired spatial-block resamples.
 They are marginal intervals, not a simultaneous test of a trend across bins.
 Right: the fraction of all attempted galaxies in each bin entering these
-comparisons; numbers inside bars give common successes and $N$ below each bin
+comparisons; numbers above bars give common successes and $N$ below each bin
 gives its total count. The fixed/adaptive totals are 1,446/1,498 successes out of
 2,118 attempted validation fields. The predefined bins are $(-\infty,5)$,
 $[5,10)$, $[10,20)$, $[20,50)$ and $[50,\infty)$.

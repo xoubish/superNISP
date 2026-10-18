@@ -1,0 +1,139 @@
+{
+  "status": "Figure 7 alternative A: points only",
+  "notebook": "07_model_shapes.ipynb",
+  "notebook_source_sha256": "521efc1996fbce756351060696c27f2f69431f3fe96ae7d4d7280cbe091c075b",
+  "visual_style": {
+    "version": "matisse-inspired-v01",
+    "font_family": [
+      "Nimbus Sans",
+      "Arial",
+      "DejaVu Sans"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F",
+      "native": "#555555",
+      "nisp": "#555555",
+      "bilinear": "#9C6543",
+      "bicubic": "#52A7C1",
+      "legacy": "#2455A4",
+      "sr": "#2455A4",
+      "direct5": "#23836F",
+      "diffusion": "#B58A16",
+      "diffusion_mean3": "#77649B",
+      "jwst": "#D9822B",
+      "reference": "#D9822B"
+    },
+    "markers": {
+      "native": "o",
+      "nisp": "o",
+      "bilinear": "D",
+      "bicubic": "v",
+      "legacy": "s",
+      "sr": "s",
+      "direct5": "^",
+      "diffusion": "o",
+      "diffusion_mean3": "P",
+      "jwst": "D",
+      "reference": "D"
+    },
+    "palette_inspiration": "Custom Matisse-inspired palette; not sampled from a specific artwork"
+  },
+  "helper_sha256": "e8213407084bb9bea7966fbcc69c8825f2c2ae2190c3938ad66bd57d6b164667",
+  "inputs": {
+    "paper_figures/inputs/cached_shapes_v02.json": "573aec7c58878d0b8e4dd1adc561818e4947d8b501b11c11dbaae463617a702b",
+    "paper_figures/inputs/cached_shapes_v02.npz": "b522ecee1c1d0c704421e89781dfe9f36be2c7cabc392e80a2debc21840801ae"
+  },
+  "settings": {
+    "methods": [
+      "native",
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "estimators": [
+      "fixed",
+      "adaptive"
+    ],
+    "components": "e1 and e2 pooled per galaxy",
+    "fit": "Theil-Sen median slope of measured on JWST ellipticity, galaxies with |e_JWST|<0.5",
+    "fit_range": [
+      -0.5,
+      0.5
+    ],
+    "core_points": {
+      "fixed/native": 2636,
+      "fixed/diffusion": 2636,
+      "fixed/legacy": 2636,
+      "fixed/direct5": 2636,
+      "adaptive/native": 2328,
+      "adaptive/diffusion": 2328,
+      "adaptive/legacy": 2328,
+      "adaptive/direct5": 2328
+    },
+    "rmse": "combined e1/e2 component RMSE about the 1:1 line",
+    "common_objects": {
+      "fixed": 1446,
+      "adaptive": 1498
+    },
+    "fits": {
+      "fixed/native": {
+        "slope": 0.6780507617765182,
+        "intercept": 0.007688998363981012
+      },
+      "fixed/diffusion": {
+        "slope": 0.8280610836942711,
+        "intercept": 0.00816485659323023
+      },
+      "fixed/legacy": {
+        "slope": 0.7995531653412387,
+        "intercept": 0.010122138638082576
+      },
+      "fixed/direct5": {
+        "slope": 0.8016383021599744,
+        "intercept": 0.011399426092465071
+      },
+      "adaptive/native": {
+        "slope": 0.6067925633610894,
+        "intercept": 0.0023521950407504894
+      },
+      "adaptive/diffusion": {
+        "slope": 0.7055518871916484,
+        "intercept": 0.013010956915132411
+      },
+      "adaptive/legacy": {
+        "slope": 0.730942746314825,
+        "intercept": 0.005295610947527968
+      },
+      "adaptive/direct5": {
+        "slope": 0.7338504341048984,
+        "intercept": 0.004301936094803281
+      }
+    },
+    "axis_limits": [
+      -1.0,
+      1.0
+    ],
+    "points_outside_axes": {
+      "fixed/native": 0,
+      "fixed/diffusion": 0,
+      "fixed/legacy": 0,
+      "fixed/direct5": 0,
+      "adaptive/native": 0,
+      "adaptive/diffusion": 0,
+      "adaptive/legacy": 0,
+      "adaptive/direct5": 0
+    },
+    "population": "All 2118 frozen validation objects attempted. Per-estimator intersection of successful JWST, native NISP, and all six cached methods; same objects in every model panel. Also report the intersection across both estimators and full-denominator failure counts."
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig07_shape_scatter_v06.pdf": "1b5244bb7a1c98a97ab043c849020634bd0e45237e85b34868a51fd4d1ae8dcf",
+    "fig07_shape_scatter_v06.svg": "1d4aa7a0875ee75bab737b993a914093453ca4f278bbc8d3e72f476fda2334be",
+    "fig07_shape_scatter_v06.png": "20297546b5b17b7cde824a9519fd7127b08d54ab0965a53a401911cb6ad6f75e"
+  }
+}

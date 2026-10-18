@@ -1,0 +1,204 @@
+{
+  "passed": true,
+  "tests": 4,
+  "psfs": [
+    {
+      "filename": "EUC_NIR_W-STK-PSF-I_Y-4907_20250423T232759.861260Z.fits.gz",
+      "sha256": "02e9ce181081b3d581dd963c671122d4a216bf8349eac8d9dc25116428ec39df",
+      "observation": 4907,
+      "source_header_sha256": "65422dd7dbeb9f931439e3aa955c9569ebc5f50f043a639a9bde66d08179ebc7",
+      "native_cd": [
+        [
+          7.920500751886e-05,
+          2.279901086285e-05
+        ],
+        [
+          -2.280430683577e-05,
+          7.920914839422e-05
+        ]
+      ],
+      "psf_cd": [
+        [
+          1.3737084465778e-05,
+          0.0
+        ],
+        [
+          0.0,
+          1.37375034987928e-05
+        ]
+      ],
+      "native_scale_arcsec": 0.2967255495585131,
+      "basis_arcsec": [
+        [
+          0.047524764267526345,
+          -0.013679615172491548
+        ],
+        [
+          0.013682375440529202,
+          0.047523729389410095
+        ]
+      ],
+      "signed_sum": 36.48364423228003,
+      "negative_pixels": 2,
+      "header_widths": {
+        "PSF_FWHM": 1.77499998,
+        "FWHMXPSF": 1.548923901701976,
+        "FWHMYPSF": 1.539163167607578,
+        "REE50": 0.2665064561741048,
+        "REE80": 0.4039358802550614
+      },
+      "supplied_sample_max_absolute_error": 7.771336612422131e-10,
+      "psf_native_stamp_flux": 0.9998425151388735,
+      "native_psf_adaptive_status": -1
+    },
+    {
+      "filename": "EUC_NIR_W-STK-PSF-I_Y-4910_20250424T000156.010214Z.fits.gz",
+      "sha256": "d78496ee0784cac0752e1b719359612900c74bfe4771df1ce7e8e7350d80cff6",
+      "observation": 4910,
+      "source_header_sha256": "f9e1cabbde7398be819e7d7e03f8958c23ddeefaf2205b31467e9214942047d7",
+      "native_cd": [
+        [
+          7.9202392005e-05,
+          2.281145849077e-05
+        ],
+        [
+          -2.281816292072e-05,
+          7.9204510419e-05
+        ]
+      ],
+      "psf_cd": [
+        [
+          1.37373047032774e-05,
+          0.0
+        ],
+        [
+          0.0,
+          1.37373346812256e-05
+        ]
+      ],
+      "native_scale_arcsec": 0.296726104813117,
+      "basis_arcsec": [
+        [
+          0.04752265448514355,
+          -0.013686890053281173
+        ],
+        [
+          0.01369088283900261,
+          0.04752148714068125
+        ]
+      ],
+      "signed_sum": 36.42664286902698,
+      "negative_pixels": 6,
+      "header_widths": {
+        "PSF_FWHM": 1.77499998,
+        "FWHMXPSF": 1.547404450146699,
+        "FWHMYPSF": 1.546033901829102,
+        "REE50": 0.2667937160153162,
+        "REE80": 0.4041937464875276
+      },
+      "supplied_sample_max_absolute_error": 9.629588480775109e-10,
+      "psf_native_stamp_flux": 0.9998437448295642,
+      "native_psf_adaptive_status": -1
+    },
+    {
+      "filename": "EUC_NIR_W-STK-PSF-I_Y-4911_20250423T231840.182112Z.fits.gz",
+      "sha256": "daef22a5b16fe37a12860c1635121fbf746da591178cecff38310d5ad58389fd",
+      "observation": 4911,
+      "source_header_sha256": "1a863ba35f2d4a446147143b7f5ea0ea5d9cc1d221c67b76e5a52217e9e9c0a5",
+      "native_cd": [
+        [
+          7.92068337441899e-05,
+          2.280450678132e-05
+        ],
+        [
+          -2.280167585975e-05,
+          7.920381115992e-05
+        ]
+      ],
+      "psf_cd": [
+        [
+          1.37372556431481e-05,
+          0.0
+        ],
+        [
+          0.0,
+          1.3736902076554e-05
+        ]
+      ],
+      "native_scale_arcsec": 0.2967209032102048,
+      "basis_arcsec": [
+        [
+          0.04752289828916648,
+          -0.01368252799274426
+        ],
+        [
+          0.013681181585031902,
+          0.047523488682037957
+        ]
+      ],
+      "signed_sum": 36.48462764972231,
+      "negative_pixels": 5,
+      "header_widths": {
+        "PSF_FWHM": 1.77499998,
+        "FWHMXPSF": 1.544619676706346,
+        "FWHMYPSF": 1.541149216823775,
+        "REE50": 0.2665460193257839,
+        "REE80": 0.4043726358341279
+      },
+      "supplied_sample_max_absolute_error": 6.680985452367505e-10,
+      "psf_native_stamp_flux": 0.9998356669541807,
+      "native_psf_adaptive_status": -1
+    },
+    {
+      "filename": "EUC_NIR_W-STK-PSF-I_Y-4932_20250424T021642.305490Z.fits.gz",
+      "sha256": "e08a9e9fd0ed9fda8eba0c988e0c7e5865e0e96bcc7a1712cebd1786347b4c3b",
+      "observation": 4932,
+      "source_header_sha256": "98409c9941b030cdfbd54fd85da8f488102cbf5caf4952099257f50f536b7e81",
+      "native_cd": [
+        [
+          7.92204830554099e-05,
+          2.27801702175e-05
+        ],
+        [
+          -2.278084032891e-05,
+          7.920989253321e-05
+        ]
+      ],
+      "psf_cd": [
+        [
+          1.37384816620428e-05,
+          0.0
+        ],
+        [
+          0.0,
+          1.3736754458847e-05
+        ]
+      ],
+      "native_scale_arcsec": 0.29673254946249483,
+      "basis_arcsec": [
+        [
+          0.04752892329326454,
+          -0.01366724292857273
+        ],
+        [
+          0.013669363483796056,
+          0.047529301866471745
+        ]
+      ],
+      "signed_sum": 36.47287299276809,
+      "negative_pixels": 11,
+      "header_widths": {
+        "PSF_FWHM": 1.77499998,
+        "FWHMXPSF": 1.552631640423647,
+        "FWHMYPSF": 1.533951512407039,
+        "REE50": 0.2661986588007935,
+        "REE80": 0.4029359059827447
+      },
+      "supplied_sample_max_absolute_error": 5.314661323876924e-10,
+      "psf_native_stamp_flux": 0.9998301670340554,
+      "native_psf_adaptive_status": -1
+    }
+  ],
+  "source_sha256": "0e1b4f51ec37b82f5da1170c615f7493c85a739160353bacc3daf50278650e21",
+  "test_sha256": "bdd474fc703bd3f10e86d4855e42b3f0ab1986c3529fc2aec2da03d1004ff939"
+}

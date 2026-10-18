@@ -1,0 +1,73 @@
+{
+  "status": "Companion residual review sheet; same objects, checkpoints and crops as Figure 5",
+  "notebook": "05_galaxy_examples.ipynb",
+  "notebook_source_sha256": "84878d37dd56b2b3760d798578af090d402d61fc7d64c1451e12584ae59b8610",
+  "visual_style": {
+    "version": "matisse-inspired-v01",
+    "font_family": [
+      "Nimbus Sans",
+      "Arial",
+      "DejaVu Sans"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F",
+      "native": "#555555",
+      "nisp": "#555555",
+      "bilinear": "#9C6543",
+      "bicubic": "#52A7C1",
+      "legacy": "#2455A4",
+      "sr": "#2455A4",
+      "direct5": "#23836F",
+      "diffusion": "#B58A16",
+      "diffusion_mean3": "#77649B",
+      "jwst": "#D9822B",
+      "reference": "#D9822B"
+    },
+    "markers": {
+      "native": "o",
+      "nisp": "o",
+      "bilinear": "D",
+      "bicubic": "v",
+      "legacy": "s",
+      "sr": "s",
+      "direct5": "^",
+      "diffusion": "o",
+      "diffusion_mean3": "P",
+      "jwst": "D",
+      "reference": "D"
+    },
+    "palette_inspiration": "Custom Matisse-inspired palette; not sampled from a specific artwork"
+  },
+  "helper_sha256": "e8213407084bb9bea7966fbcc69c8825f2c2ae2190c3938ad66bd57d6b164667",
+  "inputs": {
+    "paper_figures/inputs/galaxy_examples_v06.npz": "9dfb86b096b25e089c9960e08c4cfd764f3a2e12268379e1b4becae307923d70",
+    "paper_figures/inputs/galaxy_examples_v06.json": "89fed9f0e3a70e7a03998fcf9dd410e60a698adc69e2c2f983323d8ba1319c2e"
+  },
+  "settings": {
+    "predictions": [
+      "bilinear",
+      "diffusion",
+      "legacy",
+      "direct5"
+    ],
+    "crop_native": 21,
+    "residual_limits": [
+      0.0720306309342384,
+      0.2642436736106844,
+      0.7651405345916583,
+      0.35364739494323666,
+      0.2848195767402622
+    ]
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig05_galaxy_residuals_v08.pdf": "9174c9f085131e3d82dcb1b3bdd2103b17deeb3204c6e13d75bc2254c1023197",
+    "fig05_galaxy_residuals_v08.svg": "4656923b97b7194ad8dc1f7c7435ea6a0b6251a58cd51fe71691c047a6b68eae",
+    "fig05_galaxy_residuals_v08.png": "e86edd95ee939752686f8f550ba7453d86e677392d07508da3ac677a22873377"
+  }
+}

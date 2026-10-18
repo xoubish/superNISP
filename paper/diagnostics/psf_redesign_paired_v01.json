@@ -1,0 +1,9 @@
+{
+  "comparison_sha256": "61725387010deab7f37602b47ad9576cecad72e5d09f592b65c3167ddb3c53c6",
+  "source_sha256": "4465a4490341d97fa77e20c01333585230a4833d3905baf54b9e98a0bc3b9a82",
+  "outputs": {
+    "png": "a1d629685144fcb0b655ba0eb2136b3c566592ce951c183e941c925a0e57ef25",
+    "pdf": "70f340fcc27ec74d994412f537e33d3e7a93c8395a8b51f174d60c1abcdb6925"
+  },
+  "meaning": "Absolute paired differences scaled only for display; no ratio approximation. Fine scale is 3\u20136 target pixels."
+}

@@ -1,6 +1,77 @@
 # Paper figures workspace
 
-## Figure 6 installed in the local manuscript — 2026-10-17
+## Current shared style: Matisse-inspired palette
+
+All nine active notebooks now use consistent Nimbus Sans typography, white
+backgrounds, restrained axes, and richer pigment colors: cobalt ResNet, deep-green
+ResNet-D5, and ochre diffusion, with orange, umber, sky-blue, and violet supporting
+roles. Pink/red categorical colors are removed. Symbols, line patterns, and
+coverage hatching preserve distinctions beyond color. Scientific measurements,
+selected objects, model checkpoints, and uncertainties are unchanged.
+
+[All nine figures, PDF](exports/all_figures_style_v01.pdf) ·
+[contact sheet](exports/all_figures_style_v01.png) ·
+[Figure 8](exports/fig08_shape_dependence_v04.png) ·
+[Figure 8 color-vision/grayscale proof](exports/fig08_shape_dependence_v04_vision_proof.png) ·
+[style guide and portable-input notes](STYLE_GUIDE.md).
+
+All nine approved figures are now installed in `paper/survey_enhancements.tex`.
+Figure 8 replaces the historical residual-plane plot; Figure 9 adds the controlled
+supplied-PSF shear-response experiment. Captions, methods, results, and the related
+introduction/discussion statements now match the current measurements. The old
+ODR/shear-calibration claims were removed. The original ResNet is retained.
+Full manuscript compilation remains blocked by missing `etex.sty`; standalone
+caption proofs and all figure assets are checked locally. Installation evidence:
+`paper/diagnostics/figures_8_9_install_v01.json`.
+
+The second Figure 9 notebook has been removed from the active folder and
+archived as [09_shape_robustness_retired.ipynb](revisions/09_shape_robustness_retired.ipynb).
+There is now exactly one active notebook per figure number. Previous executed
+notebooks and style helpers are in `revisions/style_before_v01/`.
+
+## Figure 9: supplied NISP PSFs — installed
+
+[09_shear_response.ipynb](09_shear_response.ipynb) now uses the completed experiment
+with all four supplied NISP Y effective PSF profiles:
+[preview](exports/fig09_shear_response_v06.png),
+[PDF](exports/fig09_shear_response_v06.pdf). Panels now identify galaxy radius
+(0.18 and 0.35 arcsec); colors and symbols identify the three methods. Each point
+is the equally weighted mean across PSFs on a common successful population,
+versus nominal input S/N 20, 50, and 100. The shared Matisse-inspired styling is applied.
+
+All 48 simulation cells completed and passed independent verification; the
+original ResNet is unchanged. ResNet has higher response in all six displayed
+cells, while the omitted 0.65-arcsec case still has lower response at S/N 20.
+The larger-radius and noiseless results remain in notebook tables. The caption
+records the prior size selection, effective-pixel rendering, counts, and limits.
+[Protocol](../paper/empirical_shear_protocol.md),
+[results](../paper/empirical_shear_results.md),
+[frozen inputs](inputs/shear_response_empirical_v01.json).
+
+The v01–v04 Gaussian-PSF exports and archived notebooks remain available.
+The current v06 is installed in the manuscript as Figure 9.
+The former shape-robustness notebook is archived, as linked above.
+
+## PSF-aware redesign diagnostics — 2026-10-17
+
+[diagnostics/psf_redesign.ipynb](diagnostics/psf_redesign.ipynb) reviews the two
+completed PSF/noise-aware training branches against the original ResNet and matched
+extra-training control. It is executed with the RMSE, source/outside power and
+structure, fixed/adaptive shapes, and fixed-example image/residual comparisons.
+It performs no inference. Both runs selected epoch 5 after ten extra epochs;
+the additional RMSE gains over control are uncertain and adaptive shapes do not
+clearly improve. Recommendation: retain the original paper model.
+Results live in `runs/psf-redesign-comparison-v01/`; the diagnostic is separate
+from the numbered paper figures. Results: `paper/psf_redesign_results.md`;
+design: `paper/psf_redesign_protocol.md`. A compact paired-effect plot is
+`paper/diagnostics/psf_redesign_paired_v01.png`.
+The earlier eight-panel controlled shear pilot is preserved at
+`paper/diagnostics/shear_response_review_v02.png` (also PDF); its compact presentation
+is now proposed as Figure 9 above. This observed-shape-only
+presentation omits the native PSF-correction curve; its results remain in v01
+and the [pilot report](../paper/shear_response_pilot.md).
+
+## Installation history: Figure 6 — 2026-10-17
 
 The approved three-panel v06 PDF is now `paper/figs/model_comparison_v06.pdf`,
 included as Figure 6 in `paper/survey_enhancements.tex`. Its artwork and model
@@ -34,34 +105,37 @@ historical manuscript text and results still require revision. Local full-PDF
 verification is blocked by missing TeX `etex.sty` (and latexmk's Perl
 `Time::HiRes` dependency); the included PDF and figure ordering were checked.
 
-| Figure | Notebook | Proposed content | Initial state |
+| Figure | Notebook | Content | Current version |
 | --- | --- | --- | --- |
-| 1 | [01_sample.ipynb](01_sample.ipynb) | Footprint/splits and matched ~24-arcsec NISP/JWST field | True image footprint with connector lines; v07 |
-| 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v05 rendered |
-| 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic draft |
-| 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, ResNet/ResNet-D5 heads, dense-block detail | Named variants; v05 |
-| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Isolated source first, then pairs/disk/crowded field; v07 |
-| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Source/outside RMSE, power and Fourier correlation | Three panels in one row; v06 installed in local manuscript |
-| 7 | [07_model_shapes.ipynb](07_model_shapes.ipynb) | Hexbin density of measured ellipticity vs JWST with 1:1 and robust fit lines; gain bars as companion | Executed v05; installed in local manuscript as `paper/figs/shape_hexbin_v05.pdf`; alternatives kept in notebook |
-| 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Current-model shape gains versus input S/N, fixed/adaptive moments and matched coverage | Executed v03 local draft; estimator names on y-axes |
-| Supporting checks | [09_shape_robustness.ipynb](09_shape_robustness.ipynb) | Measurement choices, adaptive moments and failure coverage | Retained analysis; no standalone Figure 9 planned |
+| 1 | [01_sample.ipynb](01_sample.ipynb) | Footprint/splits and matched ~24-arcsec NISP/JWST field | True image footprint with connector lines; v08 |
+| 2 | [02_sample_properties.ipynb](02_sample_properties.ipynb) | Magnitude and redshift distributions | Magnitude-only COSMOS parent; v06 rendered |
+| 3 | [03_diffusion_architecture.ipynb](03_diffusion_architecture.ipynb) | Corrected conditioning, UNet, training and sampling | Vector schematic v06 |
+| 4 | [04_residual_architecture.ipynb](04_residual_architecture.ipynb) | Shared residual trunk, ResNet/ResNet-D5 heads, dense-block detail | Named variants; v06 |
+| 5 | [05_galaxy_examples.ipynb](05_galaxy_examples.ipynb) | NISP, JWST, models and residuals on the same galaxies | Isolated source first, then pairs/disk/crowded field; v08 |
+| 6 | [06_model_comparison.ipynb](06_model_comparison.ipynb) | Source/outside RMSE, power and Fourier correlation | Three panels in one row; v07 installed in local manuscript |
+| 7 | [07_model_shapes.ipynb](07_model_shapes.ipynb) | Hexbin density of measured ellipticity vs JWST with 1:1 and robust fit lines; gain bars as companion | Executed v06; installed in local manuscript as `paper/figs/shape_hexbin_v06.pdf`; alternatives kept in notebook |
+| 8 | [08_shape_dependence.ipynb](08_shape_dependence.ipynb) | Current-model shape gains versus input S/N, fixed/adaptive moments and matched coverage | Executed v04; installed as Figure 8; estimator names on y-axes |
+| 9 | [09_shear_response.ipynb](09_shear_response.ipynb) | Synthetic shear response versus S/N, size and native PSF width | Two-panel v06; installed as Figure 9; supplied NISP PSFs; original ResNet; no calibrated shear claim |
 
-The user selected a compact updated Figure 8 and retained notebook 9 as supporting
-analysis rather than a paper figure. The current Figure 8 draft has fixed/adaptive
+The user selected a compact updated Figure 8; the older shape-robustness
+notebook is now retired to the revisions folder. The new Figure 9 presents the controlled shear
+pilot. The current Figure 8 has fixed/adaptive
 S/N trends and matched measurement coverage; its mean-of-three and interpolation
 checks remain in the notebook tables.
 
 The sample overview and property distributions are now **two separate figures**,
 each in one row, without figure/panel titles, numbered Figures 1 and 2.
-The zoomed overview field is cached in `inputs/sample_region_v06.npz`, with
-source checksums and extraction metadata in the accompanying JSON. To rebuild,
+The zoomed overview field can be cached in `inputs/sample_region_v06.npz`, with
+source checksums and extraction metadata in the accompanying JSON. This machine
+uses the exact frozen v07 display pixels because the physical cache is absent.
+Figure 2 likewise uses verified exact cached counts; see the style guide. To rebuild,
 set `MOSAIC_ROOT` in `01_sample.ipynb` on the machine holding the original mosaics.
 `sample_region.py` extracts 82×82 native
 NISP pixels and an aligned 410×410 JWST field (about 24 arcsec across). The
 notebook also accepts explicit paths for the two images and caches the extracted
 field under `inputs/` for reuse elsewhere. No training or inference is involved.
 
-## Current model names
+## Model names and naming-revision history
 
 Use **ResNet** for the two-stage residual network and **ResNet-D5** for the
 direct 5× upsampling variant. Figure 4 v05, Figure 5 v07 and Figure 6 v06
@@ -74,7 +148,7 @@ apply these names throughout labels and captions:
 These are label-only revisions: Figure 5 reuses bundle v06 (`BUNDLE_VERSION`),
 and Figure 6 v06 reuses benchmark v03 and both spectral v01 bundles. Internal `legacy`
 and `direct5` keys and archived snapshots retain their original identities.
-The manuscript uses the new architecture and example PDFs; Figure 6 remains local.
+The manuscript now uses the styled Figures 1–7 listed above.
 The sections below retain the history of earlier figure versions.
 
 ## Working together
@@ -125,9 +199,9 @@ recorded source hashes without importing the models.
 `inputs/README.md` defines the two pending figure input contracts. No synthetic
 placeholder results are substituted when those artifacts are missing.
 
-## Rendered drafts and current sample revision
+## Earlier rendered drafts and sample revision
 
-Figure 2's [current v05](exports/fig02_sample_properties_v05.png) uses the full
+Figure 2's [earlier v05](exports/fig02_sample_properties_v05.png) uses the full
 COSMOS2020 catalog with **only valid ACS F814W magnitude < 25**, yielding
 233,784 parent objects. There is no classification, footprint, redshift, size,
 quality, or buffer cut. Gray shading sits behind train (teal), validation

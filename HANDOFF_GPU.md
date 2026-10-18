@@ -4,7 +4,144 @@ Updated 2026-10-17. Read this first when continuing on `ipacgpu3`.
 This records completed work and the next experiment; it does not certify
 the old paper results or claim a trained model is ready.
 
-## Latest update: PSF audit and synthetic shear-response pilot — 2026-10-17
+## Latest update: all nine figures installed in manuscript — 2026-10-17
+
+`paper/survey_enhancements.tex` now includes all nine approved Matisse-styled
+figures in order. Added `paper/figs/shape_dependence_v04.pdf` as Figure 8 and
+`paper/figs/shear_response_v06.pdf` as Figure 9; the historical residual-plane
+figure and obsolete ODR/shear-calibration claims were replaced. Figure 8 has
+input-S/N/coverage methods and results; Figure 9 has the supplied-effective-PSF
+rendering convention, finite-difference response, common selection, full-grid
+counterexample, and limitations. Related abstract/introduction/discussion text
+is consistent with the observed-shape and controlled-response distinction.
+No model/data changes, new inference, or external publishing.
+
+Pre-edit manuscript: `paper/diagnostics/figures_8_9_install_v01/manuscript_before.tex`.
+Verification: `paper/diagnostics/figures_8_9_install_v01.json`.
+Standalone Figures 8/9 caption proof: `paper/diagnostics/figures_8_9_caption_proof_v01.pdf`.
+Full A&A compilation still requires `etex.sty`; no dependency stub was substituted.
+The individual approved figure PDFs are unchanged in scientific content.
+
+## Previous update: consistent figure style — 2026-10-17
+
+All nine active figure notebooks are rendered with the user-requested custom
+Matisse-inspired palette: cobalt ResNet, green D5, ochre diffusion; pink/red
+categorical colors removed. Nimbus Sans fonts, consistent markers, line patterns,
+white backgrounds, and coverage hatching. See `paper_figures/STYLE_GUIDE.md`.
+No training, inference, metric changes, object reselection, or external uploads.
+
+Current primary export versions, Figures 1–9: v08/v06/v06/v06/v08/v07/v06/v04/v06.
+Review: `paper_figures/exports/all_figures_style_v01.pdf` (nine pages), PNG contact
+sheet, and Figure 6/8 color-vision/grayscale proof sheets. Styled Figures 1–7 are
+installed in `paper/survey_enhancements.tex`; Figure 8/9 remain notebook drafts.
+The manuscript's historical residual-plane Figure 8 still awaits scientific
+replacement. No full manuscript compilation: missing TeX dependencies persist.
+
+`09_shape_robustness.ipynb` was removed from the active folder and preserved as
+`paper_figures/revisions/09_shape_robustness_retired.ipynb`. Pre-style notebooks,
+helpers, and manuscript source are in `paper_figures/revisions/style_before_v01/`.
+Figure 1 uses exact display rasters from the hash-verified v07 SVG because the
+raw mosaic cache is absent here; Figure 2 uses exact verified integer histogram
+counts recovered from its v05 SVG, with six selected distributions independently
+checked. Details are in the style guide. Figure 7's supplementary bootstrap table
+is frozen at its previous displayed precision. Numerical bundles are unchanged.
+Verification: `paper/diagnostics/figure_style_v01.json`.
+
+## Previous update: Figure 9 with supplied NISP PSFs completed — 2026-10-17
+
+The user approved rerunning the shear experiment with supplied NISP PSFs.
+`runs/shear-response-empirical-v01/` completed 48 cells / 6,240 native shear inputs
+with exit 0, original epoch-49 ResNet unchanged. W&B:
+https://wandb.ai/AI-Astro/superNISP-corrected/runs/e1ehrb1p . No job remains queued.
+Runner `code/empirical_shear_response.py`; launcher `code/launch_empirical_shear.sh`;
+protocol `paper/empirical_shear_protocol.md`; results `paper/empirical_shear_results.md`.
+
+All four supplied signed effective PSFs are normalized, centered, and mapped
+using supplied PSF/native CD matrices, with Lanczos11 interpolation. Native
+rendering uses no_pixel (PSFEx effective profile already includes pixel response).
+Four scientific controls passed; `code/verify_empirical_shear.py` independently
+reproduced all matrices, ratios, counts, and hashes. Native bare-PSF HSM fits and
+all auxiliary native REGAUSS attempts fail from undersampling; failures are kept
+and do not select the observed comparison. This remains a synthetic pilot.
+
+Current notebook: `paper_figures/09_shear_response.ipynb`, executed v05.
+Exports: `paper_figures/exports/fig09_shear_response_v05.{png,pdf,svg,json}`.
+Frozen input: `paper_figures/inputs/shear_response_empirical_v01.json`.
+Two panels now identify radii 0.18/0.35 arcsec, with three method curves versus
+S/N 20/50/100. Each point equally averages all four PSFs on identical successful
+objects (31/32 for smallest/lowest-SNR, otherwise 32/32). ResNet responses at
+S/N 100 are 0.8001/0.8943 versus native 0.4170/0.6397. Keep original model.
+The larger-radius S/N-20 counterexample remains: ResNet 0.7153 < native 0.7743.
+All sizes/noiseless inputs and PSF-specific values are in diagnostics and notebook
+tables. Gaussian v01–v04 plots/notebooks are archived. No manuscript installation
+or external paper upload. Real galaxy and reserved test images were not read.
+
+## Previous update: PSF-aware redesign completed — 2026-10-17
+
+Both redesigns finished 10 epochs / 22,270 updates, selected epoch 5, and exited
+0. The automatic CPU comparison also exited 0. No job remains queued by this
+experiment. Read [paper/psf_redesign_results.md](paper/psf_redesign_results.md).
+Results: `runs/psf-redesign-comparison-v01/`; notebook:
+`paper_figures/diagnostics/psf_redesign.ipynb`; paired-effect plot:
+`paper/diagnostics/psf_redesign_paired_v01.png` (also PDF/JSON).
+
+Source RMSE: original 0.0601735, extra-training control 0.0594465, conditioned
+0.0593742, inverse-feature 0.0593513 MJy/sr. The additional 0.122%/0.160% gains
+over control have paired intervals spanning zero. Conditioned fixed-shape RMSE
+improves 0.98% over control (difference CI excludes zero), but neither redesign
+clearly improves adaptive shapes or fine-scale correlation over control. Visual
+examples remain very similar. User-confirmed decision: retain the original independently
+replicated paper ResNet; conditioned is a follow-up candidate, with no demonstrated
+overall benefit from the inverse feature. No manuscript/numbered-figure switch.
+
+Three CPU controls and both GPU preflights passed. Independent verification checks
+all training streams against control, exact epoch-zero parent weights, inherited
+and new optimizer steps, final learning rates, hashes, and 20 paired shape
+bootstrap differences. Primary common samples: 1,627 fixed / 1,700 adaptive;
+do not directly compare absolute errors to Figure 7's different common sample.
+Original checkpoint unchanged; test images unused. Source snapshots and the
+protocol remain immutable for reproducibility. Earlier launch details follow.
+
+## Previous update: PSF-aware redesign training — 2026-10-17
+
+User requested a redesign and comparison of RMSE, visuals, sharpness and shapes
+before finalizing the paper. After automatic review blocked the initial launch,
+the user **explicitly approved uploading these runs' training/validation metrics
+and fixed galaxy images to AI-Astro/superNISP-corrected**. Both runs then launched:
+
+| Branch | GPU | tmux | W&B |
+| --- | --- | --- | --- |
+| Image + PSF + noise + mask | 0 | `supernisp-psf-conditioned-v01` | [on773llj](https://wandb.ai/AI-Astro/superNISP-corrected/runs/on773llj) |
+| Same + bounded inverse-filter feature | 1 | `supernisp-psf-deconv-v01` | [hdsb3bfx](https://wandb.ai/AI-Astro/superNISP-corrected/runs/hdsb3bfx) |
+
+Outputs: `runs/psf-redesign-{conditioned,deconv}-v01/`; adjacent `-console`
+directories have logs/exit codes. At this update both passed GPU finite-update,
+exact checkpoint restoration and numerical next-step tests, and reproduced the
+parent's complete validation predictions/metrics before entering epoch 1.
+Read live `progress.json`, `live.json`, `status.json` before claiming completion.
+Three CPU tests passed, including original-output equivalence, optimizer isolation,
+flux-preserving inverse filter, D4 transformations, and PSF sampling geometry.
+
+Frozen design: [paper/psf_redesign_protocol.md](paper/psf_redesign_protocol.md).
+Do not edit active training sources or that protocol; resume signatures include
+their hashes. The original epoch-49 weights/Adam initialize both; zero context
+adapter initially preserves the original. Ten extra epochs / 22,270 updates each,
+same masked L1 and batch/augmentation stream as completed control v03, checked
+per epoch. New context LR 1e-4→1e-5; original weights 1e-5→1e-6. Select source MAE
+with epoch zero eligible; report selected/final. Every new epoch checkpoint saved.
+Both current parent and matched extra-training control are required baselines.
+
+PSF associations/proxies: `runs/psf-features-v01/`. Four nearly identical empirical
+PSFs; header-based orientation/pixel-response approximation is explicit. No JWST
+information in inference inputs, no test images, no physically exact deconvolution
+or calibrated shear claim. Original image remains available to both new models.
+Evaluation code `code/compare_psf_redesign.py` waits for completion and compares
+all selected/final checkpoints, including common-success shapes and failure rates,
+source/outside spectra, S/N/stack subgroups, fixed Figure 5 image/residual sheets,
+and paired spatial-block intervals. Results go to `runs/psf-redesign-comparison-v01/`.
+Current manuscript/figure inputs remain unchanged pending the comparison.
+
+## Previous update: PSF audit and synthetic shear-response pilot — 2026-10-17
 
 User authorized the PSF audit and controlled shear-response pilot. Completed all
 24 cells / 3,120 frozen original-ResNet inputs in tmux
@@ -15,7 +152,11 @@ source snapshots, per-object shapes/statuses, and primary results are in
 `runs/shear-response-pilot-v01/`; launcher `code/launch_shear_response_pilot.sh`.
 All three physics/selection controls passed; independent response/count/hash
 checks passed. Full report: [paper/shear_response_pilot.md](paper/shear_response_pilot.md).
-Review plot: `paper/diagnostics/shear_response_review_v01.png` (also PDF/JSON).
+Review plot: `paper/diagnostics/shear_response_review_v02.png` (also PDF;
+v02 JSON records presentation provenance, v01 JSON retains numerical results).
+At the user's request, v02 omits the green native PSF-correction curve and failure
+annotations. The original three observed-shape curves, samples, and values are
+unchanged. Corrected results and failures remain in the report and archived v01.
 
 The four NISP PSFs match manifest hashes but use a different format from the old
 `EuclidPSF` loader. Their pixel-response/stacking conventions need confirmation;

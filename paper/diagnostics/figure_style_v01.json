@@ -1,0 +1,191 @@
+{
+  "complete": true,
+  "style": "matisse-inspired-v01",
+  "active_notebooks": 9,
+  "figures": [
+    {
+      "figure": 1,
+      "stem": "fig01_sample_v08",
+      "changed_presentation_settings": [
+        "frozen_display_reuse"
+      ],
+      "input_files_verified": 5,
+      "source_hash": "5f8d2af46e2f64d57b228b48d6ba6d0015dd18e915f483df480c060545a3977b",
+      "fonts": [
+        "EKTMJB+NimbusSans-Bold",
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig01_sample_v08.pdf": "d0520a13e8f0e80d38408a1755f1b2726bc3784d46be5bdfc5e3ee630d0b4afc",
+        "fig01_sample_v08.svg": "68cb7564146bea2bffab212012bb344cd9ae81b3450c3c0007c69ea4a1103493",
+        "fig01_sample_v08.png": "d7e4a4871bd43f31bac65e37728a4cc57a68d12cfc0216f51acddca428c4c7b9"
+      }
+    },
+    {
+      "figure": 2,
+      "stem": "fig02_sample_properties_v06",
+      "changed_presentation_settings": [
+        "catalog_sentinels",
+        "colors",
+        "counts_source",
+        "histogram_accounting",
+        "normalization",
+        "test_access"
+      ],
+      "input_files_verified": 4,
+      "source_hash": "30a45ba17a2fe121a26bfac58689a96660154aeee2a452a4f9a9cb72cc180811",
+      "fonts": [
+        "EKTMJB+NimbusSans-Bold",
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig02_sample_properties_v06.pdf": "6b24647a7c6efa33e36014eb8492cdbc82d1d10b9d597e805622da153511381a",
+        "fig02_sample_properties_v06.svg": "ea8db1df283f687169a9d4b7ef6533edf197975fb22a6c76c11b1e70b4dfa860",
+        "fig02_sample_properties_v06.png": "0b3b2cdac16a40e03a355f5f8563f37fa2cdc90fb75e320537380d8138e8c2f5"
+      }
+    },
+    {
+      "figure": 3,
+      "stem": "fig03_diffusion_architecture_v06",
+      "changed_presentation_settings": [
+        "borders",
+        "colors"
+      ],
+      "input_files_verified": 5,
+      "source_hash": "02f95105f3a4cc65eb1ccbe6b72ed3a31133311a289f9940f032ce08fc4650d8",
+      "fonts": [
+        "EKTMJB+NimbusSans-Bold",
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig03_diffusion_architecture_v06.pdf": "7ac0f3df0a5d778032c0639d1e9132bc268be3682dccb7b576f65b8b1ab6af13",
+        "fig03_diffusion_architecture_v06.svg": "9813d42346e79ad0356f0e84380a8ca23822ad732528bbb9e1a13ce2b391b1a2",
+        "fig03_diffusion_architecture_v06.png": "8d1fe1d7676749191ceb4106d07dd38febe09b0458e76bfe86e910c1759cea1b"
+      }
+    },
+    {
+      "figure": 4,
+      "stem": "fig04_residual_architecture_v06",
+      "changed_presentation_settings": [
+        "borders",
+        "colors"
+      ],
+      "input_files_verified": 6,
+      "source_hash": "a4f8cd79907f03e8b19e52a59d0e4057a77606a5c6278bd272c2d35c33f03cd4",
+      "fonts": [
+        "EKTMJB+NimbusSans-Bold",
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig04_residual_architecture_v06.pdf": "376846ae03cdb6248a3f469770c39eaa622c685b6ddd8ce527554d3282f87a06",
+        "fig04_residual_architecture_v06.svg": "db88eb1dc2e6989e062ec58e8154033986d25559e040c7f26d486b98e2075fa2",
+        "fig04_residual_architecture_v06.png": "ac4f917ae307c93083c80c25dfd56beac963c29896554a0350642b6a3f937244"
+      }
+    },
+    {
+      "figure": 5,
+      "stem": "fig05_galaxy_examples_v08",
+      "changed_presentation_settings": [],
+      "input_files_verified": 3,
+      "source_hash": "84878d37dd56b2b3760d798578af090d402d61fc7d64c1451e12584ae59b8610",
+      "fonts": [
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig05_galaxy_examples_v08.pdf": "85e4f1e64567741bb77c78a27f9e059f452805f9fa7efda91d5cba8c66c652ea",
+        "fig05_galaxy_examples_v08.svg": "e51e36fa3f79e529e9d1a61fe7796610d1f4cb4d20ad7f7fbbe3424d1c7bef9e",
+        "fig05_galaxy_examples_v08.png": "9685caf5ae66aeabdc98565497d42aa070debf125f1657a2c53ff13cb9f06679"
+      }
+    },
+    {
+      "figure": 6,
+      "stem": "fig06_model_comparison_v07",
+      "changed_presentation_settings": [],
+      "input_files_verified": 3,
+      "source_hash": "722d8e29cff2e42bb36303ca5c2235b4604ae79730ae67e615c9a7e74a9a45f8",
+      "fonts": [
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig06_model_comparison_v07.pdf": "2d379fcede9fe78f777e35e330ae1f384301804441b19c138dcd64b1949ea53d",
+        "fig06_model_comparison_v07.svg": "a8f3bc4f12229ffefe3d489c27fc25264e89f11295366ee45f17a6c554609069",
+        "fig06_model_comparison_v07.png": "d477f692a23b321a0b7fe57c5cf782b35da4a646756b6ce631df5185178bf3f1"
+      }
+    },
+    {
+      "figure": 7,
+      "stem": "fig07_shape_hexbin_v06",
+      "changed_presentation_settings": [
+        "hexbin"
+      ],
+      "input_files_verified": 2,
+      "source_hash": "521efc1996fbce756351060696c27f2f69431f3fe96ae7d4d7280cbe091c075b",
+      "fonts": [
+        "EKTMJB+NimbusSans-Italic",
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig07_shape_hexbin_v06.pdf": "023a2b6f0b009b60ddbdec285db8386c75a9c2d768338a62cd848bc2d9910ff7",
+        "fig07_shape_hexbin_v06.svg": "ee912bd3a9f6ccacad182b4db2a813c6f868ae7f2c067528030b9ee3a43b946e",
+        "fig07_shape_hexbin_v06.png": "662f47b3a2b36fc11882ed8a7ce98685d3d5bfa3293283306210a77418ede698"
+      }
+    },
+    {
+      "figure": 8,
+      "stem": "fig08_shape_dependence_v04",
+      "changed_presentation_settings": [],
+      "input_files_verified": 4,
+      "source_hash": "0e9eed6cfd7f08cc37c30ba29c0e1a9d79bba20fcb22c657a98d183f70aa59f8",
+      "fonts": [
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig08_shape_dependence_v04.pdf": "e8c144a19c0c7cc2200b78cd8e3733fe724be4ba45cd595672d82791fcb70c5d",
+        "fig08_shape_dependence_v04.svg": "331691f11e75df23874accb1a98dbe19924dcf4584cd0ba3bccdbb4c069a6740",
+        "fig08_shape_dependence_v04.png": "10b5d460b4122bd0eed783d9655d0eb18730248f207045d8013376fa9f26694d"
+      }
+    },
+    {
+      "figure": 9,
+      "stem": "fig09_shear_response_v06",
+      "changed_presentation_settings": [
+        "version"
+      ],
+      "input_files_verified": 4,
+      "source_hash": "ca38a63392f929a9c3cbfb8c3555c44ab5cefa820f6bc16e0fd98f612ea6864a",
+      "fonts": [
+        "EKTMJB+NimbusSans-Bold",
+        "EKTMJB+NimbusSans-Italic",
+        "EKTMJB+NimbusSans-Regular"
+      ],
+      "exports": {
+        "fig09_shear_response_v06.pdf": "272756f8d7999770648e7b5bd7e01ed67bb7daf38ef6f570dfe611bb2cc11328",
+        "fig09_shear_response_v06.svg": "423134952cde516e9b9eec4c3196b7464868e0ff6ae08c98f1ea8f93f9e36231",
+        "fig09_shear_response_v06.png": "b096cf7c8ad2178cef8fc5223f1a7a083a4023bb29d1bba9750833ae7771dcab"
+      }
+    }
+  ],
+  "all_current_inputs_exports_and_notebook_sources_verified": true,
+  "all_shared_numerical_input_hashes_unchanged": true,
+  "figure2_exact_histograms": 6,
+  "figure2_max_integer_recovery_residual": 0.00017687065039240224,
+  "figure1_display": "Exact embedded v07 image pixels reused; physical mosaic cache absent; stretch/orientation preserved",
+  "color_review": "Grayscale and Machado 2009 severity-100 vision proofs for Figures 6/8; redundant markers, patterns and labels retained",
+  "installed_figures": [
+    "sample_overview_v08",
+    "sample_properties_v06",
+    "diffusion_architecture_v06",
+    "residual_architecture_v06",
+    "galaxy_examples_v08",
+    "model_comparison_v07",
+    "shape_hexbin_v06"
+  ],
+  "notebook_only_figures": [
+    8,
+    9
+  ],
+  "manuscript_before_sha256": "b00cff97700d846c5d0502a8b7f8b308ccd1ebc1aa4ee2ca1395b699dd084c90",
+  "manuscript_after_sha256": "cfc343b8f908f7cad2093051f62aa0a62353b18b3f00ba2475ac66fadb4a3d2a",
+  "manuscript_compile": "Not run: etex.sty absent; standalone figure PDFs checked",
+  "verifier_source_sha256": "c2b5dc98a6761d9ae71a6ea3f63e7ae69b4feb97197882c1c47fb7e621ca7cb2"
+}

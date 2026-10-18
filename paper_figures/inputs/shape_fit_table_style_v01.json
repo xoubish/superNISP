@@ -1,0 +1,103 @@
+{
+  "source_notebook": "paper_figures/revisions/style_before_v01/07_model_shapes.ipynb",
+  "source_sha256": "8974e5c1f5ca9cf03752c11c394a3311c5ec7aefc0883a29f56d7784084cfa71",
+  "note": "Previously computed displayed bootstrap table; intervals and rounded values preserved verbatim. No statistical recomputation for styling.",
+  "records": [
+    {
+      "estimator": "fixed",
+      "method": "Native NISP",
+      "objects": 1446,
+      "slope": 0.678051,
+      "slope_ci95": "[0.657, 0.7]",
+      "intercept": 0.007689,
+      "rmse": 0.201114,
+      "rmse_ci95": "[0.1941, 0.2069]",
+      "gain_percent": 0.0,
+      "gain_ci95_percent": "[0.0, 0.0]"
+    },
+    {
+      "estimator": "fixed",
+      "method": "Diffusion (1 sample)",
+      "objects": 1446,
+      "slope": 0.828061,
+      "slope_ci95": "[0.795, 0.861]",
+      "intercept": 0.008165,
+      "rmse": 0.228958,
+      "rmse_ci95": "[0.2185, 0.2378]",
+      "gain_percent": -13.844969,
+      "gain_ci95_percent": "[-16.03157423277367, -11.26577964635931]"
+    },
+    {
+      "estimator": "fixed",
+      "method": "ResNet",
+      "objects": 1446,
+      "slope": 0.799553,
+      "slope_ci95": "[0.774, 0.827]",
+      "intercept": 0.010122,
+      "rmse": 0.162364,
+      "rmse_ci95": "[0.1549, 0.1684]",
+      "gain_percent": 19.267582,
+      "gain_ci95_percent": "[16.591509333536603, 21.87278368654546]"
+    },
+    {
+      "estimator": "fixed",
+      "method": "ResNet-D5",
+      "objects": 1446,
+      "slope": 0.801638,
+      "slope_ci95": "[0.775, 0.829]",
+      "intercept": 0.011399,
+      "rmse": 0.162494,
+      "rmse_ci95": "[0.1547, 0.1687]",
+      "gain_percent": 19.203084,
+      "gain_ci95_percent": "[16.520554995929015, 21.64788704880936]"
+    },
+    {
+      "estimator": "adaptive",
+      "method": "Native NISP",
+      "objects": 1498,
+      "slope": 0.606793,
+      "slope_ci95": "[0.583, 0.638]",
+      "intercept": 0.002352,
+      "rmse": 0.242377,
+      "rmse_ci95": "[0.2311, 0.2527]",
+      "gain_percent": 0.0,
+      "gain_ci95_percent": "[0.0, 0.0]"
+    },
+    {
+      "estimator": "adaptive",
+      "method": "Diffusion (1 sample)",
+      "objects": 1498,
+      "slope": 0.705552,
+      "slope_ci95": "[0.67, 0.743]",
+      "intercept": 0.013011,
+      "rmse": 0.296577,
+      "rmse_ci95": "[0.2882, 0.3042]",
+      "gain_percent": -22.362146,
+      "gain_ci95_percent": "[-27.807251658056707, -17.97281253539561]"
+    },
+    {
+      "estimator": "adaptive",
+      "method": "ResNet",
+      "objects": 1498,
+      "slope": 0.730943,
+      "slope_ci95": "[0.711, 0.753]",
+      "intercept": 0.005296,
+      "rmse": 0.216657,
+      "rmse_ci95": "[0.2094, 0.2237]",
+      "gain_percent": 10.611569,
+      "gain_ci95_percent": "[7.3468183709684, 13.219594509871527]"
+    },
+    {
+      "estimator": "adaptive",
+      "method": "ResNet-D5",
+      "objects": 1498,
+      "slope": 0.73385,
+      "slope_ci95": "[0.71, 0.758]",
+      "intercept": 0.004302,
+      "rmse": 0.216849,
+      "rmse_ci95": "[0.2093, 0.224]",
+      "gain_percent": 10.532413,
+      "gain_ci95_percent": "[7.611552589936058, 13.020338502896005]"
+    }
+  ]
+}

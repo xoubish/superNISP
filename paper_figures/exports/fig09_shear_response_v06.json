@@ -1,0 +1,300 @@
+{
+  "status": "Supplied NISP PSF synthetic pilot; original ResNet; not calibrated shear",
+  "notebook": "09_shear_response.ipynb",
+  "notebook_source_sha256": "a7b98f3022e68cdaa41e5acbe5d009b01212160b351821267a33235a914432ad",
+  "visual_style": {
+    "version": "matisse-inspired-v01",
+    "font_family": [
+      "Nimbus Sans",
+      "Arial",
+      "DejaVu Sans"
+    ],
+    "colors": {
+      "train": "#2455A4",
+      "validation": "#D9822B",
+      "test": "#23836F",
+      "native": "#555555",
+      "nisp": "#555555",
+      "bilinear": "#9C6543",
+      "bicubic": "#52A7C1",
+      "legacy": "#2455A4",
+      "sr": "#2455A4",
+      "direct5": "#23836F",
+      "diffusion": "#B58A16",
+      "diffusion_mean3": "#77649B",
+      "jwst": "#D9822B",
+      "reference": "#D9822B"
+    },
+    "markers": {
+      "native": "o",
+      "nisp": "o",
+      "bilinear": "D",
+      "bicubic": "v",
+      "legacy": "s",
+      "sr": "s",
+      "direct5": "^",
+      "diffusion": "o",
+      "diffusion_mean3": "P",
+      "jwst": "D",
+      "reference": "D"
+    },
+    "palette_inspiration": "Custom Matisse-inspired palette; not sampled from a specific artwork"
+  },
+  "helper_sha256": "e8213407084bb9bea7966fbcc69c8825f2c2ae2190c3938ad66bd57d6b164667",
+  "inputs": {
+    "paper_figures/inputs/shear_response_empirical_v01.json": "86b731b766936eaa082035ba049147e1d7f157c891a3ba1e60ec70e5de3ab7f4",
+    "runs/shear-response-empirical-v01/report.json": "475886b3fcfa5ec6d7cc36b6e746860b73a010429cafb89a429688d843bef67f",
+    "runs/shear-response-empirical-v01/verification.json": "d6566d217c8f67b84e4e782f49e6d6f19ce143b4b4f9ba866671f67301b2f865",
+    "paper/empirical_shear_protocol.md": "2a2d7e0b18d9ac65606446bf2e4f25691b19eacb9d997d7eadc2e63d3ed03213"
+  },
+  "settings": {
+    "version": "v06",
+    "panels": "intrinsic half-light radius",
+    "radii": [
+      0.18,
+      0.35
+    ],
+    "snr_order": [
+      20,
+      50,
+      100
+    ],
+    "categorical_positions": [
+      0,
+      1,
+      2
+    ],
+    "native_psf": "All four supplied NISP Y effective profiles; no extra pixel convolution",
+    "aggregation": "Equal weight across all four supplied stack PSFs, not field-abundance weighting. Common observed-method success across all PSFs and five shear branches. Mean per-PSF response ratios.",
+    "values": [
+      {
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "native_observed",
+        "response_ratio": 0.42007417945416325,
+        "common": 31,
+        "attempted": 32,
+        "psf_range": [
+          0.418651377994623,
+          0.4207346702677128
+        ]
+      },
+      {
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "native_observed",
+        "response_ratio": 0.4207506473615411,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.4195236552739528,
+          0.421432619043683
+        ]
+      },
+      {
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "native_observed",
+        "response_ratio": 0.41702547821031516,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.41586627247105606,
+          0.41769962845268116
+        ]
+      },
+      {
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "resnet_observed",
+        "response_ratio": 0.5716164944904206,
+        "common": 31,
+        "attempted": 32,
+        "psf_range": [
+          0.5713077572523403,
+          0.5717969591725582
+        ]
+      },
+      {
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "resnet_observed",
+        "response_ratio": 0.7505530283403397,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.7498036887237355,
+          0.7516383844896426
+        ]
+      },
+      {
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "resnet_observed",
+        "response_ratio": 0.8001145347146891,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.7986559194106855,
+          0.8021949394143343
+        ]
+      },
+      {
+        "half_light_radius": 0.18,
+        "snr": 20,
+        "method": "target_observed",
+        "response_ratio": 0.9072932325265035,
+        "common": 31,
+        "attempted": 32,
+        "psf_range": [
+          0.9072929284763419,
+          0.9072935685819452
+        ]
+      },
+      {
+        "half_light_radius": 0.18,
+        "snr": 50,
+        "method": "target_observed",
+        "response_ratio": 0.9072931061297931,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.9072927216663748,
+          0.9072934595880968
+        ]
+      },
+      {
+        "half_light_radius": 0.18,
+        "snr": 100,
+        "method": "target_observed",
+        "response_ratio": 0.9072931061297931,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.9072927216663748,
+          0.9072934595880968
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "native_observed",
+        "response_ratio": 0.6283144127085285,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.6280651618189536,
+          0.6285307710473925
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "native_observed",
+        "response_ratio": 0.6356806482333235,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.6353999755497054,
+          0.6358987530805912
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "native_observed",
+        "response_ratio": 0.6397440186166339,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.6394362530221736,
+          0.6399982376761117
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "resnet_observed",
+        "response_ratio": 0.7038987529053367,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.7033143645370984,
+          0.7043790243554718
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "resnet_observed",
+        "response_ratio": 0.8564607069322001,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.8555757372481213,
+          0.8574994265578048
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "resnet_observed",
+        "response_ratio": 0.8942946399083653,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.8936447185005962,
+          0.8950274694037554
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 20,
+        "method": "target_observed",
+        "response_ratio": 0.9713260193984148,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.9713257333762346,
+          0.9713264247902854
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 50,
+        "method": "target_observed",
+        "response_ratio": 0.9713260860594107,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.9713256837680516,
+          0.9713264557953996
+        ]
+      },
+      {
+        "half_light_radius": 0.35,
+        "snr": 100,
+        "method": "target_observed",
+        "response_ratio": 0.9713260860594107,
+        "common": 32,
+        "attempted": 32,
+        "psf_range": [
+          0.9713256837680516,
+          0.9713264557953996
+        ]
+      }
+    ],
+    "size_selection": "0.18 and 0.35 selected in the earlier Gaussian pilot; 0.65 reported separately",
+    "noiseless_input_displayed": false,
+    "native_psf_correction_displayed": false
+  },
+  "versions": {
+    "matplotlib": "3.9.4",
+    "pandas": "2.3.1"
+  },
+  "exports": {
+    "fig09_shear_response_v06.pdf": "d1f9414b0a4eacb8eb03cdf0d0db14cdc3f12f966273edc7ab2adf4e5465edeb",
+    "fig09_shear_response_v06.svg": "9dcf8f91ba928f65eae64359800fa5cb27f98d008544510bfab18e230eb7496e",
+    "fig09_shear_response_v06.png": "b096cf7c8ad2178cef8fc5223f1a7a083a4023bb29d1bba9750833ae7771dcab"
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "complete": true,
+  "scope": "Local manuscript installation; no external publication",
+  "manuscript_sha256": "f8f7ceb3286bccc2e0cf596ea9512606ec3e623dd49c947427c27a957bc23340",
+  "manuscript_before_sha256": "cfc343b8f908f7cad2093051f62aa0a62353b18b3f00ba2475ac66fadb4a3d2a",
+  "figures": [
+    {
+      "number": 1,
+      "path": "paper/figs/sample_overview_v08.pdf",
+      "sha256": "d0520a13e8f0e80d38408a1755f1b2726bc3784d46be5bdfc5e3ee630d0b4afc",
+      "notebook": "01_sample.ipynb",
+      "notebook_source_sha256": "5f8d2af46e2f64d57b228b48d6ba6d0015dd18e915f483df480c060545a3977b"
+    },
+    {
+      "number": 2,
+      "path": "paper/figs/sample_properties_v06.pdf",
+      "sha256": "6b24647a7c6efa33e36014eb8492cdbc82d1d10b9d597e805622da153511381a",
+      "notebook": "02_sample_properties.ipynb",
+      "notebook_source_sha256": "30a45ba17a2fe121a26bfac58689a96660154aeee2a452a4f9a9cb72cc180811"
+    },
+    {
+      "number": 3,
+      "path": "paper/figs/diffusion_architecture_v06.pdf",
+      "sha256": "7ac0f3df0a5d778032c0639d1e9132bc268be3682dccb7b576f65b8b1ab6af13",
+      "notebook": "03_diffusion_architecture.ipynb",
+      "notebook_source_sha256": "02f95105f3a4cc65eb1ccbe6b72ed3a31133311a289f9940f032ce08fc4650d8"
+    },
+    {
+      "number": 4,
+      "path": "paper/figs/residual_architecture_v06.pdf",
+      "sha256": "376846ae03cdb6248a3f469770c39eaa622c685b6ddd8ce527554d3282f87a06",
+      "notebook": "04_residual_architecture.ipynb",
+      "notebook_source_sha256": "a4f8cd79907f03e8b19e52a59d0e4057a77606a5c6278bd272c2d35c33f03cd4"
+    },
+    {
+      "number": 5,
+      "path": "paper/figs/galaxy_examples_v08.pdf",
+      "sha256": "85e4f1e64567741bb77c78a27f9e059f452805f9fa7efda91d5cba8c66c652ea",
+      "notebook": "05_galaxy_examples.ipynb",
+      "notebook_source_sha256": "84878d37dd56b2b3760d798578af090d402d61fc7d64c1451e12584ae59b8610"
+    },
+    {
+      "number": 6,
+      "path": "paper/figs/model_comparison_v07.pdf",
+      "sha256": "2d379fcede9fe78f777e35e330ae1f384301804441b19c138dcd64b1949ea53d",
+      "notebook": "06_model_comparison.ipynb",
+      "notebook_source_sha256": "722d8e29cff2e42bb36303ca5c2235b4604ae79730ae67e615c9a7e74a9a45f8"
+    },
+    {
+      "number": 7,
+      "path": "paper/figs/shape_hexbin_v06.pdf",
+      "sha256": "023a2b6f0b009b60ddbdec285db8386c75a9c2d768338a62cd848bc2d9910ff7",
+      "notebook": "07_model_shapes.ipynb",
+      "notebook_source_sha256": "521efc1996fbce756351060696c27f2f69431f3fe96ae7d4d7280cbe091c075b"
+    },
+    {
+      "number": 8,
+      "path": "paper/figs/shape_dependence_v04.pdf",
+      "sha256": "ed63e3c2bbb7d54dbc51756de482ff5f798d9dc996bf51566d6c3e6914a00b01",
+      "notebook": "08_shape_dependence.ipynb",
+      "notebook_source_sha256": "5a2001df5dbe71044a7660939fa0d3d0f2e2a667300d4559939a44a23c32dc91"
+    },
+    {
+      "number": 9,
+      "path": "paper/figs/shear_response_v06.pdf",
+      "sha256": "d1f9414b0a4eacb8eb03cdf0d0db14cdc3f12f966273edc7ab2adf4e5465edeb",
+      "notebook": "09_shear_response.ipynb",
+      "notebook_source_sha256": "a7b98f3022e68cdaa41e5acbe5d009b01212160b351821267a33235a914432ad"
+    }
+  ],
+  "all_references_resolve": true,
+  "latex_braces_and_environments_balanced": true,
+  "figure8_quoted_endpoints": [
+    {
+      "estimator": "fixed",
+      "bin": "<5",
+      "model": "ResNet",
+      "gain_and_ci": [
+        "19.9",
+        "13.8",
+        "25.3"
+      ]
+    },
+    {
+      "estimator": "adaptive",
+      "bin": "<5",
+      "model": "ResNet",
+      "gain_and_ci": [
+        "7.8",
+        "3.2",
+        "11.4"
+      ]
+    },
+    {
+      "estimator": "fixed",
+      "bin": "\u226550",
+      "model": "ResNet",
+      "gain_and_ci": [
+        "63.0",
+        "57.3",
+        "68.3"
+      ]
+    },
+    {
+      "estimator": "adaptive",
+      "bin": "\u226550",
+      "model": "ResNet",
+      "gain_and_ci": [
+        "39.8",
+        "29.1",
+        "47.6"
+      ]
+    }
+  ],
+  "figure9_quoted_values": [
+    [
+      0.18,
+      100,
+      "resnet_observed",
+      "0.800"
+    ],
+    [
+      0.35,
+      100,
+      "resnet_observed",
+      "0.894"
+    ],
+    [
+      0.18,
+      100,
+      "native_observed",
+      "0.417"
+    ],
+    [
+      0.35,
+      100,
+      "native_observed",
+      "0.640"
+    ],
+    [
+      0.18,
+      100,
+      "target_observed",
+      "0.907"
+    ],
+    [
+      0.35,
+      100,
+      "target_observed",
+      "0.971"
+    ],
+    [
+      0.65,
+      20,
+      "resnet_observed",
+      "0.715"
+    ],
+    [
+      0.65,
+      20,
+      "native_observed",
+      "0.774"
+    ],
+    [
+      0.65,
+      50,
+      "resnet_observed",
+      "0.854"
+    ],
+    [
+      0.65,
+      50,
+      "native_observed",
+      "0.810"
+    ],
+    [
+      0.65,
+      100,
+      "resnet_observed",
+      "0.921"
+    ],
+    [
+      0.65,
+      100,
+      "native_observed",
+      "0.819"
+    ],
+    [
+      0.18,
+      null,
+      "resnet_observed",
+      "0.806"
+    ],
+    [
+      0.35,
+      null,
+      "resnet_observed",
+      "0.924"
+    ],
+    [
+      0.65,
+      null,
+      "resnet_observed",
+      "0.951"
+    ]
+  ],
+  "numerical_bundles": {
+    "paper_figures/inputs/shape_snr_v02.json": "dffb9f79be6f8fda3bb4bceb40339c6eee34f0ba68ec5118835e089a6cb54df6",
+    "paper_figures/inputs/shear_response_empirical_v01.json": "86b731b766936eaa082035ba049147e1d7f157c891a3ba1e60ec70e5de3ab7f4"
+  },
+  "caption_proof": {
+    "path": "paper/diagnostics/figures_8_9_caption_proof_v01.pdf",
+    "sha256": "e51d350d0e046418943faac5f97707d81bbb7b172b075279c4a74b3290989adf",
+    "pages": 2,
+    "compile": "passed; visual inspection passed"
+  },
+  "full_manuscript_compile": {
+    "status": "blocked",
+    "reason": "A&A class requires unavailable etex.sty",
+    "log": "paper/diagnostics/figures_8_9_install_v01/texcheck/survey_enhancements.log"
+  },
+  "verifier_sha256": "c3f384db6ab02d1ccac26e6b0596464e1f43ea725e70487a9e58af8117996e44"
+}

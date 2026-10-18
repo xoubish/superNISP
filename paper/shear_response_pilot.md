@@ -2,7 +2,13 @@
 
 This is supporting work for the PSF/shear discussion, separate from Figures 7–8.
 Those figures compare observed cross-band shapes and are not shear calibration.
-No manuscript figure or calibration claim is changed by this experiment.
+The current Figure 9 reruns the experiment with the four supplied NISP Y
+effective PSFs, replacing the illustrative Gaussian native PSFs below. See the
+[new results](empirical_shear_results.md), [rendering protocol](empirical_shear_protocol.md),
+and [two-panel Figure 9](../paper_figures/exports/fig09_shear_response_v05.png).
+Its panels identify galaxy radius rather than assumed PSF width. The original
+Gaussian pilot, PSF audit, and failure diagnostics are preserved below as history.
+Neither experiment establishes calibrated shear measurements.
 
 ## Available PSFs
 
@@ -84,10 +90,16 @@ independent reader reproduced every available primary response matrix and all
 success counts from the frozen per-object measurements. The primary all-method
 intersection has 312/624 base objects; the observed-only intersection has 622/624.
 
-Review [the plot](diagnostics/shear_response_review_v01.png),
-[PDF](diagnostics/shear_response_review_v01.pdf), and
+Review [the plot](diagnostics/shear_response_review_v02.png),
+[PDF](diagnostics/shear_response_review_v02.pdf), and
 [verified numerical results](diagnostics/shear_response_review_v01.json).
 The original predeclared plot/report are preserved in the run directory.
+The v02 presentation shows only the three observed-shape curves, as requested;
+the green native-PSF-correction curve and its failure annotations are omitted.
+All corrected-shape measurements and failures remain in the numerical results,
+the table below, and the [archived v01 plot](diagnostics/shear_response_review_v01.png).
+The common samples and displayed response values are unchanged; see
+[presentation provenance](diagnostics/shear_response_review_v02.json).
 
 The 0.45-arcsec PSF is too poorly sampled for native-grid GalSim HSM in this
 setup: **all 1,560 REGAUSS attempts at that PSF fail**, so the primary four-method
@@ -101,8 +113,8 @@ correction is scientifically unnecessary or that ResNet outperforms it.
 
 To avoid hiding valid observed-shape measurements, a clearly labeled **secondary**
 analysis compares native, ResNet, and high-resolution observed shapes on their
-joint successful sample. The review plot uses that sample and includes REGAUSS
-only where it succeeds for the entire identical sample. It does not replace the
+joint successful sample. The review plot uses that sample. The archived v01 plot
+also includes REGAUSS where it succeeds for the entire identical sample. Neither replaces the
 failed primary comparison with a different successful population. Only two base
 objects fail the observed comparison, both in the smallest-size / S/N-20 /
 0.45-arcsec-PSF cell; their failures remain in the denominators.

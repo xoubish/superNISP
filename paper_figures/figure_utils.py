@@ -28,18 +28,44 @@ _default_data = next((path for path in _data_candidates
                       if (path/'manifest.json').is_file() and (path/'objects.csv').is_file()),
                      _data_candidates[0])
 DATA=Path(os.environ.get('SUPERNISP_DATA',str(_default_data))).expanduser().resolve()
-COLORS=dict(train='#0072B2',validation='#D55E00',test='#999999',native='#626A73',
-            bilinear='#E69F00',bicubic='#56B4E9',legacy='#0072B2',sr='#0072B2',
-            direct5='#009E73',diffusion='#8B5DA8',jwst='#252B33')
+STYLE_VERSION = 'matisse-inspired-v01'
+# Custom Matisse-inspired pigments: cobalt, green, ochre, umber and violet.
+# Artistic inspiration, not a canonical painting-derived or certified palette.
+# Color carries method identity; markers/line patterns provide redundant encoding.
+COLORS=dict(train='#2455A4',validation='#D9822B',test='#23836F',native='#555555',
+            nisp='#555555',bilinear='#9C6543',bicubic='#52A7C1',legacy='#2455A4',
+            sr='#2455A4',direct5='#23836F',diffusion='#B58A16',
+            diffusion_mean3='#77649B',jwst='#D9822B',reference='#D9822B')
+MARKERS=dict(native='o',nisp='o',bilinear='D',bicubic='v',legacy='s',sr='s',
+             direct5='^',diffusion='o',diffusion_mean3='P',jwst='D',reference='D')
+INK = '#222222'
+GRID = '#E5E5E5'
+ESTIMATOR_COLORS = dict(fixed='#D9822B',adaptive='#555555')
 
 
-def style(fontsize=8):
-    mpl.rcParams.update({'font.family':'DejaVu Sans','font.size':fontsize,'axes.labelsize':fontsize,
+def style(fontsize=9):
+    mpl.rcParams.update({'font.family':'sans-serif','font.sans-serif':['Nimbus Sans','Arial','DejaVu Sans'],
+        'font.size':fontsize,'axes.labelsize':fontsize,
         'axes.titlesize':fontsize+1,'legend.fontsize':fontsize-1,'xtick.labelsize':fontsize-1,
         'ytick.labelsize':fontsize-1,'axes.spines.top':False,'axes.spines.right':False,
-        'axes.linewidth':.7,'lines.linewidth':1.5,'savefig.dpi':240,'figure.dpi':120,
+        'axes.linewidth':.7,'axes.edgecolor':'#777777','axes.labelcolor':INK,'text.color':INK,
+        'xtick.color':'#444444','ytick.color':'#444444','xtick.major.size':3,'ytick.major.size':3,
+        'xtick.major.width':.7,'ytick.major.width':.7,'axes.axisbelow':True,
+        'grid.color':GRID,'grid.linewidth':.65,'grid.alpha':1.,
+        'lines.linewidth':1.8,'lines.markersize':5,'savefig.dpi':240,'figure.dpi':120,
+        'legend.frameon':False,'legend.handlelength':2.4,'legend.labelspacing':.4,
+        'mathtext.fontset':'custom','mathtext.rm':'Nimbus Sans',
+        'mathtext.it':'Nimbus Sans:italic','mathtext.bf':'Nimbus Sans:bold',
         'pdf.fonttype':42,'ps.fonttype':42,'svg.fonttype':'none','axes.unicode_minus':True,
         'figure.facecolor':'white','axes.facecolor':'white'})
+
+
+def finish_axes(ax,grid='y'):
+    """White publication canvas, light guides, and restrained axes."""
+    ax.set_facecolor('white')
+    ax.grid(axis=grid,color=GRID,lw=.65,alpha=1.,zorder=0)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
 
 def read_json(path): return json.loads(Path(path).read_text())
@@ -62,6 +88,8 @@ def export(fig,stem,notebook,inputs,settings,status='layout draft',formats=('pdf
     evidence={str(Path(p).resolve().relative_to(ROOT)) if Path(p).resolve().is_relative_to(ROOT) else str(Path(p).resolve()):sha(p)
               for p in inputs}
     provenance=dict(status=status,notebook=notebook,notebook_source_sha256=notebook_source_hash(FIGURES/notebook),
+        visual_style=dict(version=STYLE_VERSION,font_family=mpl.rcParams['font.sans-serif'],
+                          colors=COLORS,markers=MARKERS,palette_inspiration='Custom Matisse-inspired palette; not sampled from a specific artwork'),
         helper_sha256=sha(__file__),inputs=evidence,settings=settings,
         versions=dict(matplotlib=mpl.__version__,pandas=pd.__version__),
         exports={p.name:sha(p) for p in paths})

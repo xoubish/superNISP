@@ -1,0 +1,17 @@
+{
+  "numerical_source": "paper/diagnostics/shear_response_review_v01.json",
+  "numerical_source_sha256": "10c06875e67a6c15fe08ac94e4f9323d702d78d4e83c08777e0864dd611579ca",
+  "plotting_source": "code/plot_shear_response.py",
+  "plotting_source_sha256": "fca11a219da81fb37e26fe11c80d6e7c182bcd7df490951f1490f4c3250a560f",
+  "displayed_methods": [
+    "native_observed",
+    "resnet_observed",
+    "target_observed"
+  ],
+  "change": "Display only: omit native REGAUSS curve, legend entry, and failure annotations. Keep all numerical results, observed-common samples, scales, and remaining curves unchanged.",
+  "observed_common": 622,
+  "exports_sha256": {
+    "paper/diagnostics/shear_response_review_v02.png": "e0c38df278676ce0b358a1b5f0cfe647083ca46e86a6e445b0faffb2e80ce226",
+    "paper/diagnostics/shear_response_review_v02.pdf": "4ec57e4ed346ee940ae74a3ca3740cb4c63759194563812542ece205be5f3571"
+  }
+}
