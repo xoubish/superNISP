@@ -134,12 +134,15 @@ spatial-buffer cuts (Sect.~\ref{sc:preprocessing}). We assign
 disjoint $3\arcmin$ sky blocks to training, validation, and test
 subsets, excluding galaxies within $10\arcsec$ of block boundaries,
 which gives 17\,816 training, 2118 validation, and 2876 test
-galaxies. Training data fit the model weights and normalisation
-scales; validation data support checkpoint selection and development
-of the models and measurement protocol. All comparisons of observed galaxies in this paper use the validation
-sample, except the single held-out check of Sect.~\ref{sc:test}, for
-which the test sample was kept untouched until the procedure was
-fixed.
+galaxies. Training data fit the model weights and normalisation scales.
+Validation data select the checkpoint of each model, decide among
+the trained variants, guided the design of the measurement protocol,
+and enter every comparison reported below; the architectures and
+training settings were fixed before the full runs, informed by short
+pilot runs that also used validation galaxies. The test sample was
+held back from all of these decisions and used once, after the
+procedure was fixed, to confirm the main results
+(Sect.~\ref{sc:test}).
 
 The paired sample is small compared with the imaging to which the
 trained models can be applied, because only the NISP image is needed
@@ -790,7 +793,7 @@ comparator.
     \tablefoot{Reductions are relative to native NISP on the galaxies measurable in the JWST reference, native NISP, and the reconstruction, with 95\% spatial-block intervals; the validation common samples therefore differ from those of Fig.~\ref{fig:ellipticity_comp}, which also require success in every other method. Slopes are Theil--Sen fits of reconstructed against JWST ellipticity over $|e_{\rm JWST}|<0.5$.}
 \end{table}
 
-The 2876 test galaxies were not used for training, checkpoint selection, or any measurement choice. After the procedure was fixed, we applied the frozen ResNet and the unchanged measurement pipeline to them once. Table~\ref{tab:test} compares the headline quantities with the validation sample: source and outside-source RMSE agree to within 1\% and 3\%, the shape-error reductions agree within their intervals, and the slopes of reconstructed against JWST ellipticity are unchanged. The validation results are therefore not a product of the selection and development carried out on that sample.
+The 2876 test galaxies took no part in training, pilot runs, checkpoint selection, model choice, or the design of the measurement protocol. After the procedure was fixed, we applied the frozen ResNet and the unchanged measurement pipeline to them once. Table~\ref{tab:test} compares the headline quantities with the validation sample: source and outside-source RMSE agree to within 1\% and 3\%, the shape-error reductions agree within their intervals, and the slopes of reconstructed against JWST ellipticity are unchanged. The validation results are therefore not a product of the selection and development carried out on that sample.
 
 \subsection{Response to applied shear}
 \label{sc:shear_response_results}
@@ -900,10 +903,10 @@ The scope of the sample also limits the conclusions. Our galaxies
 lie in one COSMOS field and satisfy F814W $<25$ and
 $\zph<3$, so the results do not yet demonstrate performance
 on the optically fainter population that motivates near-infrared
-shape measurement. The validation sample also informed model and measurement choices,
-but the held-out test sample reproduces its image and shape results
-(Sect.~\ref{sc:test}); tests across fields and populations are the
-natural next step. Future work should also quantify residual
+shape measurement. The validation sample determined checkpoint and model selection and
+the measurement protocol, but the held-out test sample reproduces its
+image and shape results (Sect.~\ref{sc:test}); tests across fields
+and populations are the natural next step. Future work should also quantify residual
 astrometric offsets and the effective PSFs of the input, target, and
 reconstructed images, which determine how image differences
 translate into morphological errors.
