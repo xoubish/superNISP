@@ -254,8 +254,12 @@ without clipping.
 
 The diffusion model follows the image-refinement approach of
 \citet{SR3}, based on denoising diffusion models
-\citep{Ho2020, Nichol2021}. During training, we add a known amount of
-Gaussian noise to a JWST cutout and train the network to recover the
+\citep{Ho2020, Nichol2021}. A diffusion model is a neural network
+trained to remove noise from an image; generation reverses a gradual
+noising process by applying the network repeatedly, each step
+removing a little noise, so that an image consistent with the
+conditioning input emerges from a random field. During training, we
+add a known amount of Gaussian noise to a JWST cutout and train the network to recover the
 original image. Repeating this at many noise levels teaches the model
 to proceed from a random field towards an F115W reconstruction
 (Fig.~\ref{fig:diff_model}a).
@@ -316,7 +320,7 @@ To generate an image (Fig.~\ref{fig:diff_model}c), we start from a Gaussian fiel
 
 The residual network produces an F115W estimate in a single pass. It first extracts features on the $41\times41$ grid, then enlarges them to the $205\times205$ output (Fig.~\ref{fig:resnet_model}). We compare two variants with the same feature extraction and different enlargement paths, a two-stage network (ResNet) and a direct-$5\times$ network (ResNet-D5), each trained separately.
 
-Feature extraction (Fig.~\ref{fig:resnet_model}a) combines residual learning \citep{ResNet} with the dense reuse of intermediate features used in image super-resolution \citep{Wang2018}. An initial convolution produces 64 feature maps, which pass through eight residual dense blocks (Fig.~\ref{fig:resnet_model}c). Within each block, four $3\times3$ convolutions with leaky ReLU activation (slope 0.2) each add 32 feature maps to the accumulated input, a fifth combines them into 64 maps, and the result is added to the block input without rescaling. After the eight blocks, a convolution combines the features and a long skip adds back the initial maps. A further module applies a fixed $3\times3$ Laplacian filter to each of the 64 feature maps, adds the response to the features, and processes the result with learned convolutions, which emphasises the sharp transitions that super-resolution must recover; channel weights computed from each map's mean response \citep{hu2019} then rescale
+Feature extraction (Fig.~\ref{fig:resnet_model}a) combines residual learning \citep{ResNet} with the dense reuse of intermediate features used in image super-resolution \citep{Wang2018}. In residual learning, each block predicts a correction that is added to its own input rather than replacing it, which keeps deep networks trainable and lets the layers concentrate on the difference between input and target; in a dense block, each convolution also receives the outputs of all earlier convolutions in the block. An initial convolution produces 64 feature maps, which pass through eight residual dense blocks (Fig.~\ref{fig:resnet_model}c). Within each block, four $3\times3$ convolutions with leaky ReLU activation (slope 0.2) each add 32 feature maps to the accumulated input, a fifth combines them into 64 maps, and the result is added to the block input without rescaling. After the eight blocks, a convolution combines the features and a long skip adds back the initial maps. A further module applies a fixed $3\times3$ Laplacian filter to each of the 64 feature maps, adds the response to the features, and processes the result with learned convolutions, which emphasises the sharp transitions that super-resolution must recover; channel weights computed from each map's mean response \citep{hu2019} then rescale
 the maps before enlargement.
 
 Both enlargement paths (Fig.~\ref{fig:resnet_model}b) use pixel shuffling, in which a convolution predicts extra feature maps that are rearranged onto a finer grid \citep{Shi2016PixelShuffle}. ResNet doubles the grid twice, from 41 to 82 to 164 pixels, predicts an image, and resizes it bilinearly to $205\times205$ inside the network, so that the loss is evaluated on the target grid. This final non-integer resampling slightly smooths the output, which motivated ResNet-D5: it enlarges in one step from 41 to 205 pixels and predicts directly on the target grid. Because a $5\times$ shuffle requires 25 rather than four feature maps per output map, ResNet-D5 has about 0.6 million more parameters (Table~\ref{tab:training_settings}), so the comparison includes a change in capacity as well as in resampling.
