@@ -775,22 +775,27 @@ comparator.
     \label{tab:test}
     \centering
     \small
+    \setlength{\tabcolsep}{4pt}
     \begin{tabular}{lcc}
         \hline\hline
         Quantity & Validation & Test \\
         \hline
         Galaxies & 2118 & 2876 \\
-        Source RMSE (MJy\,sr$^{-1}$) & 0.0602 & 0.0599 \\
-        Outside-source RMSE (MJy\,sr$^{-1}$) & 0.0140 & 0.0136 \\
-        Fixed moments: common sample & 1526 & 2101 \\
-        Fixed moments: RMSE reduction (\%) & 19.6 (16.9--22.2) & 18.7 (17.1--20.4) \\
-        Fixed moments: slope & 0.78 & 0.77 \\
-        Adaptive moments: common sample & 1553 & 2180 \\
-        Adaptive moments: RMSE reduction (\%) & 11.1 (7.9--13.6) & 12.3 (10.3--14.3) \\
-        Adaptive moments: slope & 0.72 & 0.73 \\
+        RMSE, source & 0.0602 & 0.0599 \\
+        RMSE, outside source & 0.0140 & 0.0136 \\
+        \hline
+        \multicolumn{3}{l}{Fixed weighted moments} \\
+        Common sample & 1526 & 2101 \\
+        Error reduction (\%) & 19.6 (16.9--22.2) & 18.7 (17.1--20.4) \\
+        Slope & 0.78 & 0.77 \\
+        \hline
+        \multicolumn{3}{l}{Adaptive moments} \\
+        Common sample & 1553 & 2180 \\
+        Error reduction (\%) & 11.1 (7.9--13.6) & 12.3 (10.3--14.3) \\
+        Slope & 0.72 & 0.73 \\
         \hline
     \end{tabular}
-    \tablefoot{Reductions are relative to native NISP on the galaxies measurable in the JWST reference, native NISP, and the reconstruction, with 95\% spatial-block intervals; the validation common samples therefore differ from those of Fig.~\ref{fig:ellipticity_comp}, which also require success in every other method. Slopes are Theil--Sen fits of reconstructed against JWST ellipticity over $|e_{\rm JWST}|<0.5$.}
+    \tablefoot{RMSE values are in MJy\,sr$^{-1}$. Error reductions are relative to native NISP on the galaxies measurable in the JWST reference, native NISP, and the reconstruction, with 95\% spatial-block intervals in parentheses; the validation common samples therefore differ from those of Fig.~\ref{fig:ellipticity_comp}, which also require success in every other method. Slopes are Theil--Sen fits of reconstructed against JWST ellipticity over $|e_{\rm JWST}|<0.5$.}
 \end{table}
 
 The 2876 test galaxies took no part in training, pilot runs, checkpoint selection, model choice, or the design of the measurement protocol. After the procedure was fixed, we applied the frozen ResNet and the unchanged measurement pipeline to them once. Table~\ref{tab:test} compares the headline quantities with the validation sample: source and outside-source RMSE agree to within 1\% and 3\%, the shape-error reductions agree within their intervals, and the slopes of reconstructed against JWST ellipticity are unchanged. The validation results are therefore not a product of the selection and development carried out on that sample.
