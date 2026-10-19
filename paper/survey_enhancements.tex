@@ -112,7 +112,7 @@ for weak lensing, but its $0\farcs3$ pixels, three times coarser than VIS, limit
 \label{sc:intro}
 
 Weak gravitational lensing is one of the primary cosmological probes of Stage IV wide-field surveys \citep{Laureijs2011, Chang2013}, and its statistical precision places demanding requirements on the control of systematic errors. Shape measurement in particular has required a sustained, community-wide effort: successive blind challenges \citep{Heymans2006, Massey2007, Mandelbaum2015} and calibration frameworks based on image simulations and self-calibration \citep[e.g.,][]{Huff2017, Sheldon2017, EC_Congedo2024} have been devoted
-to measuring and removing biases in shape estimators. For \Euclid, multiplicative shear biases must be controlled to $10^{-3}$ \citep{Cropper2013}. This requirement is sensitive to the details of the galaxy population: replacing the morphologies in the \Euclid\ Flagship simulation with distributions learned from \Euclid\ imaging shifts the multiplicative bias at the percent level
+to measuring and removing biases in shape estimators. For \Euclid, multiplicative shear biases must be controlled to $10^{-3}$ \citep{Cropper2013}. This requirement is sensitive to the details of the galaxy population: replacing the morphologies in the Euclid Flagship simulation with distributions learned from \Euclid\ imaging shifts the multiplicative bias at the percent level
 \citep{EC_ShapeDist2026}, several times the allowed budget. Any new shape-measurement technique must therefore be tested for bias and calibrated on realistic simulations before its outputs can support cosmological inference.
 
 Deep learning has meanwhile become integral to astronomical data analysis, with applications ranging from image generation and outlier detection to photometric redshifts and deblending \citep{Arcelin2021, Hemmati2022, Sampson2024, Scognamiglio2025}. Super-resolution, the task of inferring high-resolution spatial
@@ -134,7 +134,7 @@ Subaru/HSC and HST images to deblend ground-based galaxy images, and \citet{Kahn
     \label{fig:sample_overview}
 \end{figure*}
 
-\Euclid\ offers a natural setting for this approach. Its weak lensing shapes are measured in the visible band with VIS \citep[$0\farcs1$ pixels;][]{EuclidSkyVIS}, while the near-infrared imaging from NISP \citep[$0\farcs3$ pixels;][]{EuclidSkyNISP} is three times coarser in sampling and serves photometry and photometric redshifts rather than shape measurement. Galaxies that are well detected in the near-infrared but lack usable VIS shapes, including red and high-redshift sources, are therefore excluded from the weak lensing sample. Studies with HST/CANDELS imaging have demonstrated the potential of near-infrared shapes: \citet{Lee2018} compared ellipticities in optical and near-infrared images degraded to survey quality, and \citet{Finner2023} examined WFC3-IR PSF modelling and weak lensing systematics. Super-resolved NISP images could extend the range of galaxies with useful shapes, increasing the source density and redshift coverage available to lensing analyses. The same gain would serve galaxy science: at $z\gtrsim1$ the NISP bands sample rest-frame optical light and so trace the stellar mass distribution rather than individual star-forming regions, yet \Euclid\ morphological measurements, from S\'ersic fits to machine-learning classifications, are currently made on VIS imaging \citep[e.g.,][]{EC_Q1_Quilley2025, EC_Q1_Walmsley2025}. Sharper near-infrared images over the \Euclid\ Wide Survey would support measurements of structure, merger signatures, and blending for a far larger sample than
+\Euclid\ offers a natural setting for this approach. Its weak lensing shapes are measured in the visible band with VIS \citep[$0\farcs1$ pixels;][]{EuclidSkyVIS}, while the near-infrared imaging from NISP \citep[$0\farcs3$ pixels;][]{EuclidSkyNISP} is three times coarser in sampling and serves photometry and photometric redshifts rather than shape measurement. Galaxies that are well detected in the near-infrared but lack usable VIS shapes, including red and high-redshift sources, are therefore excluded from the weak lensing sample. Studies with HST/CANDELS imaging have demonstrated the potential of near-infrared shapes: \citet{Lee2018} compared ellipticities in optical and near-infrared images degraded to survey quality, and \citet{Finner2023} examined WFC3-IR PSF modelling and weak lensing systematics. Super-resolved NISP images could extend the range of galaxies with useful shapes, increasing the source density and redshift coverage available to lensing analyses. The same gain would serve galaxy science: at $z\gtrsim1$ the NISP bands sample rest-frame optical light and so trace the stellar mass distribution rather than individual star-forming regions, yet \Euclid\ morphological measurements, from S\'ersic fits to machine-learning classifications, are currently made on VIS imaging \citep[e.g.,][]{EC_Q1_Quilley2025, EC_Q1_Walmsley2025}. Sharper near-infrared images over the Euclid Wide Survey would support measurements of structure, merger signatures, and blending for a far larger sample than
 space-based near-infrared imaging has covered to date.
 
 This paper is a step in that direction, with weak lensing as the primary test case because it sets the most stringent requirements on measured shapes. We train deep-learning super-resolution models on \Euclid\ NISP images of the COSMOS field and evaluate them against overlapping JWST/NIRCam imaging, which provides a factor of five finer sampling and an independent reference for every galaxy (Sect.~\ref{sc:observations}). We compare a conditional diffusion model \citep{sohldickstein2015, Ho2020}, which generates images through successive denoising steps, with a residual network built from residual dense blocks \citep{Wang2018}, which predicts an image in a single pass (Sect.~\ref{sc:methods}). We evaluate both on image fidelity, spatial structure, and observed ellipticity, examine how shape errors depend on input signal-to-noise, and test the response of the residual network to an applied shear in controlled simulations (Sects.~\ref{sc:measurement} and \ref{sc:results}). Section~\ref{sc:discussion} summarises the results and the steps needed to extend them to the fainter near-infrared population and to
@@ -152,11 +152,10 @@ approximately $0\farcs46$, and the Wide Survey reaches a $5\,\sigma$
 point-source depth of approximately 24.5\,AB in \YE\
 \citep{EuclidSkyOverview}. The JWST images are COSMOS-Web F115W
 mosaics \citep[version 0.8, preceding the public data release
-of][]{Franco2025} at $0\farcs06$ per pixel, with a nominal PSF FWHM of
-$0\farcs04$ and a $5\,\sigma$ point-source depth of 26.7--27.4\,AB
-depending on exposure coverage \citep{Franco2025}.\footnote{The
-nominal FWHM is from the NIRCam documentation,
-\url{https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-performance/nircam-point-spread-functions}.} We
+of][]{Franco2025} at $0\farcs06$ per pixel, with a measured PSF
+FWHM of approximately $0\farcs056$ in F115W \citep{Zhuang2024} and a
+$5\,\sigma$ point-source depth of 26.7--27.4\,AB depending on exposure
+coverage \citep{Franco2025}. We
 use the $0\farcs06$ rather than the $0\farcs03$ mosaics because the
 NISP PSF, not the target sampling, limits the recoverable detail, and
 the coarser grid gives an integer $5\times$ ratio to the NISP pixel at
@@ -773,9 +772,9 @@ than native NISP in every case. On the 1098 galaxies measurable in
 all scenarios, the nominal reduction is 19.0\% (RMSE 0.154 to 0.125)
 and the scenarios span 8.2\% to 25.0\%. Background offsets have the
 largest effect: subtracting 0.1 outer-region RMS from the
-reconstruction lowers its successful measurements from 2045 to 1759
+reconstruction lowers its successful measurements from 1786 to 1544
 of 2118 and, on each scenario's own common sample, the RMSE
-reduction from 19.2\% to 10.6\%. The direction of improvement is
+reduction from 19.6\% to 10.7\%. The direction of improvement is
 stable; its size depends on the estimator, the background treatment,
 and the galaxies retained.
 
