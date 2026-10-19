@@ -276,8 +276,10 @@ times the pixel noise and logarithmic above it, so it compresses
 bright galaxy cores while retaining negative values. It is inverted
 before evaluation.
 
-The network is a U-Net whose encoder levels contain 32, 64, and 128
-feature maps, with a central stage of 128 and a symmetric decoder
+The network is a U-Net, a convolutional encoder--decoder that halves
+the image resolution in successive stages and then restores it; the
+encoder levels contain 32, 64, and 128 feature maps, with a central
+stage of 128 and a symmetric decoder
 (Fig.~\ref{fig:diff_model}b). Skip connections pass encoder features
 to the corresponding decoder level, and each stage contains two
 residual blocks. The noisy image is the only input channel; the NISP
@@ -287,7 +289,9 @@ features of every stage through learned rescalings and offsets (FiLM;
 internally, so that the three halvings of resolution in the encoder
 are exact, and cropped on output.
 
-For each training pair we sample one of 1000 noise levels from a cosine schedule \citep{Nichol2021}. Writing the transformed target as $x_0$ and a standard Gaussian field as $\epsilon$, the noisy image at step $t$ and the quantity the network is trained to predict
+For each training pair we sample one of 1000 noise levels from a cosine schedule
+\citep{Nichol2021}, which spaces the levels so that the signal is
+removed gradually rather than mostly in the first steps. Writing the transformed target as $x_0$ and a standard Gaussian field as $\epsilon$, the noisy image at step $t$ and the quantity the network is trained to predict
 \citep[the velocity parameterisation of][]{Salimans2022} are
 \begin{equation}
     x_t=a_t x_0+b_t\epsilon, \qquad v_t=a_t\epsilon-b_t x_0,
@@ -331,7 +335,9 @@ Sect.~\ref{sc:training}. Each network is trained with the mean absolute differen
 \subsection{Training and model selection}
 \label{sc:training}
 
-All three models use the same 17\,816 training galaxies and a budget of 50 epochs at batch size eight (111\,350 updates). We apply random $90\degr$ rotations and reflections consistently to each paired batch; validation images are not augmented. Training uses Adam with a one-cycle learning-rate schedule peaking at $10^{-4}$. All losses exclude invalid target pixels and average over the valid pixels of each galaxy before averaging over the batch, so that each galaxy has equal weight. Table~\ref{tab:training_settings} summarises the
+All three models use the same 17\,816 training galaxies and a budget of 50 epochs at batch size eight (111\,350 updates). We apply random $90\degr$ rotations and reflections consistently to each paired batch; validation images are not augmented. Training uses the Adam optimiser with a one-cycle learning-rate
+schedule, in which the rate rises to a peak of $10^{-4}$ and then
+decays to near zero by the end of training. All losses exclude invalid target pixels and average over the valid pixels of each galaxy before averaging over the batch, so that each galaxy has equal weight. Table~\ref{tab:training_settings} summarises the
 settings. The equal update budget does not imply equal computation, since the models differ in parameter count, objective, and generation cost. On a single NVIDIA L40S GPU per model, training took 1.2\,h for ResNet, 1.4\,h for ResNet-D5, and 3.8\,h for the diffusion model, and producing one reconstruction takes 0.5\,ms for ResNet and 125\,ms for a 50-step diffusion draw.
 
 We select the checkpoint with the lowest validation mean absolute image error. For the residual networks this uses all 2118 validation galaxies. For diffusion, where generation requires 50 network evaluations per galaxy, we monitor a fixed random subset of 256
