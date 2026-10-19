@@ -112,7 +112,7 @@ for weak lensing, but its $0\farcs3$ pixels, three times coarser than VIS, limit
 \label{sc:intro}
 
 Weak gravitational lensing is one of the primary cosmological probes of Stage IV wide-field surveys \citep{Laureijs2011, Chang2013}, and its statistical precision places demanding requirements on the control of systematic errors. Shape measurement in particular has required a sustained, community-wide effort: successive blind challenges \citep{Heymans2006, Massey2007, Mandelbaum2015} and calibration frameworks based on image simulations and self-calibration \citep[e.g.,][]{Huff2017, Sheldon2017, EC_Congedo2024} have been devoted
-to measuring and removing biases in shape estimators. For \Euclid, multiplicative shear biases must be controlled to $10^{-3}$ \citep{Cropper2013}. This requirement is sensitive to the details of the galaxy population: replacing the morphologies in the Euclid Flagship simulation with distributions learned from \Euclid\ imaging shifts the multiplicative bias at the percent level
+to measuring and removing biases in shape estimators. For \Euclid, multiplicative shear biases must be controlled to $10^{-3}$ \citep{Cropper2013}. This requirement is sensitive to the details of the galaxy population: replacing the morphologies in the Euclid Flagship simulation with distributions learned from \Euclid\ imaging shifts the multiplicative bias at the per cent level
 \citep{EC_ShapeDist2026}, several times the allowed budget. Any new shape-measurement technique must therefore be tested for bias and calibrated on realistic simulations before its outputs can support cosmological inference.
 
 Deep learning has meanwhile become integral to astronomical data analysis, with applications ranging from image generation and outlier detection to photometric redshifts and deblending \citep{Arcelin2021, Hemmati2022, Sampson2024, Scognamiglio2025}. Super-resolution, the task of inferring high-resolution spatial
@@ -562,7 +562,7 @@ error is
 where $\Delta e_i=e_i^{\rm prediction}-e_i^{\rm JWST}$, and the
 improvement relative to a baseline is
 $100[1-{\rm RMSE}_e({\rm model})/{\rm RMSE}_e({\rm baseline})]$
-percent. We also fit the slope of measured against reference
+per cent. We also fit the slope of measured against reference
 ellipticity, with both components pooled, using the Theil--Sen
 estimator over $|e^{\rm JWST}|<0.5$; a slope below unity indicates
 that the image underestimates the reference ellipticity, as expected
@@ -589,8 +589,8 @@ $(-\infty,5)$, $[5,10)$, $[10,20)$, $[20,50)$, and $[50,\infty)$.
     \caption{Reconstruction accuracy and spatial structure in
     JWST-defined source (filled circles, solid curves) and
     outside-source (open squares, dashed curves) regions of the
-    validation sample. Left: mean per-object RMSE against JWST F115W.
-    Middle: geometric mean model/reference power ratio. Right: mean
+    validation sample. \emph{Left}: mean per-object RMSE against JWST F115W.
+    \emph{Middle}: geometric mean model/reference power ratio. \emph{Right}: mean
     signed Fourier correlation. Whiskers and bands are 95\%
     spatial-block intervals. The dotted line marks the NISP Nyquist
     wavelength ($0\farcs59$).}
@@ -830,7 +830,7 @@ comparator.
     for fixed weighted and adaptive moments; ochre circles, cobalt
     squares, and green triangles are a single diffusion realisation,
     ResNet, and ResNet-D5. Whiskers are 95\% spatial-block intervals;
-    lines guide the eye. Right: fraction of attempted fields in the
+    lines guide the eye. \emph{Right}: fraction of attempted fields in the
     common sample for fixed (solid orange) and adaptive (hatched
     charcoal) moments, with counts above the bars and attempted
     numbers below.}
