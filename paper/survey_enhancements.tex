@@ -37,7 +37,7 @@
    
 
 \abstract{
-\Euclid\ is imaging of order a billion galaxies over 14\,000\,deg$^2$ in one broad visible band and three near-infrared bands. Weak lensing shapes are currently measured only in the visible images. Near-infrared shapes could eventually enlarge the source sample and extend it to higher redshift, but the near-infrared pixels are three times coarser than the visible ones. As a step towards that goal, we investigate whether learned super-resolution of the near-infrared images improves image fidelity and observed shapes while preserving sensitivity to applied shear. We train a conditional diffusion model and two residual-network variants on \Euclid\ \YE-band cutouts paired with JWST/NIRCam F115W images of the same COSMOS field at five times finer sampling, and evaluate them on a separate validation sample against the observed F115W images. The generative diffusion model retains about 90\% of the observed small-scale power but places less of it correctly, whereas the deterministic residual networks produce smoother images with 25\% lower reconstruction error and stronger spatial correlation with JWST; these reconstruction errors are consistent across three training seeds. Relative to the native \Euclid\ images, the residual network reduces the root-mean-square ellipticity error against JWST by approximately 19\% with fixed weighted moments and 11\% with adaptive moments. The gains grow with signal-to-noise ratio, reaching 63\% with fixed moments and 40\% with adaptive moments for the brightest galaxies, whereas at low signal-to-noise ratio only a subset of galaxies yields measurable shapes. Controlled simulations using the \Euclid\ near-infrared point-spread functions show increased shear response for compact galaxies after reconstruction, but the gain depends on size and noise, and responses remain below the intrinsic value. At 0.5\,ms per galaxy, the residual network can process the full first \Euclid\ data release in under a day. These results support residual networks as a practical route to improving observed-shape fidelity in \Euclid\ near-infrared imaging. Establishing calibrated shear accuracy will require realistic simulations and independent validation that account for noise, instrumental response, cross-band differences, and measurement selection.}
+\Euclid\ is imaging of order a billion galaxies over 14\,000\,deg$^2$ in one broad visible band and three near-infrared bands. Weak lensing shapes are currently measured only in the visible images. Near-infrared shapes could eventually enlarge the source sample and extend it to higher redshift, but the near-infrared pixels are three times coarser than the visible ones. As a step towards that goal, we investigate whether learned super-resolution of the near-infrared images improves image fidelity and observed shapes while preserving sensitivity to applied shear. We train a conditional diffusion model and two residual-network variants on \Euclid\ \YE-band cutouts paired with JWST/NIRCam F115W images of the same COSMOS field at five times finer sampling, and evaluate them on a separate validation sample against the observed F115W images. The generative diffusion model retains about 90\% of the observed small-scale power but places less of it correctly, whereas the deterministic residual networks produce smoother images with 25\% lower reconstruction error and stronger spatial correlation with JWST; these reconstruction errors are consistent across three training seeds and are reproduced on a held-out test sample. Relative to the native \Euclid\ images, the residual network reduces the root-mean-square ellipticity error against JWST by approximately 19\% with fixed weighted moments and 11\% with adaptive moments. The gains grow with signal-to-noise ratio, reaching 63\% with fixed moments and 40\% with adaptive moments for the brightest galaxies, whereas at low signal-to-noise ratio only a subset of galaxies yields measurable shapes. Controlled simulations using the \Euclid\ near-infrared point-spread functions show increased shear response for compact galaxies after reconstruction, but the gain depends on size and noise, and responses remain below the intrinsic value. At 0.5\,ms per galaxy, the residual network can process the full first \Euclid\ data release in under a day. These results support residual networks as a practical route to improving observed-shape fidelity in \Euclid\ near-infrared imaging. Establishing calibrated shear accuracy will require realistic simulations and independent validation that account for noise, instrumental response, cross-band differences, and measurement selection.}
 
     \keywords{Gravitational lensing: weak -- Methods: data analysis -- Techniques: image processing -- Surveys}
    \titlerunning{\Euclid\/: Super-resolution of NISP imaging and its fidelity for shape measurement}
@@ -136,9 +136,10 @@ subsets, excluding galaxies within $10\arcsec$ of block boundaries,
 which gives 17\,816 training, 2118 validation, and 2876 test
 galaxies. Training data fit the model weights and normalisation
 scales; validation data support checkpoint selection and development
-of the models and measurement protocol. All comparisons of observed
-galaxies in this paper use the validation sample. The test sample is
-reserved for an independent evaluation of the final procedure.
+of the models and measurement protocol. All comparisons of observed galaxies in this paper use the validation
+sample, except the single held-out check of Sect.~\ref{sc:test}, for
+which the test sample was kept untouched until the procedure was
+fixed.
 
 The paired sample is small compared with the imaging to which the
 trained models can be applied, because only the NISP image is needed
@@ -763,6 +764,34 @@ model for the remainder of the paper. ResNet-D5 has slightly lower
 source RMSE and comparable shape performance, and we keep it as a
 comparator.
 
+\subsection{Held-out test sample}
+\label{sc:test}
+
+\begin{table}
+    \caption{ResNet on the validation and held-out test samples.}
+    \label{tab:test}
+    \centering
+    \small
+    \begin{tabular}{lcc}
+        \hline\hline
+        Quantity & Validation & Test \\
+        \hline
+        Galaxies & 2118 & 2876 \\
+        Source RMSE (MJy\,sr$^{-1}$) & 0.0602 & 0.0599 \\
+        Outside-source RMSE (MJy\,sr$^{-1}$) & 0.0140 & 0.0136 \\
+        Fixed moments: common sample & 1526 & 2101 \\
+        Fixed moments: RMSE reduction (\%) & 19.6 (16.9--22.2) & 18.7 (17.1--20.4) \\
+        Fixed moments: slope & 0.78 & 0.77 \\
+        Adaptive moments: common sample & 1553 & 2180 \\
+        Adaptive moments: RMSE reduction (\%) & 11.1 (7.9--13.6) & 12.3 (10.3--14.3) \\
+        Adaptive moments: slope & 0.72 & 0.73 \\
+        \hline
+    \end{tabular}
+    \tablefoot{Reductions are relative to native NISP on the galaxies measurable in the JWST reference, native NISP, and the reconstruction, with 95\% spatial-block intervals; the validation common samples therefore differ from those of Fig.~\ref{fig:ellipticity_comp}, which also require success in every other method. Slopes are Theil--Sen fits of reconstructed against JWST ellipticity over $|e_{\rm JWST}|<0.5$.}
+\end{table}
+
+The 2876 test galaxies were not used for training, checkpoint selection, or any measurement choice. After the procedure was fixed, we applied the frozen ResNet and the unchanged measurement pipeline to them once. Table~\ref{tab:test} compares the headline quantities with the validation sample: source and outside-source RMSE agree to within 1\% and 3\%, the shape-error reductions agree within their intervals, and the slopes of reconstructed against JWST ellipticity are unchanged. The validation results are therefore not a product of the selection and development carried out on that sample.
+
 \subsection{Response to applied shear}
 \label{sc:shear_response_results}
 
@@ -873,10 +902,10 @@ The scope of the sample also limits the conclusions. Our galaxies
 lie in one COSMOS field and satisfy F814W $<25$ and
 $\zph<3$, so the results do not yet demonstrate performance
 on the optically fainter population that motivates near-infrared
-shape measurement. The validation sample also informed model and
-measurement choices. An independent evaluation on the 2876 reserved
-test galaxies, followed by tests across fields and populations, is
-the natural next step. Future work should also quantify residual
+shape measurement. The validation sample also informed model and measurement choices,
+but the held-out test sample reproduces its image and shape results
+(Sect.~\ref{sc:test}); tests across fields and populations are the
+natural next step. Future work should also quantify residual
 astrometric offsets and the effective PSFs of the input, target, and
 reconstructed images, which determine how image differences
 translate into morphological errors.
@@ -903,8 +932,8 @@ reproduce its image errors, and controlled simulations show
 increased shear response for compact galaxies under the NISP
 effective PSFs. These results support ResNet as a practical starting
 point for extracting more structural information from NISP imaging
-across the \Euclid\ survey. Evaluation on the reserved test sample
-and realistic simulations of instrumental, noise, and selection
+across the \Euclid\ survey, and the held-out test sample reproduces
+them. Realistic simulations of instrumental, noise, and selection
 effects are the next steps towards using these reconstructions for
 morphological and weak lensing science.
 
